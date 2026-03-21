@@ -70,7 +70,7 @@ english-app/
 
 ---
 
-#### Task 001: EAS Build 및 외부 서비스 초기 설정 — 우선순위
+#### Task 001: EAS Build 및 외부 서비스 초기 설정 — 우선순위 `[Developer]`
 
 - EAS Build 계정 설정 및 `eas.json` 구성 (`development` / `preview` / `production` 프로필)
 - EAS Dev Client 빌드 생성 (iOS + Android), 실제 디바이스에서 Dev Client 앱 실행 확인
@@ -125,7 +125,7 @@ english-app/
 
 ---
 
-#### Task 002: Supabase DB 스키마, RLS, 트리거, 인덱스 설정 ✅
+#### Task 002: Supabase DB 스키마, RLS, 트리거, 인덱스 설정 ✅ `[Developer]`
 
 - Supabase 프로젝트 생성, SQL Editor에서 4개 테이블 생성:
   - `users` (id, email, display_name, created_at, last_login_at)
@@ -142,7 +142,7 @@ english-app/
 
 ---
 
-#### Task 003: 백엔드 Express 서버 프로젝트 구조 설정 ✅
+#### Task 003: 백엔드 Express 서버 프로젝트 구조 설정 ✅ `@contexttalk-api-architect`
 
 - `ai-server/` 디렉토리, `package.json` 초기화, 필수 패키지 설치:
   - **런타임**: `express`, `@supabase/supabase-js`, `openai`, `multer`, `dotenv`, `cors`
@@ -165,7 +165,7 @@ english-app/
 
 ---
 
-#### Task 004: 모바일 앱 Expo 프로젝트 구조 및 내비게이션 골격
+#### Task 004: ✅ 모바일 앱 Expo 프로젝트 구조 및 내비게이션 골격 `@rn-expo-frontend`
 
 - `mobile-app/` 디렉토리, `npx create-expo-app` 초기화 (TypeScript 템플릿)
 - 필수 패키지 설치:
@@ -204,9 +204,11 @@ english-app/
 
 **완료 기준:** EAS Dev Client에서 앱 실행 시 탭 네비게이션이 보이고 각 화면의 빈 페이지로 전환됨. NativeWind 동작 확인 (임시로 `className="text-red-500"` 적용 후 텍스트 색상 변경 확인). 환경변수 `process.env.EXPO_PUBLIC_API_BASE_URL` 런타임에서 참조 가능 확인
 
+**✅ 완료 (2026-03-21)** — 누락 패키지 설치, NativeWind v4 설정, 화면 골격 7개 생성, 인증 가드 레이아웃, API 추상화 레이어 껍데기, 환경변수 파일 구성 완료.
+
 ---
 
-#### Task 005: TypeScript 타입 및 인터페이스 전체 정의
+#### Task 005: TypeScript 타입 및 인터페이스 전체 정의 ✅ `@rn-expo-frontend`
 
 - `mobile-app/types/index.ts` 생성, 아래 타입 전부 정의:
   ```typescript
@@ -235,9 +237,11 @@ english-app/
 
 **완료 기준:** TypeScript 컴파일 에러 없이 빌드됨. `FeedbackItem.is_perfect = true` 시 `original`과 `corrected`가 `string | null` 타입으로 정의됨. 모든 API 응답 구조가 타입으로 커버됨
 
+**✅ 완료 (2026-03-21)** — types/index.ts 생성, ContentType/SourceBlock/FeedbackItem/AITurnContent/UserSpeechContent/MessageContent/User/Conversation/Message/Expression/ErrorCode/TranscribeResponse/SendMessageResponse/APIError 14개 타입 export 완료.
+
 ---
 
-#### Task 006: 전역 상태 관리 Store 뼈대 구축 (Zustand) — 우선순위
+#### Task 006: 전역 상태 관리 Store 뼈대 구축 (Zustand) — 우선순위 ✅ `@rn-expo-frontend`
 
 - `mobile-app/store/useAppStore.ts` 생성:
   ```typescript
@@ -275,6 +279,8 @@ english-app/
 - 더미 테스트: `setTodayTurnCount(20)` 호출 후 `isTurnLimitReached === true` 확인
 - `setTypingIndicator(true)` → 채팅 화면에서 TypingIndicator 표시, `false` → 숨김 (Phase 2 UI와 연결 확인)
 
+**✅ 완료 (2026-03-21)** — store/useAppStore.ts 생성, auth/turn/ui/toast 4개 슬라이스 구현, isTurnLimitReached 파생 로직(count >= 20) 포함. setSession에서 Supabase Session.user → 프로젝트 User 타입 명시적 매핑 처리. store/index.ts barrel export 완료.
+
 ---
 
 ### Phase 2: UI/UX 완성 (더미 데이터 활용)
@@ -284,7 +290,7 @@ english-app/
 
 ---
 
-#### Task 007: 공통 UI 컴포넌트 라이브러리 구현
+#### Task 007: 공통 UI 컴포넌트 라이브러리 구현 ✅ `@rn-expo-frontend`
 
 - `components/chat/UserBubble.tsx` — 사용자 발화 오른쪽 말풍선 (텍스트 + 🔊 TTSButton)
 - `components/chat/AIBubble.tsx` — AI 응답 컨테이너 (FeedbackBlock 배열 + 대화 응답 블록 포함)
@@ -300,9 +306,11 @@ english-app/
 
 **완료 기준:** 더미 화면에서 모든 컴포넌트 렌더링 확인. `is_perfect = true` 항목 🔊 버튼 미표시 확인. SavePopup 텍스트 수정 가능 확인. NativeWind 클래스 적용 확인
 
+**✅ 완료 (2026-03-21)** — TTSButton/SavePopup/Toast/FeedbackBlock/UserBubble/AIBubble/TypingIndicator/RecordButton/ExpressionCard 9개 컴포넌트 구현 완료. NativeWind className 적용, is_perfect 분기, isTurnLimitReached/isTypingIndicatorVisible store 구독, 30초 카운트다운 타이머 포함.
+
 ---
 
-#### Task 008: 온보딩 및 소셜 로그인 화면 UI
+#### Task 008: 온보딩 및 소셜 로그인 화면 UI `@rn-expo-frontend`
 
 - `app/(auth)/onboarding.tsx`: 슬라이드 3장 구현
   - 슬라이드 1: "AI 선생님과 부담 없이 영어로 대화해요"
@@ -317,7 +325,7 @@ english-app/
 
 ---
 
-#### Task 009: 홈 화면 및 주제 선택 화면 UI
+#### Task 009: 홈 화면 및 주제 선택 화면 UI `@rn-expo-frontend`
 
 - `app/(tabs)/index.tsx` 홈 화면:
   - 더미 대화 목록 3건 (topic_label, 마지막 대화 시간, 대화 턴 수)
@@ -332,7 +340,7 @@ english-app/
 
 ---
 
-#### Task 010: 채팅 화면 UI (더미 데이터)
+#### Task 010: 채팅 화면 UI (더미 데이터) `@rn-expo-frontend`
 
 - `app/chat/[id].tsx` 채팅 화면 레이아웃:
   - 헤더: 주제명 + "대화 끝내기" 버튼 (우상단, 탭 시 홈으로 즉시 이동)
@@ -354,7 +362,7 @@ english-app/
 
 ---
 
-#### Task 011: 표현 학습장 탭 UI (더미 데이터)
+#### Task 011: 표현 학습장 탭 UI (더미 데이터) `@rn-expo-frontend`
 
 - `app/(tabs)/study.tsx` 학습장 탭:
   - ExpressionCard 목록 (저장일 역순 더미 3건)
@@ -376,7 +384,7 @@ english-app/
 
 ---
 
-#### Task 012: 인증 미들웨어 및 KST 일일 턴 제한 미들웨어 — 우선순위
+#### Task 012: 인증 미들웨어 및 KST 일일 턴 제한 미들웨어 — 우선순위 `@contexttalk-api-architect` + `@api-test-writer`
 
 - `middleware/auth.js` 구현:
   - `Authorization: Bearer <token>` 헤더 파싱
@@ -406,7 +414,7 @@ english-app/
 
 ---
 
-#### Task 013: STT API 구현 (POST /api/stt)
+#### Task 013: STT API 구현 (POST /api/stt) `@contexttalk-api-architect` + `@api-test-writer`
 
 - `routes/stt.js` 구현:
   - `multer` 설정 (임시 파일 저장, 크기 제한)
@@ -430,7 +438,7 @@ english-app/
 
 ---
 
-#### Task 014: LLM API 구현 (POST /api/conversations/:id/messages)
+#### Task 014: LLM API 구현 (POST /api/conversations/:id/messages) `@contexttalk-api-architect` + `@api-test-writer`
 
 - `routes/conversations.js` 구현 (POST `/:id/messages` 엔드포인트):
   - `auth` + `turnLimit` 미들웨어 적용
@@ -458,7 +466,7 @@ english-app/
 
 ---
 
-#### Task 015: TTS API 구현 (POST /api/tts)
+#### Task 015: TTS API 구현 (POST /api/tts) `@contexttalk-api-architect` + `@api-test-writer`
 
 - `routes/tts.js` 구현:
   - `auth` 미들웨어 적용
@@ -480,7 +488,7 @@ english-app/
 
 ---
 
-#### Task 016: 대화 및 표현 CRUD API 구현
+#### Task 016: 대화 및 표현 CRUD API 구현 `@contexttalk-api-architect` + `@api-test-writer`
 
 - `routes/conversations.js` 나머지 엔드포인트 구현:
   - `POST /api/conversations` — conversations INSERT, `{ id, topic_id, topic_label, created_at }` 반환
@@ -508,7 +516,7 @@ english-app/
 
 ---
 
-#### Task 017: 백엔드 통합 테스트
+#### Task 017: 백엔드 통합 테스트 `@api-test-writer`
 
 - `__tests__/integration.test.js` 작성: 전체 대화 플로우 E2E 시나리오
   1. 대화 생성 → STT(텍스트 직접 주입) → LLM 응답 수신 → 표현 저장 → 표현 목록 조회
@@ -528,7 +536,7 @@ english-app/
 
 ---
 
-#### Task 018: 소셜 로그인 (Google/Apple) 실제 연동
+#### Task 018: 소셜 로그인 (Google/Apple) 실제 연동 `@rn-expo-frontend`
 
 - **필수 패키지 확인:** Task 004에서 설치한 `expo-apple-authentication`, `expo-web-browser`, `expo-auth-session` 동작 확인
 - `mobile-app/utils/supabase.ts` Supabase 클라이언트 초기화 완성 (`EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY` 환경변수 연결)
@@ -558,7 +566,7 @@ english-app/
 
 ---
 
-#### Task 019: API 추상화 레이어 구현 (chat.js)
+#### Task 019: API 추상화 레이어 구현 (chat.js) `@rn-expo-frontend`
 
 - `mobile-app/api/chat.js` 전체 함수 실제 구현:
   ```javascript
@@ -592,7 +600,7 @@ english-app/
 
 ---
 
-#### Task 020: STT 녹음 + 2-Step 호출 흐름 연동
+#### Task 020: STT 녹음 + 2-Step 호출 흐름 연동 `@rn-expo-frontend`
 
 - `expo-av` Audio.Recording PTT 구현:
   - `pressIn` → `Audio.Recording.createAsync()` 시작
@@ -620,7 +628,7 @@ english-app/
 
 ---
 
-#### Task 021: TTS 재생 연동 (expo-av + _currentSound 중단 메커니즘)
+#### Task 021: TTS 재생 연동 (expo-av + _currentSound 중단 메커니즘) `@rn-expo-frontend`
 
 - Task 019의 `playTTS` 함수를 모든 🔊 버튼에 연결:
   - UserBubble 🔊: `content.text` 전달
@@ -640,7 +648,7 @@ english-app/
 
 ---
 
-#### Task 022: 표현 저장 및 학습장 탭 전체 연동
+#### Task 022: 표현 저장 및 학습장 탭 전체 연동 `@rn-expo-frontend`
 
 - 채팅 화면 롱프레스 SavePopup: 블록 종류별 초기 텍스트 + source_block 값 결정:
 
@@ -667,7 +675,7 @@ english-app/
 
 ---
 
-#### Task 023: 에러 핸들링 및 UX 폴리싱
+#### Task 023: 에러 핸들링 및 UX 폴리싱 `@rn-expo-frontend`
 
 - 전역 Toast 컴포넌트를 `useAppStore.toastMessage` 구독으로 완성 (에러 코드별 메시지 매핑 테이블 적용)
 - 네트워크 오프라인 감지 (`NetInfo`) → `showToast()` + 입력 비활성화 → 재연결 시 자동 복구
@@ -683,7 +691,7 @@ english-app/
 
 ---
 
-#### Task 024: MVP 시드 데이터 기반 전체 통합 테스트
+#### Task 024: MVP 시드 데이터 기반 전체 통합 테스트 `[Developer]`
 
 - PRD 시드 데이터 3개 시나리오를 실제 디바이스(iOS + Android)에서 전체 플로우 수동 테스트:
 
@@ -722,32 +730,32 @@ english-app/
 
 ## Task 전체 목록
 
-| Task | Phase | 설명 | 상태 |
-|------|-------|------|------|
-| Task 001 | 0 | EAS Build 및 외부 서비스 초기 설정 | ⬜ |
-| Task 002 | 1 | Supabase DB 스키마, RLS, 트리거, 인덱스 설정 | ⬜ |
-| Task 003 | 1 | 백엔드 Express 서버 프로젝트 구조 설정 | ⬜ |
-| Task 004 | 1 | 모바일 앱 Expo 프로젝트 구조 및 내비게이션 골격 | ⬜ |
-| Task 005 | 1 | TypeScript 타입 및 인터페이스 전체 정의 | ⬜ |
-| Task 006 | 1 | 전역 상태 관리 Store 뼈대 구축 (Zustand) | ⬜ |
-| Task 007 | 2 | 공통 UI 컴포넌트 라이브러리 구현 | ⬜ |
-| Task 008 | 2 | 온보딩 및 소셜 로그인 화면 UI | ⬜ |
-| Task 009 | 2 | 홈 화면 및 주제 선택 화면 UI | ⬜ |
-| Task 010 | 2 | 채팅 화면 UI (더미 데이터) | ⬜ |
-| Task 011 | 2 | 표현 학습장 탭 UI (더미 데이터) | ⬜ |
-| Task 012 | 3 | 인증 미들웨어 및 KST 일일 턴 제한 미들웨어 | ⬜ |
-| Task 013 | 3 | STT API 구현 (POST /api/stt) | ⬜ |
-| Task 014 | 3 | LLM API 구현 (POST /api/conversations/:id/messages) | ⬜ |
-| Task 015 | 3 | TTS API 구현 (POST /api/tts) | ⬜ |
-| Task 016 | 3 | 대화 및 표현 CRUD API 구현 | ⬜ |
-| Task 017 | 3 | 백엔드 통합 테스트 (Jest + Supertest) | ⬜ |
-| Task 018 | 4 | 소셜 로그인 (Google/Apple) 실제 연동 | ⬜ |
-| Task 019 | 4 | API 추상화 레이어 구현 (chat.js) | ⬜ |
-| Task 020 | 4 | STT 녹음 + 2-Step 호출 흐름 연동 | ⬜ |
-| Task 021 | 4 | TTS 재생 연동 (expo-av + _currentSound) | ⬜ |
-| Task 022 | 4 | 표현 저장 및 학습장 탭 전체 연동 | ⬜ |
-| Task 023 | 5 | 에러 핸들링 및 UX 폴리싱 | ⬜ |
-| Task 024 | 5 | MVP 시드 데이터 기반 전체 통합 테스트 | ⬜ |
+| Task | Phase | 설명 | 담당 에이전트 | 상태 |
+|------|-------|------|--------------|------|
+| Task 001 | 0 | EAS Build 및 외부 서비스 초기 설정 | `[Developer]` | ⬜ |
+| Task 002 | 1 | Supabase DB 스키마, RLS, 트리거, 인덱스 설정 | `[Developer]` | ⬜ |
+| Task 003 | 1 | 백엔드 Express 서버 프로젝트 구조 설정 | `@contexttalk-api-architect` | ⬜ |
+| Task 004 | 1 | 모바일 앱 Expo 프로젝트 구조 및 내비게이션 골격 | `@rn-expo-frontend` | ✅ |
+| Task 005 | 1 | TypeScript 타입 및 인터페이스 전체 정의 | `@rn-expo-frontend` | ✅ |
+| Task 006 | 1 | 전역 상태 관리 Store 뼈대 구축 (Zustand) | `@rn-expo-frontend` | ✅ |
+| Task 007 | 2 | 공통 UI 컴포넌트 라이브러리 구현 | `@rn-expo-frontend` | ✅ |
+| Task 008 | 2 | 온보딩 및 소셜 로그인 화면 UI | `@rn-expo-frontend` | ⬜ |
+| Task 009 | 2 | 홈 화면 및 주제 선택 화면 UI | `@rn-expo-frontend` | ⬜ |
+| Task 010 | 2 | 채팅 화면 UI (더미 데이터) | `@rn-expo-frontend` | ⬜ |
+| Task 011 | 2 | 표현 학습장 탭 UI (더미 데이터) | `@rn-expo-frontend` | ⬜ |
+| Task 012 | 3 | 인증 미들웨어 및 KST 일일 턴 제한 미들웨어 | `@contexttalk-api-architect` + `@api-test-writer` | ⬜ |
+| Task 013 | 3 | STT API 구현 (POST /api/stt) | `@contexttalk-api-architect` + `@api-test-writer` | ⬜ |
+| Task 014 | 3 | LLM API 구현 (POST /api/conversations/:id/messages) | `@contexttalk-api-architect` + `@api-test-writer` | ⬜ |
+| Task 015 | 3 | TTS API 구현 (POST /api/tts) | `@contexttalk-api-architect` + `@api-test-writer` | ⬜ |
+| Task 016 | 3 | 대화 및 표현 CRUD API 구현 | `@contexttalk-api-architect` + `@api-test-writer` | ⬜ |
+| Task 017 | 3 | 백엔드 통합 테스트 (Jest + Supertest) | `@api-test-writer` | ⬜ |
+| Task 018 | 4 | 소셜 로그인 (Google/Apple) 실제 연동 | `@rn-expo-frontend` | ⬜ |
+| Task 019 | 4 | API 추상화 레이어 구현 (chat.js) | `@rn-expo-frontend` | ⬜ |
+| Task 020 | 4 | STT 녹음 + 2-Step 호출 흐름 연동 | `@rn-expo-frontend` | ⬜ |
+| Task 021 | 4 | TTS 재생 연동 (expo-av + _currentSound) | `@rn-expo-frontend` | ⬜ |
+| Task 022 | 4 | 표현 저장 및 학습장 탭 전체 연동 | `@rn-expo-frontend` | ⬜ |
+| Task 023 | 5 | 에러 핸들링 및 UX 폴리싱 | `@rn-expo-frontend` | ⬜ |
+| Task 024 | 5 | MVP 시드 데이터 기반 전체 통합 테스트 | `[Developer]` | ⬜ |
 
 ---
 

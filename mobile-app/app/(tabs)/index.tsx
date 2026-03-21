@@ -1,98 +1,130 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { FlatList, Pressable, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import type { Conversation } from '@/types';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+const DUMMY_CONVERSATIONS: (Conversation & { last_message_at: string })[] = [
+  {
+    id: 'conv-001',
+    user_id: 'dummy-user',
+    topic_id: 'cafe',
+    topic_label: '카페 주문',
+    updated_at: '2026-03-22T10:30:00Z',
+    last_message_at: '2026-03-22T10:30:00Z',
+    turn_count: 6,
+  },
+  {
+    id: 'conv-002',
+    user_id: 'dummy-user',
+    topic_id: 'airport',
+    topic_label: '공항/호텔',
+    updated_at: '2026-03-21T18:00:00Z',
+    last_message_at: '2026-03-21T18:00:00Z',
+    turn_count: 12,
+  },
+  {
+    id: 'conv-003',
+    user_id: 'dummy-user',
+    topic_id: 'shopping',
+    topic_label: '쇼핑',
+    updated_at: '2026-03-20T09:15:00Z',
+    last_message_at: '2026-03-20T09:15:00Z',
+    turn_count: 4,
+  },
+];
 
-export default function HomeScreen() {
+function formatRelativeTime(isoString: string): string {
+  const now = new Date();
+  const date = new Date(isoString);
+  const diffMs = now.getTime() - date.getTime();
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffHours < 1) return '방금 전';
+  if (diffHours < 24) return `${diffHours}시간 전`;
+  if (diffDays === 1) return '어제';
+  return `${diffDays}일 전`;
+}
+
+type ConversationItemProps = {
+  item: (typeof DUMMY_CONVERSATIONS)[number];
+  onPress: (id: string) => void;
+};
+
+function ConversationItem({ item, onPress }: ConversationItemProps) {
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
-
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <Pressable
+      className="flex-row items-center justify-between bg-white rounded-2xl px-4 py-4 mb-3 shadow-sm border border-gray-100 active:opacity-70"
+      onPress={() => onPress(item.id)}
+    >
+      <View className="flex-1 mr-3">
+        <Text className="text-base font-semibold text-gray-900 mb-1">{item.topic_label}</Text>
+        <Text className="text-sm text-gray-400">{formatRelativeTime(item.last_message_at)}</Text>
+      </View>
+      <View className="items-end">
+        <View className="bg-blue-50 rounded-full px-3 py-1">
+          <Text className="text-xs font-medium text-blue-600">{item.turn_count}턴</Text>
+        </View>
+      </View>
+    </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
-});
+function EmptyState() {
+  return (
+    <View className="flex-1 items-center justify-center px-8">
+      <Text className="text-5xl mb-4">💬</Text>
+      <Text className="text-xl font-bold text-gray-800 mb-2 text-center">
+        아직 대화가 없어요
+      </Text>
+      <Text className="text-sm text-gray-400 text-center leading-5">
+        아래 + 버튼을 눌러{'\n'}첫 번째 영어 대화를 시작해 보세요
+      </Text>
+    </View>
+  );
+}
+
+export default function HomeScreen() {
+  const router = useRouter();
+  const conversations = DUMMY_CONVERSATIONS;
+
+  function handleConversationPress(id: string) {
+    router.push(`/chat/${id}`);
+  }
+
+  function handleFABPress() {
+    router.push('/chat/topic-select');
+  }
+
+  return (
+    <View className="flex-1 bg-gray-50">
+      {/* Header */}
+      <View className="bg-white px-5 pt-14 pb-4 border-b border-gray-100">
+        <Text className="text-2xl font-bold text-gray-900">내 대화</Text>
+        <Text className="text-sm text-gray-400 mt-1">오늘의 영어 연습을 시작하세요</Text>
+      </View>
+
+      {/* Conversation list or empty state */}
+      {conversations.length === 0 ? (
+        <EmptyState />
+      ) : (
+        <FlatList
+          data={conversations}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <ConversationItem item={item} onPress={handleConversationPress} />
+          )}
+          contentContainerClassName="px-4 pt-4 pb-24"
+          showsVerticalScrollIndicator={false}
+        />
+      )}
+
+      {/* FAB */}
+      <Pressable
+        className="absolute bottom-8 right-6 w-14 h-14 bg-blue-500 rounded-full items-center justify-center shadow-lg active:bg-blue-600"
+        onPress={handleFABPress}
+      >
+        <Text className="text-white text-3xl leading-none mt-[-2px]">+</Text>
+      </Pressable>
+    </View>
+  );
+}
