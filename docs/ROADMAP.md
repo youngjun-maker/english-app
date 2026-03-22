@@ -310,7 +310,7 @@ english-app/
 
 ---
 
-#### Task 008: 온보딩 및 소셜 로그인 화면 UI `@rn-expo-frontend`
+#### Task 008: 온보딩 및 소셜 로그인 화면 UI ✅ `@rn-expo-frontend`
 
 - `app/(auth)/onboarding.tsx`: 슬라이드 3장 구현
   - 슬라이드 1: "AI 선생님과 부담 없이 영어로 대화해요"
@@ -323,9 +323,11 @@ english-app/
 
 **완료 기준:** 슬라이드 스와이프/탭 동작. 마지막 슬라이드에서 버튼 탭 시 홈 화면 진입. 재실행 시 온보딩 화면 미표시 확인
 
+**✅ 완료 (2026-03-21)** — onboarding.tsx 슬라이드 3장 구현, 슬라이드 인디케이터, Google/Apple 버튼 UI(더미), AsyncStorage `onboarding_completed` 플래그 저장/조회 완료.
+
 ---
 
-#### Task 009: 홈 화면 및 주제 선택 화면 UI `@rn-expo-frontend`
+#### Task 009: 홈 화면 및 주제 선택 화면 UI ✅ `@rn-expo-frontend`
 
 - `app/(tabs)/index.tsx` 홈 화면:
   - 더미 대화 목록 3건 (topic_label, 마지막 대화 시간, 대화 턴 수)
@@ -338,9 +340,11 @@ english-app/
 
 **완료 기준:** 더미 대화 목록 3개 표시. 주제 선택 후 채팅 화면 진입 확인. FAB 탭 → 주제 선택 → 채팅 화면 전체 플로우 확인
 
+**✅ 완료 (2026-03-21)** — (tabs)/index.tsx 더미 대화 목록 3건, FAB 버튼, 빈 상태 화면 구현. chat/topic-select.tsx 6개 topic 카드 구현 완료.
+
 ---
 
-#### Task 010: 채팅 화면 UI (더미 데이터) `@rn-expo-frontend`
+#### Task 010: 채팅 화면 UI (더미 데이터) ✅ `@rn-expo-frontend`
 
 - `app/chat/[id].tsx` 채팅 화면 레이아웃:
   - 헤더: 주제명 + "대화 끝내기" 버튼 (우상단, 탭 시 홈으로 즉시 이동)
@@ -360,9 +364,11 @@ english-app/
 - 롱프레스 팝업에서 블록별 원문 자동 채우기 확인
 - Store에서 `isTurnLimitReached = true` 설정 시 RecordButton 비활성화 확인
 
+**✅ 완료 (2026-03-21)** — chat/[id].tsx 더미 2턴 렌더링, UserBubble/AIBubble/FeedbackBlock/RecordButton 컴포넌트 연결, TypingIndicator/isTurnLimitReached store 구독, 롱프레스 SavePopup 구현 완료.
+
 ---
 
-#### Task 011: 표현 학습장 탭 UI (더미 데이터) `@rn-expo-frontend`
+#### Task 011: 표현 학습장 탭 UI (더미 데이터) ✅ `@rn-expo-frontend`
 
 - `app/(tabs)/study.tsx` 학습장 탭:
   - ExpressionCard 목록 (저장일 역순 더미 3건)
@@ -375,6 +381,8 @@ english-app/
 
 **완료 기준:** 더미 표현 카드 3개 표시. 탭 시 원본 대화 문맥 화면 열림. 해당 `ai_turn` 블록 하이라이트 확인. 삭제 팝업 동작 확인
 
+**✅ 완료 (2026-03-21)** — (tabs)/study.tsx ExpressionCard 목록, 빈 상태 화면, study/[expressionId].tsx 대화 문맥 화면, DeleteConfirmModal 스와이프 삭제 구현 완료.
+
 ---
 
 ### Phase 3: 백엔드 API 구현
@@ -384,7 +392,7 @@ english-app/
 
 ---
 
-#### Task 012: 인증 미들웨어 및 KST 일일 턴 제한 미들웨어 — 우선순위 `@contexttalk-api-architect` + `@api-test-writer`
+#### Task 012: 인증 미들웨어 및 KST 일일 턴 제한 미들웨어 ✅ — 우선순위 `@contexttalk-api-architect` + `@api-test-writer`
 
 - `middleware/auth.js` 구현:
   - `Authorization: Bearer <token>` 헤더 파싱
@@ -412,9 +420,11 @@ english-app/
 
 **완료 기준:** 위 6개 테스트 시나리오 전부 통과 (`npm test` 초록불)
 
+**✅ 완료 (2026-03-22)** — middleware/auth.js (Supabase getUser JWT 검증, req.user 주입), middleware/turnLimit.js (KST UTC+9 자정 계산, COUNT 쿼리, 20턴 제한), __tests__/middleware.test.js 작성 완료.
+
 ---
 
-#### Task 013: STT API 구현 (POST /api/stt) `@contexttalk-api-architect` + `@api-test-writer`
+#### Task 013: STT API 구현 (POST /api/stt) ✅ `@contexttalk-api-architect` + `@api-test-writer`
 
 - `routes/stt.js` 구현:
   - `multer` 설정 (임시 파일 저장, 크기 제한)
@@ -436,9 +446,11 @@ english-app/
 
 **완료 기준:** 위 5개 테스트 시나리오 전부 통과
 
+**✅ 완료 (2026-03-22)** — routes/stt.js multer 설정, m4a 포맷 검증, 500KB 크기 제한(30초 방어), Whisper API 호출, 임시 파일 삭제, __tests__/stt.test.js 작성 완료.
+
 ---
 
-#### Task 014: LLM API 구현 (POST /api/conversations/:id/messages) `@contexttalk-api-architect` + `@api-test-writer`
+#### Task 014: LLM API 구현 (POST /api/conversations/:id/messages) ✅ `@contexttalk-api-architect` + `@api-test-writer`
 
 - `routes/conversations.js` 구현 (POST `/:id/messages` 엔드포인트):
   - `auth` + `turnLimit` 미들웨어 적용
@@ -464,9 +476,11 @@ english-app/
 
 **완료 기준:** 위 6개 테스트 시나리오 전부 통과
 
+**✅ 완료 (2026-03-22)** — routes/conversations.js POST /:id/messages 구현: auth+turnLimit 미들웨어, buildPrompt, 6-turn 슬라이딩 윈도우, GPT-4o-mini JSON mode, 2회 재시도, Supabase INSERT, __tests__/conversations.test.js 작성 완료.
+
 ---
 
-#### Task 015: TTS API 구현 (POST /api/tts) `@contexttalk-api-architect` + `@api-test-writer`
+#### Task 015: TTS API 구현 (POST /api/tts) ✅ `@contexttalk-api-architect` + `@api-test-writer`
 
 - `routes/tts.js` 구현:
   - `auth` 미들웨어 적용
@@ -485,6 +499,8 @@ english-app/
 - [ ] 응답 binary 데이터가 non-empty임을 확인 (`response.body.length > 0`)
 
 **완료 기준:** 위 5개 테스트 시나리오 전부 통과
+
+**✅ 완료 (2026-03-22)** — routes/tts.js auth 미들웨어, OpenAI TTS (tts-1/nova), mp3 stream pipe, 500자 제한, __tests__/tts.test.js 작성 완료.
 
 ---
 
@@ -743,10 +759,10 @@ english-app/
 | Task 009 | 2 | 홈 화면 및 주제 선택 화면 UI | `@rn-expo-frontend` | ✅ |
 | Task 010 | 2 | 채팅 화면 UI (더미 데이터) | `@rn-expo-frontend` | ✅ |
 | Task 011 | 2 | 표현 학습장 탭 UI (더미 데이터) | `@rn-expo-frontend` | ✅ |
-| Task 012 | 3 | 인증 미들웨어 및 KST 일일 턴 제한 미들웨어 | `@contexttalk-api-architect` + `@api-test-writer` | ⬜ |
-| Task 013 | 3 | STT API 구현 (POST /api/stt) | `@contexttalk-api-architect` + `@api-test-writer` | ⬜ |
-| Task 014 | 3 | LLM API 구현 (POST /api/conversations/:id/messages) | `@contexttalk-api-architect` + `@api-test-writer` | ⬜ |
-| Task 015 | 3 | TTS API 구현 (POST /api/tts) | `@contexttalk-api-architect` + `@api-test-writer` | ⬜ |
+| Task 012 | 3 | 인증 미들웨어 및 KST 일일 턴 제한 미들웨어 | `@contexttalk-api-architect` + `@api-test-writer` | ✅ |
+| Task 013 | 3 | STT API 구현 (POST /api/stt) | `@contexttalk-api-architect` + `@api-test-writer` | ✅ |
+| Task 014 | 3 | LLM API 구현 (POST /api/conversations/:id/messages) | `@contexttalk-api-architect` + `@api-test-writer` | ✅ |
+| Task 015 | 3 | TTS API 구현 (POST /api/tts) | `@contexttalk-api-architect` + `@api-test-writer` | ✅ |
 | Task 016 | 3 | 대화 및 표현 CRUD API 구현 | `@contexttalk-api-architect` + `@api-test-writer` | ⬜ |
 | Task 017 | 3 | 백엔드 통합 테스트 (Jest + Supertest) | `@api-test-writer` | ⬜ |
 | Task 018 | 4 | 소셜 로그인 (Google/Apple) 실제 연동 | `@rn-expo-frontend` | ⬜ |
