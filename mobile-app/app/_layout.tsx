@@ -3,6 +3,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { Redirect, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
+import { Platform, useWindowDimensions, View } from 'react-native';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -18,6 +19,7 @@ export const unstable_settings = {
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [appState, setAppState] = useState<AppState>('loading');
+  const { width: winW, height: winH } = useWindowDimensions();
 
   useEffect(() => {
     // 초기 세션 확인
@@ -37,7 +39,7 @@ export default function RootLayout() {
     return null;
   }
 
-  return (
+  const content = (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
@@ -51,4 +53,23 @@ export default function RootLayout() {
       <StatusBar style="auto" />
     </ThemeProvider>
   );
+
+  if (Platform.OS === 'web') {
+    return (
+      <View style={{ width: winW, height: winH, backgroundColor: '#f3f4f6', alignItems: 'center' }}>
+        <View style={{
+          width: 390,
+          height: winH,
+          backgroundColor: 'white',
+          overflow: 'hidden',
+          // @ts-ignore
+          boxShadow: '0 0 40px rgba(0,0,0,0.15)',
+        }}>
+          {content}
+        </View>
+      </View>
+    );
+  }
+
+  return content;
 }

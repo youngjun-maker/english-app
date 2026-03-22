@@ -9,9 +9,10 @@ type AIBubbleProps = {
   feedback: FeedbackItem[];
   nextResponse: string;
   messageId: string;
+  readonly?: boolean;
 };
 
-export default function AIBubble({ feedback, nextResponse, messageId }: AIBubbleProps) {
+export default function AIBubble({ feedback, nextResponse, messageId, readonly }: AIBubbleProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [saveVisible, setSaveVisible] = useState(false);
 
@@ -19,12 +20,16 @@ export default function AIBubble({ feedback, nextResponse, messageId }: AIBubble
     <View className="items-start mb-4 max-w-[85%]">
       {/* 피드백 블록 목록 */}
       {feedback.map((item, index) => (
-        <FeedbackBlock key={`${messageId}-fb-${index}`} feedback={item} />
+        <FeedbackBlock
+          key={`${messageId}-fb-${index}`}
+          feedback={item}
+          onLongPress={readonly ? () => {} : undefined}
+        />
       ))}
 
       {/* AI 응답 텍스트 블록 */}
       <Pressable
-        onLongPress={() => setSaveVisible(true)}
+        onLongPress={readonly ? undefined : () => setSaveVisible(true)}
         className="bg-gray-100 rounded-2xl rounded-tl-sm px-4 py-3 mt-1"
       >
         <Text className="text-gray-800 text-sm leading-5 mb-1">{nextResponse}</Text>

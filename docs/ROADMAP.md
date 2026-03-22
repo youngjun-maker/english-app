@@ -720,9 +720,9 @@ english-app/
 
 | Phase | 작업 수 | 상태 |
 |-------|---------|------|
-| Phase 0: 개발 환경 선행 설정 | 1 | ⬜ 대기 |
-| Phase 1: 프로젝트 골격 구축 | 5 | ⬜ 대기 |
-| Phase 2: UI/UX 완성 (더미 데이터) | 5 | ⬜ 대기 |
+| Phase 0: 개발 환경 선행 설정 | 1 | ✅ 완료 |
+| Phase 1: 프로젝트 골격 구축 | 5 | ✅ 완료 |
+| Phase 2: UI/UX 완성 (더미 데이터) | 5 | ✅ 완료 |
 | Phase 3: 백엔드 API 구현 | 6 | ⬜ 대기 |
 | Phase 4: 프론트엔드-백엔드 연동 | 5 | ⬜ 대기 |
 | Phase 5: 완성도 및 최종 검증 | 2 | ⬜ 대기 |
@@ -732,17 +732,17 @@ english-app/
 
 | Task | Phase | 설명 | 담당 에이전트 | 상태 |
 |------|-------|------|--------------|------|
-| Task 001 | 0 | EAS Build 및 외부 서비스 초기 설정 | `[Developer]` | ⬜ |
-| Task 002 | 1 | Supabase DB 스키마, RLS, 트리거, 인덱스 설정 | `[Developer]` | ⬜ |
-| Task 003 | 1 | 백엔드 Express 서버 프로젝트 구조 설정 | `@contexttalk-api-architect` | ⬜ |
+| Task 001 | 0 | EAS Build 및 외부 서비스 초기 설정 | `[Developer]` | ✅ |
+| Task 002 | 1 | Supabase DB 스키마, RLS, 트리거, 인덱스 설정 | `[Developer]` | ✅ |
+| Task 003 | 1 | 백엔드 Express 서버 프로젝트 구조 설정 | `@contexttalk-api-architect` | ✅ |
 | Task 004 | 1 | 모바일 앱 Expo 프로젝트 구조 및 내비게이션 골격 | `@rn-expo-frontend` | ✅ |
 | Task 005 | 1 | TypeScript 타입 및 인터페이스 전체 정의 | `@rn-expo-frontend` | ✅ |
 | Task 006 | 1 | 전역 상태 관리 Store 뼈대 구축 (Zustand) | `@rn-expo-frontend` | ✅ |
 | Task 007 | 2 | 공통 UI 컴포넌트 라이브러리 구현 | `@rn-expo-frontend` | ✅ |
-| Task 008 | 2 | 온보딩 및 소셜 로그인 화면 UI | `@rn-expo-frontend` | ⬜ |
-| Task 009 | 2 | 홈 화면 및 주제 선택 화면 UI | `@rn-expo-frontend` | ⬜ |
-| Task 010 | 2 | 채팅 화면 UI (더미 데이터) | `@rn-expo-frontend` | ⬜ |
-| Task 011 | 2 | 표현 학습장 탭 UI (더미 데이터) | `@rn-expo-frontend` | ⬜ |
+| Task 008 | 2 | 온보딩 및 소셜 로그인 화면 UI | `@rn-expo-frontend` | ✅ |
+| Task 009 | 2 | 홈 화면 및 주제 선택 화면 UI | `@rn-expo-frontend` | ✅ |
+| Task 010 | 2 | 채팅 화면 UI (더미 데이터) | `@rn-expo-frontend` | ✅ |
+| Task 011 | 2 | 표현 학습장 탭 UI (더미 데이터) | `@rn-expo-frontend` | ✅ |
 | Task 012 | 3 | 인증 미들웨어 및 KST 일일 턴 제한 미들웨어 | `@contexttalk-api-architect` + `@api-test-writer` | ⬜ |
 | Task 013 | 3 | STT API 구현 (POST /api/stt) | `@contexttalk-api-architect` + `@api-test-writer` | ⬜ |
 | Task 014 | 3 | LLM API 구현 (POST /api/conversations/:id/messages) | `@contexttalk-api-architect` + `@api-test-writer` | ⬜ |

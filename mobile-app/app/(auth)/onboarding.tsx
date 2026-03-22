@@ -2,17 +2,17 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
-  Dimensions,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  Platform,
   Pressable,
   ScrollView,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 
 const ONBOARDING_KEY = 'onboarding_completed';
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface Slide {
   id: number;
@@ -53,16 +53,18 @@ export default function OnboardingScreen() {
   const router = useRouter();
   const scrollRef = useRef<ScrollView>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const { width: windowWidth } = useWindowDimensions();
+  const SLIDE_WIDTH = Platform.OS === 'web' ? 390 : windowWidth;
 
   function handleScroll(event: NativeSyntheticEvent<NativeScrollEvent>) {
     const offsetX = event.nativeEvent.contentOffset.x;
-    const index = Math.round(offsetX / SCREEN_WIDTH);
+    const index = Math.round(offsetX / SLIDE_WIDTH);
     setCurrentIndex(index);
   }
 
   function goToNext() {
     const next = currentIndex + 1;
-    scrollRef.current?.scrollTo({ x: next * SCREEN_WIDTH, animated: true });
+    scrollRef.current?.scrollTo({ x: next * SLIDE_WIDTH, animated: true });
     setCurrentIndex(next);
   }
 
@@ -81,7 +83,7 @@ export default function OnboardingScreen() {
         {SLIDES.map((slide) => (
           <View
             key={slide.id}
-            style={{ width: SCREEN_WIDTH }}
+            style={{ width: SLIDE_WIDTH }}
             className="flex-1 items-center justify-center px-8"
           >
             <Text className="text-7xl mb-8">{slide.emoji}</Text>
