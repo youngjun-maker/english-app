@@ -1,39 +1,10 @@
 import { FlatList, Pressable, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '@/store/useAppStore';
+import { fetchConversations } from '@/api/conversations';
 import type { Conversation } from '@/types';
-
-// ─── 더미 데이터 (Phase 4에서 실제 API state로 교체 예정) ───────────────────
-const DUMMY_CONVERSATIONS: (Conversation & { last_message_at: string })[] = [
-  {
-    id: 'conv-001',
-    user_id: 'dummy-user',
-    topic_id: 'cafe',
-    topic_label: '카페 주문',
-    updated_at: '2026-03-22T10:30:00Z',
-    last_message_at: '2026-03-22T10:30:00Z',
-    turn_count: 6,
-  },
-  {
-    id: 'conv-002',
-    user_id: 'dummy-user',
-    topic_id: 'airport',
-    topic_label: '공항/호텔',
-    updated_at: '2026-03-21T18:00:00Z',
-    last_message_at: '2026-03-21T18:00:00Z',
-    turn_count: 12,
-  },
-  {
-    id: 'conv-003',
-    user_id: 'dummy-user',
-    topic_id: 'shopping',
-    topic_label: '쇼핑',
-    updated_at: '2026-03-20T09:15:00Z',
-    last_message_at: '2026-03-20T09:15:00Z',
-    turn_count: 4,
-  },
-];
 
 // ─── 토픽 이모지 매핑 ────────────────────────────────────────────────────────
 const TOPIC_EMOJI: Record<string, string> = {
@@ -61,7 +32,7 @@ function formatRelativeTime(isoString: string): string {
 // ─── 서브 컴포넌트 ───────────────────────────────────────────────────────────
 
 type ConversationItemProps = {
-  item: (typeof DUMMY_CONVERSATIONS)[number];
+  item: Conversation;
   onPress: (id: string) => void;
 };
 
@@ -81,7 +52,7 @@ function ConversationItem({ item, onPress }: ConversationItemProps) {
       {/* 토픽 라벨 + 시간 */}
       <View className="flex-1 mr-3">
         <Text className="text-base font-semibold text-gray-900 mb-1">{item.topic_label}</Text>
-        <Text className="text-sm text-gray-400">{formatRelativeTime(item.last_message_at)}</Text>
+        <Text className="text-sm text-gray-400">{formatRelativeTime(item.updated_at)}</Text>
       </View>
 
       {/* 턴 수 배지 */}
@@ -110,9 +81,15 @@ function EmptyState() {
 export default function HomeScreen() {
   const router = useRouter();
   const { todayTurnCount, isTurnLimitReached, user } = useAppStore();
-  const conversations = DUMMY_CONVERSATIONS;
+  const showToast = useAppStore((s) => s.showToast);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
 
-  // TODO: user.display_name으로 교체 (Phase 4)
+  useEffect(() => {
+    fetchConversations()
+      .then(setConversations)
+      .catch(() => showToast('대화 목록을 불러오지 못했어요.'));
+  }, []);
+
   const displayName = user?.display_name ?? '영준';
 
   const progressPercent = Math.min((todayTurnCount / 20) * 100, 100);

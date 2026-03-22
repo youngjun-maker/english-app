@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   FlatList,
   KeyboardAvoidingView,
@@ -17,91 +17,203 @@ import AIBubble from '@/components/chat/AIBubble';
 import RecordButton from '@/components/chat/RecordButton';
 import TypingIndicator from '@/components/chat/TypingIndicator';
 import { useAppStore } from '@/store';
-import type { AITurnContent } from '@/types';
+import { transcribeAudio, sendMessage, fetchMessages, saveExpression } from '@/api/chat';
+import type { AITurnContent, Message } from '@/types';
 
 // ---------------------------------------------------------------------------
-// Dummy conversation data (2 turns)
+// Types
 // ---------------------------------------------------------------------------
-type DummyTurn = {
+type ChatTurn = {
   id: string;
+  userMsgId: string | null; // user_speech message_id (fetchMessages에서만 채워짐)
   userText: string;
-  ai: AITurnContent;
+  aiContent: AITurnContent | null;
 };
-
-const DUMMY_TURNS: DummyTurn[] = [
-  {
-    id: 'turn-1',
-    userText: 'I want to order a coffee.',
-    ai: {
-      feedback: [
-        {
-          original: 'I want to order',
-          corrected: 'I would like to order',
-          is_perfect: false,
-        },
-      ],
-      next_response: 'Sure! What size would you like?',
-    },
-  },
-  {
-    id: 'turn-2',
-    userText: 'I would like a large latte, please.',
-    ai: {
-      feedback: [
-        {
-          original: null,
-          corrected: null,
-          is_perfect: true,
-        },
-      ],
-      next_response: 'Great choice! That will be $5.50.',
-    },
-  },
-];
 
 // ---------------------------------------------------------------------------
 // ChatScreen
 // ---------------------------------------------------------------------------
 export default function ChatScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, topicLabel } = useLocalSearchParams<{ id: string; topicLabel?: string }>();
   const router = useRouter();
 
   const showToast = useAppStore((s) => s.showToast);
 
-  const [isRecording, setIsRecording] = useState(false);
+  const conversationId = id;
+
+  const [turns, setTurns] = useState<ChatTurn[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [isTextMode, setIsTextMode] = useState(false);
   const [textInput, setTextInput] = useState('');
 
-  const flatListRef = useRef<FlatList<DummyTurn>>(null);
+  const flatListRef = useRef<FlatList<ChatTurn>>(null);
+
+  // -------------------------------------------------------------------------
+  // 마운트 시 기존 메시지 로드
+  // -------------------------------------------------------------------------
+  useEffect(() => {
+    if (!conversationId) return;
+    fetchMessages(conversationId)
+      .then((msgs: Message[]) => {
+        const userMsgs = msgs.filter((m) => m.content_type === 'user_speech');
+        const chatTurns: ChatTurn[] = userMsgs.map((userMsg) => {
+          const userContent = userMsg.content as { text: string };
+          const aiMsg = msgs.find(
+            (m) =>
+              m.content_type === 'ai_turn' &&
+              m.turn_number === userMsg.turn_number + 1
+          );
+          const aiContent = aiMsg ? (aiMsg.content as AITurnContent) : null;
+          return {
+            id: aiMsg?.id ?? `ai-${userMsg.id}`,
+            userMsgId: userMsg.id,
+            userText: userContent.text,
+            aiContent,
+          };
+        });
+        setTurns(chatTurns);
+      })
+      .catch(() => showToast('메시지를 불러오지 못했어요.'));
+  }, [conversationId]);
+
+  // -------------------------------------------------------------------------
+  // 표현 저장 핸들러
+  // -------------------------------------------------------------------------
+  const handleSaveExpression = useCallback(async (params: {
+    messageId: string;
+    expressionText: string;
+    sourceBlock: 'user_speech' | 'feedback' | 'response';
+    memo: string;
+  }) => {
+    try {
+      await saveExpression({
+        conversation_id: conversationId,
+        message_id: params.messageId,
+        expression_text: params.expressionText,
+        source_block: params.sourceBlock,
+        user_memo: params.memo,
+      });
+      showToast('표현이 저장되었습니다!');
+    } catch {
+      showToast('표현 저장에 실패했어요.');
+    }
+  }, [conversationId, showToast]);
+
+  // -------------------------------------------------------------------------
+  // 공통: AI 응답 fetching 흐름
+  // -------------------------------------------------------------------------
+  async function fetchAIResponse(tempId: string, text: string) {
+    useAppStore.getState().setTypingIndicator(true);
+    try {
+      const { message_id, content } = await sendMessage(conversationId, text);
+      setTurns((prev) =>
+        prev.map((t) =>
+          t.id === tempId
+            ? { id: message_id, userMsgId: t.userMsgId, userText: text, aiContent: content }
+            : t
+        )
+      );
+    } catch (err: unknown) {
+      setTurns((prev) => prev.filter((t) => t.id !== tempId));
+      const apiErr = err as { error?: { code?: string } };
+      if (apiErr?.error?.code !== 'TURN_LIMIT_EXCEEDED') {
+        showToast('AI 응답을 가져오지 못했어요. 다시 시도해주세요.');
+      }
+    } finally {
+      useAppStore.getState().setTypingIndicator(false);
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // 녹음 완료 핸들러 — STT → sendMessage 2-Step
+  // -------------------------------------------------------------------------
+  const handleRecordingStop = useCallback(
+    async (uri: string) => {
+      if (isProcessing) return;
+      setIsProcessing(true);
+      const tempId = `temp-${Date.now()}`;
+      try {
+        const { text } = await transcribeAudio(uri);
+
+        // 사용자 말풍선 즉시 표시 (optimistic — userMsgId는 아직 모름)
+        setTurns((prev) => [...prev, { id: tempId, userMsgId: null, userText: text, aiContent: null }]);
+        setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+
+        await fetchAIResponse(tempId, text);
+      } catch {
+        showToast('음성 인식에 실패했어요. 다시 시도해주세요.');
+      } finally {
+        setIsProcessing(false);
+        setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+      }
+    },
+    [conversationId, isProcessing, showToast]
+  );
+
+  // -------------------------------------------------------------------------
+  // 텍스트 전송 핸들러
+  // -------------------------------------------------------------------------
+  async function handleTextSend() {
+    const text = textInput.trim();
+    if (!text || isProcessing) return;
+    setTextInput('');
+    setIsProcessing(true);
+    const tempId = `temp-${Date.now()}`;
+    setTurns((prev) => [...prev, { id: tempId, userMsgId: null, userText: text, aiContent: null }]);
+    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+    await fetchAIResponse(tempId, text);
+    setIsProcessing(false);
+    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+  }
 
   function handleEndConversation() {
-    router.replace('/(tabs)/');
+    router.replace('/(tabs)');
   }
 
-  function handleRecordStart() {
-    setIsRecording(true);
-  }
-
-  const handleRecordStop = useCallback(() => {
-    setIsRecording(false);
-  }, []);
-
-  function handleTextSend() {
-    if (!textInput.trim()) return;
-    showToast('텍스트 전송 기능은 Phase 4에서 연동됩니다.');
-    setTextInput('');
-  }
-
-  const renderItem: ListRenderItem<DummyTurn> = useCallback(({ item: turn }) => (
+  // -------------------------------------------------------------------------
+  // FlatList renderItem
+  // -------------------------------------------------------------------------
+  const renderItem: ListRenderItem<ChatTurn> = useCallback(({ item: turn }) => (
     <View>
-      <UserBubble text={turn.userText} />
-      <AIBubble
-        feedback={turn.ai.feedback}
-        nextResponse={turn.ai.next_response}
-        messageId={turn.id}
+      <UserBubble
+        text={turn.userText}
+        onSave={
+          turn.userMsgId
+            ? (text, memo) =>
+                handleSaveExpression({
+                  messageId: turn.userMsgId!,
+                  expressionText: text,
+                  sourceBlock: 'user_speech',
+                  memo,
+                })
+            : undefined
+        }
       />
+      {turn.aiContent && (
+        <AIBubble
+          feedback={turn.aiContent.feedback}
+          nextResponse={turn.aiContent.next_response}
+          messageId={turn.id}
+          onSave={(text, memo) =>
+            handleSaveExpression({
+              messageId: turn.id,
+              expressionText: text,
+              sourceBlock: 'response',
+              memo,
+            })
+          }
+          onFeedbackSave={(_idx, text, memo) =>
+            handleSaveExpression({
+              messageId: turn.id,
+              expressionText: text,
+              sourceBlock: 'feedback',
+              memo,
+            })
+          }
+        />
+      )}
     </View>
-  ), []);
+  ), [handleSaveExpression]);
 
   return (
     <KeyboardAvoidingView
@@ -115,7 +227,7 @@ export default function ChatScreen() {
         <View className="flex-1 mr-3">
           <Text className="text-xs text-gray-400 mb-0.5">대화 #{id}</Text>
           <Text className="text-lg font-bold text-gray-900" numberOfLines={1}>
-            카페에서 커피 주문하기
+            {topicLabel ?? '대화'}
           </Text>
         </View>
         <Pressable
@@ -131,7 +243,7 @@ export default function ChatScreen() {
       {/* ------------------------------------------------------------------ */}
       <FlatList
         ref={flatListRef}
-        data={DUMMY_TURNS}
+        data={turns}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         className="flex-1 px-4 pt-4"
@@ -186,9 +298,8 @@ export default function ChatScreen() {
 
               <View className="flex-1 items-center">
                 <RecordButton
-                  isRecording={isRecording}
-                  onRecordStart={handleRecordStart}
-                  onRecordStop={handleRecordStop}
+                  onRecordStop={handleRecordingStop}
+                  disabled={isProcessing}
                 />
               </View>
 

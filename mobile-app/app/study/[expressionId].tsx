@@ -1,29 +1,76 @@
 import { View, Text, ScrollView, Pressable } from 'react-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import UserBubble from '@/components/chat/UserBubble';
 import AIBubble from '@/components/chat/AIBubble';
 import TTSButton from '@/components/common/TTSButton';
-import {
-  DUMMY_EXPRESSIONS,
-  DUMMY_CONTEXT_MAP,
-  DUMMY_EXAMPLES_MAP,
-  SOURCE_BLOCK_LABEL,
-} from '@/constants/dummyExpressions';
+import { fetchMessages } from '@/api/chat';
+import { useTTSButton } from '@/hooks/useTTSButton';
+import type { AITurnContent } from '@/types';
+
+const SOURCE_BLOCK_LABEL: Record<string, string> = {
+  user_speech: '내 발화',
+  feedback: '교정 표현',
+  response: 'AI 응답',
+};
+
+type ContextTurn = {
+  id: string;
+  userText: string;
+  aiContent: AITurnContent;
+};
 
 export default function ExpressionDetailScreen() {
-  const { expressionId } = useLocalSearchParams<{ expressionId: string }>();
+  const {
+    expressionId,
+    conversationId,
+    messageId,
+    expressionText,
+    topicLabel,
+    sourceBlock,
+  } = useLocalSearchParams<{
+    expressionId: string;
+    conversationId: string;
+    messageId: string;
+    expressionText?: string;
+    topicLabel?: string;
+    sourceBlock?: string;
+  }>();
   const router = useRouter();
 
-  const expression = DUMMY_EXPRESSIONS.find((e) => e.id === expressionId);
-  const contextData = expressionId ? DUMMY_CONTEXT_MAP[expressionId] : undefined;
-  const examples = expressionId ? (DUMMY_EXAMPLES_MAP[expressionId] ?? []) : [];
+  const { isPlaying, handlePress } = useTTSButton(expressionText ?? '');
+  const [contextTurns, setContextTurns] = useState<ContextTurn[]>([]);
+  const [highlightedTurnId, setHighlightedTurnId] = useState<string | null>(null);
 
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [showExamples, setShowExamples] = useState(false);
+  useEffect(() => {
+    if (!conversationId) return;
+    fetchMessages(conversationId)
+      .then((msgs) => {
+        const turns: ContextTurn[] = [];
+        const userMsgs = msgs.filter((m) => m.content_type === 'user_speech');
+        for (const userMsg of userMsgs) {
+          const aiMsg = msgs.find(
+            (m) =>
+              m.content_type === 'ai_turn' &&
+              m.turn_number === userMsg.turn_number + 1
+          );
+          if (!aiMsg) continue;
+          turns.push({
+            id: aiMsg.id,
+            userText: (userMsg.content as { text: string }).text,
+            aiContent: aiMsg.content as AITurnContent,
+          });
+          if (aiMsg.id === messageId) {
+            setHighlightedTurnId(aiMsg.id);
+          }
+        }
+        setContextTurns(turns);
+      })
+      .catch(() => {});
+  }, [conversationId, messageId]);
 
-  if (!expression) {
+  if (!expressionText) {
     return (
       <View className="flex-1 items-center justify-center bg-white">
         <Text className="text-gray-400">표현을 찾을 수 없습니다.</Text>
@@ -43,10 +90,10 @@ export default function ExpressionDetailScreen() {
         </Pressable>
         <View className="flex-1">
           <Text className="text-lg font-bold text-gray-900" numberOfLines={1}>
-            {expression.topic_label}
+            {topicLabel ?? '표현 상세'}
           </Text>
           <Text className="text-xs text-gray-400">
-            {SOURCE_BLOCK_LABEL[expression.source_block]}에서 저장
+            {SOURCE_BLOCK_LABEL[sourceBlock ?? ''] ?? sourceBlock ?? ''}에서 저장
           </Text>
         </View>
       </View>
@@ -56,25 +103,22 @@ export default function ExpressionDetailScreen() {
         <View className="mx-4 mt-4 mb-6 bg-blue-50 border border-blue-200 rounded-2xl px-4 py-4">
           <Text className="text-xs text-blue-500 font-medium mb-2">저장한 표현</Text>
           <Text className="text-xl font-bold text-blue-700 mb-2">
-            {expression.expression_text}
+            {expressionText}
           </Text>
           <TTSButton
-            text={expression.expression_text}
+            text={expressionText}
             isPlaying={isPlaying}
-            onPress={() => setIsPlaying((p) => !p)}
+            onPress={handlePress}
           />
-          {expression.user_memo && (
-            <Text className="text-sm text-gray-500 mt-2">{expression.user_memo}</Text>
-          )}
         </View>
 
         {/* Section 2: 원본 대화 문맥 */}
-        {contextData && (
+        {contextTurns.length > 0 && (
           <View className="mb-6">
             <Text className="text-base font-bold text-gray-900 px-4 mb-3">원본 대화</Text>
             <View className="px-4">
-              {contextData.turns.map((turn) => {
-                const isHighlighted = turn.id === contextData.highlightedTurnId;
+              {contextTurns.map((turn) => {
+                const isHighlighted = turn.id === highlightedTurnId;
                 return (
                   <View
                     key={turn.id}
@@ -89,13 +133,10 @@ export default function ExpressionDetailScreen() {
                         📌 저장된 표현이 포함된 대화
                       </Text>
                     )}
-                    <UserBubble
-                      text={turn.userText}
-                      onLongPress={() => {}}
-                    />
+                    <UserBubble text={turn.userText} />
                     <AIBubble
-                      feedback={turn.ai.feedback}
-                      nextResponse={turn.ai.next_response}
+                      feedback={turn.aiContent.feedback}
+                      nextResponse={turn.aiContent.next_response}
                       messageId={turn.id}
                       readonly
                     />
@@ -103,33 +144,6 @@ export default function ExpressionDetailScreen() {
                 );
               })}
             </View>
-          </View>
-        )}
-
-        {/* Section 3: 예문 더 보기 */}
-        {examples.length > 0 && (
-          <View className="mb-8">
-            <Pressable
-              onPress={() => setShowExamples((v) => !v)}
-              className="flex-row items-center justify-between px-4 py-3 border-t border-gray-100 active:opacity-60"
-            >
-              <Text className="text-base font-bold text-gray-900">예문 더 보기</Text>
-              <Ionicons
-                name={showExamples ? 'chevron-up' : 'chevron-down'}
-                size={18}
-                color="#6B7280"
-              />
-            </Pressable>
-            {showExamples && (
-              <View className="px-4 pt-2">
-                {examples.map((ex) => (
-                  <View key={ex.id} className="bg-gray-50 rounded-xl px-4 py-3 mb-2">
-                    <Text className="text-gray-800 font-medium text-sm mb-1">{ex.sentence}</Text>
-                    <Text className="text-gray-400 text-xs">{ex.translation}</Text>
-                  </View>
-                ))}
-              </View>
-            )}
           </View>
         )}
       </ScrollView>

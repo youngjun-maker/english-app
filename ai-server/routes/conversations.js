@@ -13,13 +13,62 @@ const { turnLimitMiddleware } = require('../middleware/turnLimit');
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // GET /api/conversations
-router.get('/', (req, res) => {
-  res.status(501).json({ error: { code: 'NOT_IMPLEMENTED', message: 'Not implemented yet' } });
+router.get('/', authMiddleware, async (req, res) => {
+  try {
+    const { data: conversations, error } = await supabase
+      .from('conversations')
+      .select('id, topic_id, topic_label, updated_at, created_at')
+      .eq('user_id', req.user.id)
+      .order('updated_at', { ascending: false });
+
+    if (error) {
+      console.error('conversations fetch error:', error);
+      return errorResponse(res, 500, 'INTERNAL_ERROR', '서버 오류가 발생했습니다');
+    }
+
+    const withTurnCount = await Promise.all(
+      (conversations || []).map(async (conv) => {
+        const { count } = await supabase
+          .from('messages')
+          .select('id', { count: 'exact', head: true })
+          .eq('conversation_id', conv.id)
+          .eq('content_type', 'user_speech');
+        return { ...conv, turn_count: count ?? 0 };
+      })
+    );
+
+    return res.status(200).json(withTurnCount);
+  } catch (err) {
+    console.error('GET /conversations unexpected error:', err);
+    return errorResponse(res, 500, 'INTERNAL_ERROR', '서버 오류가 발생했습니다');
+  }
 });
 
 // POST /api/conversations
-router.post('/', (req, res) => {
-  res.status(501).json({ error: { code: 'NOT_IMPLEMENTED', message: 'Not implemented yet' } });
+router.post('/', authMiddleware, async (req, res) => {
+  const { topic_id, topic_label } = req.body;
+
+  if (!topic_id || !topic_label) {
+    return errorResponse(res, 400, 'INVALID_REQUEST', 'topic_id와 topic_label이 필요합니다');
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('conversations')
+      .insert({ user_id: req.user.id, topic_id, topic_label })
+      .select('id, topic_id, topic_label, created_at')
+      .single();
+
+    if (error || !data) {
+      console.error('conversation insert error:', error);
+      return errorResponse(res, 500, 'INTERNAL_ERROR', '서버 오류가 발생했습니다');
+    }
+
+    return res.status(201).json(data);
+  } catch (err) {
+    console.error('POST /conversations unexpected error:', err);
+    return errorResponse(res, 500, 'INTERNAL_ERROR', '서버 오류가 발생했습니다');
+  }
 });
 
 // POST /api/conversations/:id/messages
@@ -171,8 +220,37 @@ router.post('/:id/messages', authMiddleware, turnLimitMiddleware, async (req, re
 });
 
 // GET /api/conversations/:id/messages
-router.get('/:id/messages', (req, res) => {
-  res.status(501).json({ error: { code: 'NOT_IMPLEMENTED', message: 'Not implemented yet' } });
+router.get('/:id/messages', authMiddleware, async (req, res) => {
+  const conversationId = req.params.id;
+
+  try {
+    const { data: conversation, error: convError } = await supabase
+      .from('conversations')
+      .select('id')
+      .eq('id', conversationId)
+      .eq('user_id', req.user.id)
+      .single();
+
+    if (convError || !conversation) {
+      return errorResponse(res, 404, 'CONVERSATION_NOT_FOUND', '대화를 찾을 수 없습니다');
+    }
+
+    const { data: messages, error: msgError } = await supabase
+      .from('messages')
+      .select('id, turn_number, role, content_type, content, created_at')
+      .eq('conversation_id', conversationId)
+      .order('turn_number', { ascending: true });
+
+    if (msgError) {
+      console.error('messages fetch error:', msgError);
+      return errorResponse(res, 500, 'INTERNAL_ERROR', '서버 오류가 발생했습니다');
+    }
+
+    return res.status(200).json(messages || []);
+  } catch (err) {
+    console.error('GET /:id/messages unexpected error:', err);
+    return errorResponse(res, 500, 'INTERNAL_ERROR', '서버 오류가 발생했습니다');
+  }
 });
 
 module.exports = router;

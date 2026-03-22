@@ -4,16 +4,26 @@ import type { FeedbackItem } from '@/types';
 import FeedbackBlock from '@/components/chat/FeedbackBlock';
 import TTSButton from '@/components/common/TTSButton';
 import SavePopup from '@/components/common/SavePopup';
+import { useTTSButton } from '@/hooks/useTTSButton';
 
 type AIBubbleProps = {
   feedback: FeedbackItem[];
   nextResponse: string;
   messageId: string;
   readonly?: boolean;
+  onSave?: (text: string, memo: string) => void;
+  onFeedbackSave?: (index: number, text: string, memo: string) => void;
 };
 
-export default function AIBubble({ feedback, nextResponse, messageId, readonly }: AIBubbleProps) {
-  const [isPlaying, setIsPlaying] = useState(false);
+export default function AIBubble({
+  feedback,
+  nextResponse,
+  messageId,
+  readonly,
+  onSave,
+  onFeedbackSave,
+}: AIBubbleProps) {
+  const { isPlaying, handlePress } = useTTSButton(nextResponse);
   const [saveVisible, setSaveVisible] = useState(false);
 
   return (
@@ -24,28 +34,44 @@ export default function AIBubble({ feedback, nextResponse, messageId, readonly }
           key={`${messageId}-fb-${index}`}
           feedback={item}
           onLongPress={readonly ? () => {} : undefined}
+          onSave={
+            !readonly && onFeedbackSave
+              ? (text, memo) => onFeedbackSave(index, text, memo)
+              : undefined
+          }
         />
       ))}
 
       {/* AI 응답 텍스트 블록 */}
       <Pressable
-        onLongPress={readonly ? undefined : () => setSaveVisible(true)}
+        onLongPress={
+          readonly
+            ? undefined
+            : onSave
+              ? () => setSaveVisible(true)
+              : undefined
+        }
         className="bg-gray-100 rounded-2xl rounded-tl-sm px-4 py-3 mt-1"
       >
         <Text className="text-gray-800 text-sm leading-5 mb-1">{nextResponse}</Text>
         <TTSButton
           text={nextResponse}
           isPlaying={isPlaying}
-          onPress={() => setIsPlaying((p) => !p)}
+          onPress={handlePress}
         />
       </Pressable>
 
-      <SavePopup
-        visible={saveVisible}
-        initialText={nextResponse}
-        onSave={(_t, _memo) => setSaveVisible(false)}
-        onClose={() => setSaveVisible(false)}
-      />
+      {onSave && (
+        <SavePopup
+          visible={saveVisible}
+          initialText={nextResponse}
+          onSave={(t, memo) => {
+            onSave(t, memo);
+            setSaveVisible(false);
+          }}
+          onClose={() => setSaveVisible(false)}
+        />
+      )}
     </View>
   );
 }

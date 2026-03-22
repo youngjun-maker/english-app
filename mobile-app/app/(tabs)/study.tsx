@@ -1,10 +1,11 @@
 import { View, Text, FlatList, ListRenderItem } from 'react-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import type { Expression } from '@/types';
 import ExpressionCard from '@/components/study/ExpressionCard';
 import DeleteConfirmModal from '@/components/study/DeleteConfirmModal';
-import { DUMMY_EXPRESSIONS } from '@/constants/dummyExpressions';
+import { fetchExpressions, deleteExpression } from '@/api/chat';
+import { useAppStore } from '@/store/useAppStore';
 
 function EmptyState() {
   return (
@@ -22,21 +23,45 @@ function EmptyState() {
 
 export default function StudyScreen() {
   const router = useRouter();
-  const [expressions, setExpressions] = useState<Expression[]>(DUMMY_EXPRESSIONS);
+  const showToast = useAppStore((s) => s.showToast);
+  const [expressions, setExpressions] = useState<Expression[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<Expression | null>(null);
 
-  function handleCardPress(id: string) {
-    router.push(`/study/${id}`);
+  useEffect(() => {
+    fetchExpressions()
+      .then(setExpressions)
+      .catch(() => showToast('표현 목록을 불러오지 못했어요.'));
+  }, []);
+
+  function handleCardPress(item: Expression) {
+    router.push({
+      pathname: '/study/[expressionId]',
+      params: {
+        expressionId: item.id,
+        conversationId: item.conversation_id,
+        messageId: item.message_id,
+        expressionText: item.expression_text,
+        topicLabel: item.topic_label,
+        sourceBlock: item.source_block,
+      },
+    });
   }
 
   function handleLongPress(expression: Expression) {
     setDeleteTarget(expression);
   }
 
-  function handleDeleteConfirm() {
+  async function handleDeleteConfirm() {
     if (!deleteTarget) return;
-    setExpressions((prev) => prev.filter((e) => e.id !== deleteTarget.id));
-    setDeleteTarget(null);
+    try {
+      await deleteExpression(deleteTarget.id);
+      setExpressions((prev) => prev.filter((e) => e.id !== deleteTarget.id));
+      showToast('표현이 삭제되었습니다.');
+    } catch {
+      showToast('표현 삭제에 실패했어요.');
+    } finally {
+      setDeleteTarget(null);
+    }
   }
 
   function handleDeleteCancel() {
@@ -46,7 +71,7 @@ export default function StudyScreen() {
   const renderItem: ListRenderItem<Expression> = ({ item }) => (
     <ExpressionCard
       expression={item}
-      onPress={() => handleCardPress(item.id)}
+      onPress={() => handleCardPress(item)}
       onLongPress={() => handleLongPress(item)}
     />
   );

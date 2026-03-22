@@ -48,6 +48,8 @@ export type Expression = {
   created_at: string;
   topic_label: string;
   source_sentence: string;
+  conversation_id: string;
+  message_id: string;
 };
 
 // API 요청/응답 타입

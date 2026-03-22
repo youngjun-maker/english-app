@@ -9,6 +9,7 @@ import 'react-native-reanimated';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { supabase } from '@/utils/supabase';
 import Toast from '@/components/common/Toast';
+import { useAppStore } from '@/store/useAppStore';
 
 type AppState = 'loading' | 'unauthenticated' | 'home';
 
@@ -22,14 +23,32 @@ export default function RootLayout() {
   const { width: winW, height: winH } = useWindowDimensions();
 
   useEffect(() => {
-    // 초기 세션 확인
+    // 초기 세션 확인 — store에도 반영
     supabase.auth.getSession().then(({ data: { session } }) => {
+      useAppStore.getState().setSession(session);
       setAppState(session ? 'home' : 'unauthenticated');
     });
 
     // 로그인/로그아웃 이벤트 구독
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      useAppStore.getState().setSession(session);
       setAppState(session ? 'home' : 'unauthenticated');
+
+      // 로그인 시 users 테이블 upsert (신규 가입 + 재로그인 모두 처리)
+      if (event === 'SIGNED_IN' && session?.user) {
+        await supabase.from('users').upsert(
+          {
+            id: session.user.id,
+            email: session.user.email ?? '',
+            display_name:
+              session.user.user_metadata?.['full_name'] ??
+              session.user.user_metadata?.['name'] ??
+              '',
+            last_login_at: new Date().toISOString(),
+          },
+          { onConflict: 'id' },
+        );
+      }
     });
 
     return () => subscription.unsubscribe();

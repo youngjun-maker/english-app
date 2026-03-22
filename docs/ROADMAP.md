@@ -504,7 +504,7 @@ english-app/
 
 ---
 
-#### Task 016: 대화 및 표현 CRUD API 구현 `@contexttalk-api-architect` + `@api-test-writer`
+#### Task 016: 대화 및 표현 CRUD API 구현 ✅ `@contexttalk-api-architect` + `@api-test-writer`
 
 - `routes/conversations.js` 나머지 엔드포인트 구현:
   - `POST /api/conversations` — conversations INSERT, `{ id, topic_id, topic_label, created_at }` 반환
@@ -530,9 +530,11 @@ english-app/
 
 **완료 기준:** 위 7개 테스트 시나리오 전부 통과
 
+**✅ 완료 (2026-03-22)** — routes/conversations.js (POST /, GET /, GET /:id/messages), routes/expressions.js (POST /, GET /, DELETE /:id source_sentence JS 파생), routes/auth.js (POST /verify), __tests__/crud.test.js 9개 테스트 작성. 전체 31개 테스트 통과.
+
 ---
 
-#### Task 017: 백엔드 통합 테스트 `@api-test-writer`
+#### Task 017: 백엔드 통합 테스트 ✅ `@api-test-writer`
 
 - `__tests__/integration.test.js` 작성: 전체 대화 플로우 E2E 시나리오
   1. 대화 생성 → STT(텍스트 직접 주입) → LLM 응답 수신 → 표현 저장 → 표현 목록 조회
@@ -544,6 +546,8 @@ english-app/
 
 **완료 기준:** `npm test` 실행 시 모든 테스트 통과. 에러 응답 포맷 `{ error: { code, message } }` 일관성 확인. Phase 3 완료 → Phase 4 착수 가능
 
+**✅ 완료 (2026-03-22)** — integration.test.js 작성: E2E 플로우(2), 20턴 제한(1), KST 자정 리셋 timestamp 검증(1), 에러코드 7종 포맷 일관성(7) = 10개 테스트. 전체 6 suites, 42 tests 통과.
+
 ---
 
 ### Phase 4: 프론트엔드-백엔드 연동
@@ -552,7 +556,7 @@ english-app/
 
 ---
 
-#### Task 018: 소셜 로그인 (Google/Apple) 실제 연동 `@rn-expo-frontend`
+#### Task 018: 소셜 로그인 (Google/Apple) 실제 연동 ✅ `@rn-expo-frontend`
 
 - **필수 패키지 확인:** Task 004에서 설치한 `expo-apple-authentication`, `expo-web-browser`, `expo-auth-session` 동작 확인
 - `mobile-app/utils/supabase.ts` Supabase 클라이언트 초기화 완성 (`EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY` 환경변수 연결)
@@ -580,9 +584,11 @@ english-app/
 
 **완료 기준:** EAS Dev Client에서 Google/Apple 로그인 완료 후 홈 화면 진입. `useAppStore.user` 에 사용자 정보 저장 확인. JWT가 API 요청 헤더에 포함됨 확인. 앱 재실행 시 로그인 유지됨 확인
 
+**✅ 완료 (2026-03-22)** — utils/apiFetch.ts 신규 생성(JWT Bearer 자동 첨부), _layout.tsx에 setSession + users upsert 연결, onboarding.tsx에 signInWithGoogle(expo-web-browser) + signInWithApple(expo-apple-authentication, iOS only) 실제 인증 연동. WebBrowser.maybeCompleteAuthSession() 모듈 최상단 배치.
+
 ---
 
-#### Task 019: API 추상화 레이어 구현 (chat.js) `@rn-expo-frontend`
+#### Task 019: API 추상화 레이어 구현 (chat.js) ✅ `@rn-expo-frontend`
 
 - `mobile-app/api/chat.js` 전체 함수 실제 구현:
   ```javascript
@@ -614,9 +620,11 @@ english-app/
 - `playTTS` 연속 탭 시: 이전 오디오 즉시 중단 후 새 오디오 재생 (`_currentSound` 동작 확인)
 - `saveExpression` payload에 source_block 포함 → DB 저장 확인
 
+**✅ 완료 (2026-03-22)** — api/conversations.ts (createConversation, fetchConversations), api/chat.ts (transcribeAudio, sendMessage+incrementTurnCount, fetchMessages, saveExpression, playTTS+_currentSound 중단 메커니즘, ArrayBuffer→base64→FileSystem→expo-av) 구현. UNAUTHORIZED 공통 에러 처리(refreshSession→signOut) 포함.
+
 ---
 
-#### Task 020: STT 녹음 + 2-Step 호출 흐름 연동 `@rn-expo-frontend`
+#### Task 020: STT 녹음 + 2-Step 호출 흐름 연동 ✅ `@rn-expo-frontend`
 
 - `expo-av` Audio.Recording PTT 구현:
   - `pressIn` → `Audio.Recording.createAsync()` 시작
@@ -642,9 +650,11 @@ english-app/
 - AI 응답 수신 **8초 이내** (STT 표시 시점 기준)
 - Android에서 m4a Whisper 정상 변환 확인 (MPEG_4/AAC 설정 적용)
 
+**✅ 완료 (2026-03-22)** — RecordButton: expo-av 실제 녹음(Android AndroidOutputFormat.MPEG_4/AAC), 30s 자동종료+Haptics, onRecordStop(uri) 콜백. topic-select: createConversation + topicLabel params 전달. [id].tsx: DUMMY_TURNS 제거, fetchMessages 마운트, 2-Step(transcribeAudio→말풍선즉시표시→sendMessage), handleTextSend 실제 연동.
+
 ---
 
-#### Task 021: TTS 재생 연동 (expo-av + _currentSound 중단 메커니즘) `@rn-expo-frontend`
+#### Task 021: TTS 재생 연동 (expo-av + _currentSound 중단 메커니즘) ✅ `@rn-expo-frontend`
 
 - Task 019의 `playTTS` 함수를 모든 🔊 버튼에 연결:
   - UserBubble 🔊: `content.text` 전달
@@ -662,9 +672,11 @@ english-app/
 - 연속 🔊 탭 시 이전 오디오 즉시 중단 후 새 오디오 재생
 - DB messages / expressions 테이블에 TTS URL 저장 없음 확인
 
+**✅ 완료 (2026-03-22)** — api/chat.ts: playTTS(text, onEnd?) + _currentOnEnd + stopTTS() 추가. hooks/useTTSButton.ts 신규 생성(isPlaying 상태, 재탭 중단, TTS_FAILED/오프라인 토스트). UserBubble/FeedbackBlock/AIBubble/ExpressionCard 4개 컴포넌트 useTTSButton 훅으로 교체, 로컬 isPlaying 토글 제거.
+
 ---
 
-#### Task 022: 표현 저장 및 학습장 탭 전체 연동 `@rn-expo-frontend`
+#### Task 022: 표현 저장 및 학습장 탭 전체 연동 ✅ `@rn-expo-frontend`
 
 - 채팅 화면 롱프레스 SavePopup: 블록 종류별 초기 텍스트 + source_block 값 결정:
 
@@ -684,6 +696,8 @@ english-app/
 - 피드백 블록 / 응답 블록 / 내 발화 3가지 경로로 표현 저장 후 학습장에서 확인
 - DB `expressions.source_block` 값 3종 정확성 확인
 - 학습장 → 표현 탭 → 원본 대화 문맥 → `ai_turn` 블록 하이라이트 확인
+
+**✅ 완료 (2026-03-22)** — types/index.ts: Expression에 conversation_id/message_id 추가. api/chat.ts: fetchExpressions()/deleteExpression() 추가. UserBubble/FeedbackBlock/AIBubble: onSave? prop 추가, source_block별 분기. [id].tsx: ChatTurn.userMsgId 추적, handleSaveExpression 실제 연동, renderItem onSave 전선 연결. study.tsx: DUMMY_EXPRESSIONS 제거, fetchExpressions()/deleteExpression() 연동. study/[expressionId].tsx: 더미 데이터 전부 제거, fetchMessages로 실제 대화 문맥 렌더링, ai_turn 블록 하이라이트.
 
 ---
 
@@ -739,8 +753,8 @@ english-app/
 | Phase 0: 개발 환경 선행 설정 | 1 | ✅ 완료 |
 | Phase 1: 프로젝트 골격 구축 | 5 | ✅ 완료 |
 | Phase 2: UI/UX 완성 (더미 데이터) | 5 | ✅ 완료 |
-| Phase 3: 백엔드 API 구현 | 6 | ⬜ 대기 |
-| Phase 4: 프론트엔드-백엔드 연동 | 5 | ⬜ 대기 |
+| Phase 3: 백엔드 API 구현 | 6 | ✅ 완료 |
+| Phase 4: 프론트엔드-백엔드 연동 | 5 | ✅ 완료 |
 | Phase 5: 완성도 및 최종 검증 | 2 | ⬜ 대기 |
 | **합계** | **24** | |
 
@@ -763,13 +777,13 @@ english-app/
 | Task 013 | 3 | STT API 구현 (POST /api/stt) | `@contexttalk-api-architect` + `@api-test-writer` | ✅ |
 | Task 014 | 3 | LLM API 구현 (POST /api/conversations/:id/messages) | `@contexttalk-api-architect` + `@api-test-writer` | ✅ |
 | Task 015 | 3 | TTS API 구현 (POST /api/tts) | `@contexttalk-api-architect` + `@api-test-writer` | ✅ |
-| Task 016 | 3 | 대화 및 표현 CRUD API 구현 | `@contexttalk-api-architect` + `@api-test-writer` | ⬜ |
-| Task 017 | 3 | 백엔드 통합 테스트 (Jest + Supertest) | `@api-test-writer` | ⬜ |
-| Task 018 | 4 | 소셜 로그인 (Google/Apple) 실제 연동 | `@rn-expo-frontend` | ⬜ |
-| Task 019 | 4 | API 추상화 레이어 구현 (chat.js) | `@rn-expo-frontend` | ⬜ |
-| Task 020 | 4 | STT 녹음 + 2-Step 호출 흐름 연동 | `@rn-expo-frontend` | ⬜ |
-| Task 021 | 4 | TTS 재생 연동 (expo-av + _currentSound) | `@rn-expo-frontend` | ⬜ |
-| Task 022 | 4 | 표현 저장 및 학습장 탭 전체 연동 | `@rn-expo-frontend` | ⬜ |
+| Task 016 | 3 | 대화 및 표현 CRUD API 구현 | `@contexttalk-api-architect` + `@api-test-writer` | ✅ |
+| Task 017 | 3 | 백엔드 통합 테스트 (Jest + Supertest) | `@api-test-writer` | ✅ |
+| Task 018 | 4 | 소셜 로그인 (Google/Apple) 실제 연동 | `@rn-expo-frontend` | ✅ |
+| Task 019 | 4 | API 추상화 레이어 구현 (chat.js) | `@rn-expo-frontend` | ✅ |
+| Task 020 | 4 | STT 녹음 + 2-Step 호출 흐름 연동 | `@rn-expo-frontend` | ✅ |
+| Task 021 | 4 | TTS 재생 연동 (expo-av + _currentSound) | `@rn-expo-frontend` | ✅ |
+| Task 022 | 4 | 표현 저장 및 학습장 탭 전체 연동 | `@rn-expo-frontend` | ✅ |
 | Task 023 | 5 | 에러 핸들링 및 UX 폴리싱 | `@rn-expo-frontend` | ⬜ |
 | Task 024 | 5 | MVP 시드 데이터 기반 전체 통합 테스트 | `[Developer]` | ⬜ |
 

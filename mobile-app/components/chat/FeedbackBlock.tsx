@@ -3,14 +3,16 @@ import { useState } from 'react';
 import type { FeedbackItem } from '@/types';
 import TTSButton from '@/components/common/TTSButton';
 import SavePopup from '@/components/common/SavePopup';
+import { useTTSButton } from '@/hooks/useTTSButton';
 
 type FeedbackBlockProps = {
   feedback: FeedbackItem;
   onLongPress?: () => void;
+  onSave?: (text: string, memo: string) => void;
 };
 
-export default function FeedbackBlock({ feedback, onLongPress }: FeedbackBlockProps) {
-  const [isPlaying, setIsPlaying] = useState(false);
+export default function FeedbackBlock({ feedback, onLongPress, onSave }: FeedbackBlockProps) {
+  const { isPlaying, handlePress } = useTTSButton(feedback.corrected ?? '');
   const [saveVisible, setSaveVisible] = useState(false);
 
   if (feedback.is_perfect) {
@@ -21,9 +23,17 @@ export default function FeedbackBlock({ feedback, onLongPress }: FeedbackBlockPr
     );
   }
 
+  function handleLongPress() {
+    if (onLongPress) {
+      onLongPress();
+    } else if (onSave) {
+      setSaveVisible(true);
+    }
+  }
+
   return (
     <Pressable
-      onLongPress={onLongPress ?? (() => setSaveVisible(true))}
+      onLongPress={handleLongPress}
       className="bg-amber-50 rounded-xl px-4 py-3 mb-2"
     >
       {/* 원문 (취소선) */}
@@ -42,19 +52,22 @@ export default function FeedbackBlock({ feedback, onLongPress }: FeedbackBlockPr
           <TTSButton
             text={feedback.corrected}
             isPlaying={isPlaying}
-            onPress={() => setIsPlaying((p) => !p)}
+            onPress={handlePress}
           />
         </View>
       )}
 
-      <SavePopup
-        visible={saveVisible}
-        initialText={feedback.corrected ?? ''}
-        onSave={(_text, _memo) => {
-          setSaveVisible(false);
-        }}
-        onClose={() => setSaveVisible(false)}
-      />
+      {onSave && (
+        <SavePopup
+          visible={saveVisible}
+          initialText={feedback.corrected ?? ''}
+          onSave={(t, memo) => {
+            onSave(t, memo);
+            setSaveVisible(false);
+          }}
+          onClose={() => setSaveVisible(false)}
+        />
+      )}
     </Pressable>
   );
 }

@@ -1,5 +1,6 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import { makeRedirectUri } from 'expo-auth-session';
+import * as WebBrowser from 'expo-web-browser';
 import { useRef, useState } from 'react';
 import {
   NativeScrollEvent,
@@ -12,7 +13,10 @@ import {
   View,
 } from 'react-native';
 
-const ONBOARDING_KEY = 'onboarding_completed';
+import { supabase } from '@/utils/supabase';
+
+// OAuth redirect 처리 완료 — 컴포넌트 외부 최상단에서 반드시 호출
+WebBrowser.maybeCompleteAuthSession();
 
 interface Slide {
   id: number;
@@ -44,13 +48,48 @@ const SLIDES: Slide[] = [
   },
 ];
 
-async function completeOnboarding(router: ReturnType<typeof useRouter>) {
-  await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
-  router.replace('/(tabs)/');
+async function signInWithGoogle(): Promise<void> {
+  const redirectUri = makeRedirectUri({ scheme: 'com.fyuer.englishapp' });
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: redirectUri },
+  });
+  if (error) {
+    console.error('Google OAuth error:', error.message);
+    return;
+  }
+  if (data.url) {
+    await WebBrowser.openAuthSessionAsync(data.url, redirectUri);
+  }
 }
 
+async function signInWithApple(): Promise<void> {
+  try {
+    const credential = await AppleAuthentication.signInAsync({
+      requestedScopes: [
+        AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+        AppleAuthentication.AppleAuthenticationScope.EMAIL,
+      ],
+    });
+    const { error } = await supabase.auth.signInWithIdToken({
+      provider: 'apple',
+      token: credential.identityToken!,
+    });
+    if (error) {
+      console.error('Apple Sign In error:', error.message);
+    }
+  } catch (e: unknown) {
+    // 사용자가 직접 취소한 경우는 에러 로그 불필요
+    if ((e as { code?: string }).code !== 'ERR_REQUEST_CANCELED') {
+      console.error('Apple Sign In error:', e);
+    }
+  }
+}
+
+// 로그인 성공 후 router.replace는 불필요:
+// _layout.tsx의 onAuthStateChange가 세션 감지 → appState → Redirect 처리
+
 export default function OnboardingScreen() {
-  const router = useRouter();
   const scrollRef = useRef<ScrollView>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const { width: windowWidth } = useWindowDimensions();
@@ -103,9 +142,7 @@ export default function OnboardingScreen() {
           <View
             key={slide.id}
             className={`h-2 rounded-full ${
-              currentIndex === slide.id
-                ? 'w-6 bg-blue-500'
-                : 'w-2 bg-gray-300'
+              currentIndex === slide.id ? 'w-6 bg-blue-500' : 'w-2 bg-gray-300'
             }`}
           />
         ))}
@@ -117,21 +154,19 @@ export default function OnboardingScreen() {
           <>
             <Pressable
               className="w-full bg-blue-500 rounded-2xl py-4 items-center active:opacity-80"
-              onPress={() => completeOnboarding(router)}
+              onPress={signInWithGoogle}
             >
-              <Text className="text-white text-base font-semibold">
-                Google로 시작하기
-              </Text>
+              <Text className="text-white text-base font-semibold">Google로 시작하기</Text>
             </Pressable>
 
-            <Pressable
-              className="w-full bg-gray-900 rounded-2xl py-4 items-center active:opacity-80"
-              onPress={() => completeOnboarding(router)}
-            >
-              <Text className="text-white text-base font-semibold">
-                Apple로 시작하기
-              </Text>
-            </Pressable>
+            {Platform.OS === 'ios' && (
+              <Pressable
+                className="w-full bg-gray-900 rounded-2xl py-4 items-center active:opacity-80"
+                onPress={signInWithApple}
+              >
+                <Text className="text-white text-base font-semibold">Apple로 시작하기</Text>
+              </Pressable>
+            )}
           </>
         ) : (
           <Pressable

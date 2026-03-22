@@ -1,7 +1,7 @@
 import { View, Text, Pressable } from 'react-native';
-import { useState } from 'react';
 import type { Expression } from '@/types';
 import TTSButton from '@/components/common/TTSButton';
+import { useTTSButton } from '@/hooks/useTTSButton';
 
 type ExpressionCardProps = {
   expression: Expression;
@@ -15,7 +15,7 @@ function formatDate(dateString: string): string {
 }
 
 export default function ExpressionCard({ expression, onPress, onLongPress }: ExpressionCardProps) {
-  const [isPlaying, setIsPlaying] = useState(false);
+  const { isPlaying, handlePress } = useTTSButton(expression.expression_text);
 
   return (
     <Pressable
@@ -31,7 +31,7 @@ export default function ExpressionCard({ expression, onPress, onLongPress }: Exp
         <TTSButton
           text={expression.expression_text}
           isPlaying={isPlaying}
-          onPress={() => setIsPlaying((p) => !p)}
+          onPress={handlePress}
         />
       </View>
 

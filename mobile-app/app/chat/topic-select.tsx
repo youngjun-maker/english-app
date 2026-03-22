@@ -1,5 +1,7 @@
 import { FlatList, Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
+import { createConversation } from '@/api/conversations';
 
 type Topic = {
   id: string;
@@ -8,28 +10,28 @@ type Topic = {
   emoji: string;
 };
 
+// id는 ai-server/prompts/ 파일명(확장자 제외)과 일치해야 함
 const TOPICS: Topic[] = [
-  { id: 'cafe', label: '카페 주문', aiRole: '카페 직원', emoji: '☕' },
-  { id: 'airport', label: '공항/호텔', aiRole: '체크인 데스크 직원', emoji: '✈️' },
-  { id: 'shopping', label: '쇼핑', aiRole: '매장 직원', emoji: '🛍️' },
-  { id: 'restaurant', label: '레스토랑', aiRole: '웨이터', emoji: '🍽️' },
-  { id: 'directions', label: '길 찾기', aiRole: '현지인', emoji: '🗺️' },
-  { id: 'business', label: '비즈니스 미팅', aiRole: '비즈니스 파트너', emoji: '💼' },
+  { id: 'cafe_order', label: '카페 주문', aiRole: '카페 직원', emoji: '☕' },
+  { id: 'airport_immigration', label: '공항 입국', aiRole: '입국 심사관', emoji: '✈️' },
+  { id: 'hotel_checkin', label: '호텔 체크인', aiRole: '프런트 데스크 직원', emoji: '🏨' },
+  { id: 'small_talk', label: '스몰 토크', aiRole: '대화 상대', emoji: '💬' },
+  { id: 'opinion', label: '의견 나누기', aiRole: '토론 상대', emoji: '🗣️' },
+  { id: 'free_talk', label: '자유 대화', aiRole: 'AI 친구', emoji: '🌟' },
 ];
-
-// Dummy conversation id used before real API integration (Task 010)
-const DUMMY_CONV_ID = 'conv-new';
 
 type TopicCardProps = {
   topic: Topic;
-  onPress: (topicId: string) => void;
+  onPress: (topicId: string, topicLabel: string) => void;
+  disabled: boolean;
 };
 
-function TopicCard({ topic, onPress }: TopicCardProps) {
+function TopicCard({ topic, onPress, disabled }: TopicCardProps) {
   return (
     <Pressable
-      className="flex-1 bg-white rounded-2xl p-4 m-1.5 border border-gray-100 shadow-sm active:opacity-70 active:scale-95"
-      onPress={() => onPress(topic.id)}
+      className={`flex-1 bg-white rounded-2xl p-4 m-1.5 border border-gray-100 shadow-sm active:opacity-70 active:scale-95 ${disabled ? 'opacity-50' : ''}`}
+      onPress={() => onPress(topic.id, topic.label)}
+      disabled={disabled}
     >
       <Text className="text-3xl mb-2">{topic.emoji}</Text>
       <Text className="text-base font-bold text-gray-900 mb-1">{topic.label}</Text>
@@ -40,13 +42,25 @@ function TopicCard({ topic, onPress }: TopicCardProps) {
 
 export default function TopicSelectScreen() {
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
 
-  function handleTopicPress(_topicId: string) {
-    // TODO (Task 010): POST /api/conversations with topicId, use returned id
-    router.push(`/chat/${DUMMY_CONV_ID}`);
+  async function handleTopicPress(topicId: string, topicLabel: string) {
+    if (loading) return;
+    setLoading(true);
+    try {
+      const conversation = await createConversation(topicId, topicLabel);
+      router.push({
+        pathname: '/chat/[id]',
+        params: { id: conversation.id, topicLabel },
+      });
+    } catch (e) {
+      console.error('createConversation error:', e);
+      // 에러 시 그냥 navigate (오프라인 등 대비)
+    } finally {
+      setLoading(false);
+    }
   }
 
-  // Pair topics into rows of 2 for a 2-column grid using FlatList numColumns
   return (
     <View className="flex-1 bg-gray-50">
       {/* Header */}
@@ -64,7 +78,7 @@ export default function TopicSelectScreen() {
         keyExtractor={(item) => item.id}
         numColumns={2}
         renderItem={({ item }) => (
-          <TopicCard topic={item} onPress={handleTopicPress} />
+          <TopicCard topic={item} onPress={handleTopicPress} disabled={loading} />
         )}
         contentContainerClassName="px-2.5 pt-4 pb-8"
         columnWrapperClassName="justify-between"
