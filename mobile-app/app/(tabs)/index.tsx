@@ -80,7 +80,9 @@ function EmptyState() {
 // ─── 메인 화면 ───────────────────────────────────────────────────────────────
 export default function HomeScreen() {
   const router = useRouter();
-  const { todayTurnCount, isTurnLimitReached, user } = useAppStore();
+  const todayTurnCount = useAppStore((s) => s.todayTurnCount);
+  const isTurnLimitReached = useAppStore((s) => s.isTurnLimitReached);
+  const user = useAppStore((s) => s.user);
   const showToast = useAppStore((s) => s.showToast);
   const [conversations, setConversations] = useState<Conversation[]>([]);
 

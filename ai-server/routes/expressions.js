@@ -15,7 +15,7 @@ router.get('/', authMiddleware, async (req, res) => {
     const { data: expressions, error } = await supabase
       .from('expressions')
       .select(
-        'id, expression_text, source_block, user_memo, created_at, conversation_id, message_id, messages!expressions_message_id_fkey(content)'
+        'id, expression_text, source_block, user_memo, created_at, conversation_id, message_id, messages!expressions_message_id_fkey(content), conversations!expressions_conversation_id_fkey(topic_label)'
       )
       .eq('user_id', req.user.id)
       .order('created_at', { ascending: false });
@@ -33,7 +33,8 @@ router.get('/', authMiddleware, async (req, res) => {
         if (expr.source_block === 'user_speech') {
           source_sentence = msgContent.text ?? null;
         } else if (expr.source_block === 'feedback') {
-          source_sentence = msgContent.feedback?.[0]?.corrected ?? null;
+          const matched = msgContent.feedback?.find((fb) => fb.corrected === expr.expression_text);
+          source_sentence = matched?.corrected ?? msgContent.feedback?.[0]?.corrected ?? null;
         } else if (expr.source_block === 'response') {
           source_sentence = msgContent.next_response ?? null;
         }
@@ -46,6 +47,9 @@ router.get('/', authMiddleware, async (req, res) => {
         source_sentence,
         user_memo: expr.user_memo ?? null,
         created_at: expr.created_at,
+        conversation_id: expr.conversation_id ?? null,
+        message_id: expr.message_id ?? null,
+        topic_label: expr.conversations?.topic_label ?? '',
       };
     });
 

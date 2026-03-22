@@ -161,9 +161,12 @@ export default function ChatScreen() {
     const tempId = `temp-${Date.now()}`;
     setTurns((prev) => [...prev, { id: tempId, userMsgId: null, userText: text, aiContent: null }]);
     setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
-    await fetchAIResponse(tempId, text);
-    setIsProcessing(false);
-    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+    try {
+      await fetchAIResponse(tempId, text);
+    } finally {
+      setIsProcessing(false);
+      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+    }
   }
 
   function handleEndConversation() {
