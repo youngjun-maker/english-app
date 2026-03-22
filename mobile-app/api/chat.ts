@@ -8,7 +8,6 @@ import type {
   APIError,
 } from '@/types';
 import { apiFetch } from '@/utils/apiFetch';
-import { supabase } from '@/utils/supabase';
 import { useAppStore } from '@/store/useAppStore';
 
 // 현재 재생 중인 사운드 (모듈 변수 — 연속 탭 시 이전 오디오 즉시 중단용)
@@ -21,12 +20,6 @@ async function handleError(res: Response): Promise<never> {
 
   if (code === 'TURN_LIMIT_EXCEEDED') {
     useAppStore.getState().setTodayTurnCount(20);
-  }
-  if (code === 'UNAUTHORIZED') {
-    const { error } = await supabase.auth.refreshSession();
-    if (error) {
-      await supabase.auth.signOut();
-    }
   }
   throw data;
 }

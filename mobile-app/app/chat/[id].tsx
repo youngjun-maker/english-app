@@ -38,6 +38,7 @@ export default function ChatScreen() {
   const router = useRouter();
 
   const showToast = useAppStore((s) => s.showToast);
+  const isOffline = useAppStore((s) => s.isOffline);
 
   const conversationId = id;
 
@@ -45,6 +46,7 @@ export default function ChatScreen() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isTextMode, setIsTextMode] = useState(false);
   const [textInput, setTextInput] = useState('');
+  const [sttFailed, setSttFailed] = useState(false);
 
   const flatListRef = useRef<FlatList<ChatTurn>>(null);
 
@@ -140,8 +142,13 @@ export default function ChatScreen() {
         setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
 
         await fetchAIResponse(tempId, text);
-      } catch {
-        showToast('음성 인식에 실패했어요. 다시 시도해주세요.');
+      } catch (err: unknown) {
+        const code = (err as { error?: { code?: string } })?.error?.code;
+        if (code === 'STT_FAILED') {
+          setSttFailed(true);
+        } else {
+          showToast('음성 인식에 실패했어요. 다시 시도해주세요.');
+        }
       } finally {
         setIsProcessing(false);
         setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
@@ -290,7 +297,8 @@ export default function ChatScreen() {
 
               <Pressable
                 onPress={handleTextSend}
-                className="w-10 h-10 rounded-full bg-blue-500 items-center justify-center active:opacity-80"
+                disabled={isOffline}
+                className={`w-10 h-10 rounded-full items-center justify-center ${isOffline ? 'bg-gray-300' : 'bg-blue-500 active:opacity-80'}`}
               >
                 <Ionicons name="arrow-up" size={20} color="white" />
               </Pressable>
@@ -300,10 +308,22 @@ export default function ChatScreen() {
               <View className="w-10" />
 
               <View className="flex-1 items-center">
-                <RecordButton
-                  onRecordStop={handleRecordingStop}
-                  disabled={isProcessing}
-                />
+                {sttFailed ? (
+                  <View className="items-center gap-2">
+                    <Text className="text-sm text-red-500">음성 인식에 실패했어요</Text>
+                    <Pressable
+                      onPress={() => setSttFailed(false)}
+                      className="bg-red-500 rounded-xl px-6 py-2 active:opacity-80"
+                    >
+                      <Text className="text-white text-sm font-medium">다시 말하기</Text>
+                    </Pressable>
+                  </View>
+                ) : (
+                  <RecordButton
+                    onRecordStop={handleRecordingStop}
+                    disabled={isProcessing || isOffline}
+                  />
+                )}
               </View>
 
               <Pressable

@@ -705,7 +705,7 @@ english-app/
 
 ---
 
-#### Task 023: 에러 핸들링 및 UX 폴리싱 `@rn-expo-frontend`
+#### Task 023: 에러 핸들링 및 UX 폴리싱 ✅ `@rn-expo-frontend`
 
 - 전역 Toast 컴포넌트를 `useAppStore.toastMessage` 구독으로 완성 (에러 코드별 메시지 매핑 테이블 적용)
 - 네트워크 오프라인 감지 (`NetInfo`) → `showToast()` + 입력 비활성화 → 재연결 시 자동 복구
@@ -718,6 +718,8 @@ english-app/
 - 마이크 권한 거부 시 설정 이동 안내 팝업
 
 **완료 기준:** 오프라인 전환 시 토스트 즉시 표시. 401 수신 시 자동 토큰 갱신 시도. STT 실패 시 "다시 말하기" 버튼 노출. 마이크/🔊 버튼 터치 영역 44pt 이상
+
+**✅ 완료 (2026-03-22)** — package.json: @react-native-community/netinfo 추가. useAppStore: isOffline/setIsOffline 슬라이스 추가. hooks/useOffline.ts 신규 생성(NetInfo 구독, 오프라인 시 showToast). _layout.tsx: useOffline() 루트 마운트. apiFetch.ts: _doFetch 분리 + 401 인터셉터(refresh→retry, 실패 시 signOut+clearSession). api/chat.ts: handleError UNAUTHORIZED 블록 제거(apiFetch 위임). chat/[id].tsx: isOffline 비활성화, sttFailed 상태 + "다시 말하기" UI.
 
 ---
 
@@ -784,7 +786,7 @@ english-app/
 | Task 020 | 4 | STT 녹음 + 2-Step 호출 흐름 연동 | `@rn-expo-frontend` | ✅ |
 | Task 021 | 4 | TTS 재생 연동 (expo-av + _currentSound) | `@rn-expo-frontend` | ✅ |
 | Task 022 | 4 | 표현 저장 및 학습장 탭 전체 연동 | `@rn-expo-frontend` | ✅ |
-| Task 023 | 5 | 에러 핸들링 및 UX 폴리싱 | `@rn-expo-frontend` | ⬜ |
+| Task 023 | 5 | 에러 핸들링 및 UX 폴리싱 | `@rn-expo-frontend` | ✅ |
 | Task 024 | 5 | MVP 시드 데이터 기반 전체 통합 테스트 | `[Developer]` | ⬜ |
 
 ---

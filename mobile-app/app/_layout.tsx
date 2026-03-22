@@ -7,6 +7,7 @@ import { Platform, useWindowDimensions, View } from 'react-native';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useOffline } from '@/hooks/useOffline';
 import { supabase } from '@/utils/supabase';
 import Toast from '@/components/common/Toast';
 import { useAppStore } from '@/store/useAppStore';
@@ -21,6 +22,8 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [appState, setAppState] = useState<AppState>('loading');
   const { width: winW, height: winH } = useWindowDimensions();
+
+  useOffline();
 
   useEffect(() => {
     // 초기 세션 확인 — store에도 반영

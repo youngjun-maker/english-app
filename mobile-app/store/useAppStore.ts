@@ -26,6 +26,10 @@ interface AppState {
   toastMessage: string | null;
   showToast: (message: string) => void;
   clearToast: () => void;
+
+  // 네트워크 상태
+  isOffline: boolean;
+  setIsOffline: (value: boolean) => void;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -70,4 +74,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   toastMessage: null,
   showToast: (message) => set({ toastMessage: message }),
   clearToast: () => set({ toastMessage: null }),
+
+  // 네트워크 상태
+  isOffline: false,
+  setIsOffline: (value) => set({ isOffline: value }),
 }));
