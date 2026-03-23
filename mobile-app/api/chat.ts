@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { Audio } from 'expo-av';
 import type {
   TranscribeResponse,
@@ -131,7 +131,13 @@ export async function playTTS(text: string, onEnd?: () => void): Promise<void> {
   // 임시 파일에 저장
   const tempUri = `${FileSystem.cacheDirectory}tts_${Date.now()}.mp3`;
   await FileSystem.writeAsStringAsync(tempUri, base64, {
-    encoding: FileSystem.EncodingType.Base64,
+    encoding: 'base64',
+  });
+
+  // 오디오 재생 모드 설정
+  await Audio.setAudioModeAsync({
+    allowsRecordingIOS: false,
+    playsInSilentModeIOS: true,
   });
 
   // 새 사운드 시작 직전 onEnd 등록

@@ -44,7 +44,7 @@ export default function AIBubble({
 
       {/* AI 응답 텍스트 블록 */}
       <Pressable
-        onLongPress={
+        onPress={
           readonly
             ? undefined
             : onSave

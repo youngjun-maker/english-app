@@ -20,7 +20,18 @@ export default function RecordButton({ onRecordStop, disabled }: RecordButtonPro
   const autoStopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // 카운트다운 UI 타이머 — isRecording 내부 상태 기반
+  // 컴포넌트 언마운트 시 녹음 객체 강제 정리
+  useEffect(() => {
+    return () => {
+      if (recordingRef.current) {
+        recordingRef.current.stopAndUnloadAsync().catch(() => {});
+        recordingRef.current = null;
+      }
+      if (autoStopTimerRef.current) clearTimeout(autoStopTimerRef.current);
+    };
+  }, []);
+
+  // 카운트다운 UI 타이머
   useEffect(() => {
     if (isRecording) {
       setSeconds(MAX_RECORD_SECONDS);
@@ -42,23 +53,42 @@ export default function RecordButton({ onRecordStop, disabled }: RecordButtonPro
     };
   }, [isRecording]);
 
+  async function forceCleanupRecording(recording: Audio.Recording) {
+    try {
+      await recording.stopAndUnloadAsync();
+    } catch (_) {}
+    try {
+      await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
+    } catch (_) {}
+  }
+
   async function stopRecording() {
     if (autoStopTimerRef.current) clearTimeout(autoStopTimerRef.current);
     const recording = recordingRef.current;
     if (!recording) return;
-    recordingRef.current = null;
     setIsRecording(false);
     try {
       await recording.stopAndUnloadAsync();
       const uri = recording.getURI();
+      recordingRef.current = null;
       if (uri) onRecordStop(uri);
     } catch (e) {
-      console.error('stopRecording error:', e);
+      console.warn('stopRecording error:', e);
+      recordingRef.current = null;
+      try {
+        await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
+      } catch (_) {}
     }
   }
 
-  async function handlePressIn() {
-    if (disabled || isTurnLimitReached) return;
+  async function startRecording() {
+    // 이전 Recording 객체가 남아있으면 먼저 정리
+    if (recordingRef.current) {
+      const stale = recordingRef.current;
+      recordingRef.current = null;
+      setIsRecording(false);
+      await forceCleanupRecording(stale);
+    }
 
     const { status } = await Audio.requestPermissionsAsync();
     if (status !== 'granted') {
@@ -103,6 +133,7 @@ export default function RecordButton({ onRecordStop, disabled }: RecordButtonPro
 
     recordingRef.current = recording;
     setIsRecording(true);
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     // 30초 자동 종료
     autoStopTimerRef.current = setTimeout(async () => {
@@ -111,9 +142,14 @@ export default function RecordButton({ onRecordStop, disabled }: RecordButtonPro
     }, 30000);
   }
 
-  async function handlePressOut() {
-    if (!recordingRef.current) return;
-    await stopRecording();
+  async function handlePress() {
+    if (disabled || isTurnLimitReached) return;
+
+    if (isRecording) {
+      await stopRecording();
+    } else {
+      await startRecording();
+    }
   }
 
   if (isTurnLimitReached) {
@@ -132,15 +168,14 @@ export default function RecordButton({ onRecordStop, disabled }: RecordButtonPro
         <Text className="text-red-500 text-xs font-medium">{seconds}초</Text>
       )}
       <Pressable
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
+        onPress={handlePress}
         disabled={disabled}
         className={`w-16 h-16 rounded-full items-center justify-center ${
           isRecording ? 'bg-red-500' : 'bg-blue-500'
         } ${disabled ? 'opacity-40' : ''}`}
       >
         <Ionicons
-          name={isRecording ? 'radio-button-on' : 'mic'}
+          name={isRecording ? 'stop' : 'mic'}
           size={28}
           color="white"
         />

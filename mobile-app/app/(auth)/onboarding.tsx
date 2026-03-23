@@ -49,17 +49,30 @@ const SLIDES: Slide[] = [
 ];
 
 async function signInWithGoogle(): Promise<void> {
-  const redirectUri = makeRedirectUri({ scheme: 'com.fyuer.englishapp' });
+  const redirectUri = makeRedirectUri({ scheme: 'englishapp' });
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: redirectUri },
+    options: { redirectTo: redirectUri, skipBrowserRedirect: true },
   });
   if (error) {
     console.error('Google OAuth error:', error.message);
     return;
   }
   if (data.url) {
-    await WebBrowser.openAuthSessionAsync(data.url, redirectUri);
+    const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUri);
+    if (result.type === 'success' && result.url) {
+      // implicit flow: access_token, refresh_token이 URL fragment(#)에 포함됨
+      const fragment = result.url.split('#')[1] ?? '';
+      const params = new URLSearchParams(fragment);
+      const access_token = params.get('access_token');
+      const refresh_token = params.get('refresh_token');
+      if (access_token && refresh_token) {
+        const { error: sessionError } = await supabase.auth.setSession({ access_token, refresh_token });
+        if (sessionError) {
+          console.error('Set session error:', sessionError.message);
+        }
+      }
+    }
   }
 }
 

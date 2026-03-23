@@ -15,6 +15,21 @@ async function authMiddleware(req, res, next) {
   }
 
   req.user = { id: data.user.id, email: data.user.email };
+
+  // users 테이블 upsert (service role key → RLS 우회, 신규/재로그인 모두 처리)
+  await supabase.from('users').upsert(
+    {
+      id: data.user.id,
+      email: data.user.email ?? '',
+      display_name:
+        data.user.user_metadata?.['full_name'] ??
+        data.user.user_metadata?.['name'] ??
+        '',
+      last_login_at: new Date().toISOString(),
+    },
+    { onConflict: 'id' },
+  );
+
   next();
 }
 

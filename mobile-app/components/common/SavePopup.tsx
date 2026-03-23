@@ -29,7 +29,8 @@ export default function SavePopup({ visible, initialText, onSave, onClose }: Sav
         onPress={onClose}
       >
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior="padding"
+          keyboardVerticalOffset={Platform.OS === 'android' ? 24 : 0}
         >
           <Pressable onPress={() => {}}>
             <View className="bg-white rounded-t-2xl p-6">

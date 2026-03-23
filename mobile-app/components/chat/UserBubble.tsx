@@ -11,10 +11,10 @@ type UserBubbleProps = {
 };
 
 export default function UserBubble({ text, onLongPress, onSave }: UserBubbleProps) {
-  const { isPlaying, handlePress } = useTTSButton(text);
+  const { isPlaying, handlePress: handleTTSPress } = useTTSButton(text);
   const [saveVisible, setSaveVisible] = useState(false);
 
-  function handleLongPress() {
+  function handleBubblePress() {
     if (onLongPress) {
       onLongPress();
     } else if (onSave) {
@@ -25,7 +25,7 @@ export default function UserBubble({ text, onLongPress, onSave }: UserBubbleProp
   return (
     <View className="items-end mb-4">
       <Pressable
-        onLongPress={handleLongPress}
+        onPress={handleBubblePress}
         className="bg-blue-500 rounded-2xl rounded-tr-sm px-4 py-3 max-w-[80%]"
       >
         <Text className="text-white text-sm leading-5">{text}</Text>
@@ -33,7 +33,7 @@ export default function UserBubble({ text, onLongPress, onSave }: UserBubbleProp
       <TTSButton
         text={text}
         isPlaying={isPlaying}
-        onPress={handlePress}
+        onPress={handleTTSPress}
       />
       {onSave && (
         <SavePopup

@@ -746,6 +746,31 @@ english-app/
 - `npm test` 최종 전체 통과
 - **Phase 5 완료 = MVP 출시 준비 완료**
 
+**진행 이력 및 결정 사항 (2026-03-23):**
+
+- Android 실기기 테스트 완료:
+  - Google OAuth 로그인 (implicit flow + `setSession`) 정상 동작 확인
+  - 3개 시드 시나리오 (airport/hotel/cafe) 전체 플로우 완주
+  - STT → LLM 피드백 → TTS 재생 전체 파이프라인 확인
+  - is_perfect=true/false 양 방향 처리 화면 검증
+  - 표현 저장 (탭 → SavePopup → DB) 및 학습장 탭 확인
+  - TTS 연속 탭 중단 메커니즘 확인
+  - 계정 모달 (기어 아이콘 → 이메일/이름 표시 + 로그아웃) 구현 완료
+
+- 버그 수정 사항 (Android 테스트 과정에서 발견·수정):
+  - Google OAuth 스킴 불일치 수정 (`com.fyuer.englishapp` → `englishapp`)
+  - OAuth PKCE → implicit flow 전환, `setSession` 방식으로 변경
+  - `auth.js` 서버 미들웨어에서 users 테이블 upsert (service_role key, RLS 우회) — FK 위반 해결
+  - RecordButton 녹음 방식 hold-to-record → tap-to-toggle 전환
+  - TTS 재생 실패 수정 (`expo-file-system/legacy` 임포트, `'base64'` 문자열 인코딩)
+  - 표현 저장 트리거 onLongPress → onPress (UserBubble/FeedbackBlock/AIBubble)
+  - SavePopup Android 키보드 가림 수정 (`behavior="padding"`, `keyboardVerticalOffset`)
+  - `_layout.tsx` route name 수정 (`study` → `study/[expressionId]`)
+
+- **⏸ 보류 항목 — Apple Developer 계정 등록 시 처리:**
+  - iOS 실기기 테스트 (Apple Developer 계정 $99/년 미등록)
+  - Sign in with Apple 연동
+
 ---
 
 ## Phase별 진행 상황 요약

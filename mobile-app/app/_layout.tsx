@@ -67,7 +67,7 @@ export default function RootLayout() {
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="chat" options={{ headerShown: false }} />
-        <Stack.Screen name="study" options={{ headerShown: false }} />
+        <Stack.Screen name="study/[expressionId]" options={{ headerShown: false }} />
       </Stack>
       {appState === 'unauthenticated' && <Redirect href="/(auth)/onboarding" />}
       {appState === 'home' && <Redirect href="/(tabs)/" />}

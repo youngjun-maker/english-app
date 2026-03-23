@@ -12,7 +12,7 @@ type FeedbackBlockProps = {
 };
 
 export default function FeedbackBlock({ feedback, onLongPress, onSave }: FeedbackBlockProps) {
-  const { isPlaying, handlePress } = useTTSButton(feedback.corrected ?? '');
+  const { isPlaying, handlePress: handleTTSPress } = useTTSButton(feedback.corrected ?? '');
   const [saveVisible, setSaveVisible] = useState(false);
 
   if (feedback.is_perfect) {
@@ -23,7 +23,7 @@ export default function FeedbackBlock({ feedback, onLongPress, onSave }: Feedbac
     );
   }
 
-  function handleLongPress() {
+  function handleBubblePress() {
     if (onLongPress) {
       onLongPress();
     } else if (onSave) {
@@ -33,7 +33,7 @@ export default function FeedbackBlock({ feedback, onLongPress, onSave }: Feedbac
 
   return (
     <Pressable
-      onLongPress={handleLongPress}
+      onPress={handleBubblePress}
       className="bg-amber-50 rounded-xl px-4 py-3 mb-2"
     >
       {/* 원문 (취소선) */}
@@ -52,7 +52,7 @@ export default function FeedbackBlock({ feedback, onLongPress, onSave }: Feedbac
           <TTSButton
             text={feedback.corrected}
             isPlaying={isPlaying}
-            onPress={handlePress}
+            onPress={handleTTSPress}
           />
         </View>
       )}

@@ -1,9 +1,10 @@
-import { FlatList, Pressable, Text, View } from 'react-native';
+import { FlatList, Modal, Pressable, Text, View } from 'react-native';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '@/store/useAppStore';
 import { fetchConversations } from '@/api/conversations';
+import { supabase } from '@/utils/supabase';
 import type { Conversation } from '@/types';
 
 // ─── 토픽 이모지 매핑 ────────────────────────────────────────────────────────
@@ -85,6 +86,12 @@ export default function HomeScreen() {
   const user = useAppStore((s) => s.user);
   const showToast = useAppStore((s) => s.showToast);
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [accountModalVisible, setAccountModalVisible] = useState(false);
+
+  async function handleLogout() {
+    setAccountModalVisible(false);
+    await supabase.auth.signOut();
+  }
 
   useEffect(() => {
     fetchConversations()
@@ -119,9 +126,8 @@ export default function HomeScreen() {
           </Text>
         </View>
 
-        {/* 오른쪽: 설정 아이콘 */}
-        {/* TODO: My Page 화면으로 진입 (Phase 4) */}
-        <Pressable className="p-1 active:opacity-60">
+        {/* 오른쪽: 계정 아이콘 */}
+        <Pressable className="p-1 active:opacity-60" onPress={() => setAccountModalVisible(true)}>
           <Ionicons name="settings-outline" size={22} color="#9CA3AF" />
         </Pressable>
       </View>
@@ -172,6 +178,39 @@ export default function HomeScreen() {
           showsVerticalScrollIndicator={false}
         />
       )}
+
+      {/* 계정 모달 */}
+      <Modal
+        visible={accountModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setAccountModalVisible(false)}
+      >
+        <Pressable
+          className="flex-1 bg-black/50 justify-end"
+          onPress={() => setAccountModalVisible(false)}
+        >
+          <Pressable onPress={() => {}}>
+            <View className="bg-white rounded-t-2xl p-6">
+              <Text className="text-base font-semibold text-gray-800 mb-1">계정 정보</Text>
+              <Text className="text-sm text-gray-500 mb-1">{user?.display_name ?? '-'}</Text>
+              <Text className="text-sm text-gray-400 mb-6">{user?.email ?? '-'}</Text>
+              <Pressable
+                className="w-full py-3 rounded-xl bg-red-500 items-center active:opacity-80"
+                onPress={handleLogout}
+              >
+                <Text className="text-white font-semibold">로그아웃</Text>
+              </Pressable>
+              <Pressable
+                className="w-full py-3 mt-3 rounded-xl border border-gray-200 items-center active:opacity-60"
+                onPress={() => setAccountModalVisible(false)}
+              >
+                <Text className="text-gray-600">닫기</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       {/* FAB */}
       <Pressable
