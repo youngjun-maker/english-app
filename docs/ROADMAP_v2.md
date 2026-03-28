@@ -194,7 +194,7 @@ CREATE INDEX idx_shadowing_sessions_user   ON shadowing_sessions(user_id, create
 - `mobile-app/types/shadowing.ts` (신규)
 
 **구현 사항:**
-- [ ] `mobile-app/types/shadowing.ts` 생성
+- [x] `mobile-app/types/shadowing.ts` 생성
   ```typescript
   export type ShadowingMode = '1' | '3' | 'full';
   export type BlindMode = 0 | 1 | 2;
@@ -211,7 +211,7 @@ CREATE INDEX idx_shadowing_sessions_user   ON shadowing_sessions(user_id, create
     text: string; translation: string | null;
   };
   ```
-- [ ] `useAppStore.ts`에 shadowing 슬라이스 추가
+- [x] `useAppStore.ts`에 shadowing 슬라이스 추가
   ```typescript
   // shadowing slice
   shadowingMode: ShadowingMode
@@ -242,11 +242,11 @@ CREATE INDEX idx_shadowing_sessions_user   ON shadowing_sessions(user_id, create
 - `mobile-app/api/shadowing.ts` (신규 — API 호출 함수)
 
 **구현 사항:**
-- [ ] `mobile-app/api/shadowing.ts` 생성 — `fetchContents()`, `fetchContentDetail(id)`, `saveSession()` 함수
-- [ ] `ContentCard.tsx` 구현 — 썸네일, 제목, 레벨 뱃지, 재생 시간 표시. NativeWind 스타일, 순백색 배경
-- [ ] `app/(tabs)/shadowing.tsx` 구현 — FlatList로 콘텐츠 목록, 로딩 상태, 빈 목록 처리
-- [ ] `(tabs)/_layout.tsx`에 shadowing 탭 추가 (아이콘: `play.circle` 또는 유사 outline 아이콘)
-- [ ] 카드 탭 시 `router.push('/shadowing/[id]')` 이동
+- [x] `mobile-app/api/shadowing.ts` 생성 — `fetchContents()`, `fetchContentDetail(id)`, `saveSession()` 함수 (PREVIEW_MODE 더미 데이터 포함)
+- [x] `ContentCard.tsx` 구현 — 썸네일, 제목, 레벨 뱃지, 재생 시간 표시. NativeWind 스타일, 순백색 배경
+- [x] `app/(tabs)/shadowing.tsx` 구현 — FlatList로 콘텐츠 목록, 로딩 상태, 빈 목록 처리
+- [x] `(tabs)/_layout.tsx`에 shadowing 탭 추가
+- [x] 카드 탭 시 `router.push('/shadowing/[id]')` 이동
 
 **완료 기준:** 탭에서 콘텐츠 목록 카드 렌더링 확인, 탭 이동 정상 동작
 
@@ -259,9 +259,9 @@ CREATE INDEX idx_shadowing_sessions_user   ON shadowing_sessions(user_id, create
 - `mobile-app/components/shadowing/VideoPlayer.tsx` (신규)
 
 **전제 조건 (구현 전 필수):**
-- [ ] Supabase Storage `shadowing-videos` 버킷 생성 (Public ON)
-- [ ] Steve Jobs Stanford 클립 영상 업로드 (`jobs_stanford_clip.mp4`)
-- [ ] `shadowing_contents.video_url` 갱신 — SQL Editor에서 실행:
+- [x] Supabase Storage `shadowing-videos` 버킷 생성 (Public ON)
+- [x] Steve Jobs Stanford 클립 영상 업로드 (`jobs_stanford_clip.mp4`)
+- [x] `shadowing_contents.video_url` 갱신 — SQL Editor에서 실행:
   ```sql
   UPDATE shadowing_contents
   SET video_url = 'https://brjvyzdeyszfhgttybzn.supabase.co/storage/v1/object/public/shadowing-videos/jobs_stanford_clip.mp4'
@@ -270,13 +270,15 @@ CREATE INDEX idx_shadowing_sessions_user   ON shadowing_sessions(user_id, create
   > 영상 파일 준비: `yt-dlp --download-sections "*0-105" -f mp4 -o jobs_stanford_clip.mp4 "https://www.youtube.com/watch?v=UF8uR6Z6KLc"`
 
 **구현 사항:**
-- [ ] `VideoPlayer.tsx` 구현
+- [x] `VideoPlayer.tsx` 구현
   - `expo-video` `useVideoPlayer` 훅 사용
   - `VideoView` 16:9 비율 full-width 렌더링
   - progress bar (thin, cobalt blue) — `player.currentTime / duration`으로 계산
   - `playbackRate` prop 반영 (`player.playbackRate`)
   - `onTimeUpdate` 콜백 노출 (부모에서 타임스탬프 감지용)
-- [ ] `app/shadowing/[id].tsx` 구현
+  - 웹 플랫폼 미지원 처리 (런타임 조건부 import, placeholder 렌더링)
+  - `useImperativeHandle`로 `pause / play / seek` 외부 제어 핸들 노출
+- [x] `app/shadowing/[id].tsx` 구현
   - 화면 진입 시 `fetchContentDetail(id)` 호출, 스크립트 로드
   - VideoPlayer + ModeTab + ScriptArea + ControlBar 레이아웃 배치 (컴포넌트는 다음 Task에서 구현, 우선 placeholder)
   - 화면 이탈 시 `resetShadowingState()` 호출
@@ -292,15 +294,15 @@ CREATE INDEX idx_shadowing_sessions_user   ON shadowing_sessions(user_id, create
 - `mobile-app/components/shadowing/ModeTab.tsx` (신규)
 
 **구현 사항:**
-- [ ] `ModeTab.tsx` 구현 — 알약(pill) 모양 세그먼트 컨트롤, `['1문장', '3문장', '전체']` 탭, 활성 탭 cobalt blue (`bg-blue-500`), 비활성 회색
-- [ ] `ScriptArea.tsx` 구현
+- [x] `ModeTab.tsx` 구현 — 알약(pill) 모양 세그먼트 컨트롤, `['1문장', '3문장', '전체']` 탭, 활성 탭 cobalt blue (`bg-blue-500`), 비활성 회색
+- [x] `ScriptArea.tsx` 구현
   - `scripts`, `currentIndex`, `blindMode` prop 수신
   - 현재 문장: `text-xl font-bold text-gray-900`
   - 나머지 문장: `opacity-30`
   - 한국어 번역: `text-sm text-gray-400` (blindMode >= 1이면 숨김)
   - 영어 스크립트: blindMode === 2이면 `opacity-0`
-  - `ScrollView` + `scrollToIndex` 방식으로 현재 문장 자동 스크롤
-- [ ] `[id].tsx`에 실제 ModeTab, ScriptArea 연결
+  - `ScrollView` + `onLayout` yPositions 배열로 현재 문장 자동 스크롤 (screenHeight/4 오프셋)
+- [x] `[id].tsx`에 실제 ModeTab, ScriptArea 연결
 
 **완료 기준:** 모드 탭 전환 시 UI 변경 확인, 문장 인덱스 변경 시 스크롤 이동 확인
 
@@ -315,16 +317,18 @@ CREATE INDEX idx_shadowing_sessions_user   ON shadowing_sessions(user_id, create
 **대상 파일:** `mobile-app/app/shadowing/[id].tsx`, `mobile-app/components/shadowing/VideoPlayer.tsx`
 
 **구현 사항:**
-- [ ] `onTimeUpdate` 콜백에서 현재 position으로 `currentSentenceIndex` 업데이트 로직 구현
+- [x] `onTimeUpdate` 콜백에서 현재 position으로 `currentSentenceIndex` 업데이트 로직 구현
   ```typescript
   const currentScript = scripts.find(s => position >= s.start && position < s.end);
   if (currentScript) setCurrentSentenceIndex(currentScript.index);
   ```
-- [ ] **1문장 모드**: position이 현재 문장 `end_time` 초과 시 `player.pause()` 자동 실행
-- [ ] **3문장 모드**: 3문장 블록 단위 계산 (index를 3으로 나눈 몫으로 블록 결정), 블록 마지막 문장 end_time 초과 시 pause
-- [ ] **전체 모드**: pause 없이 스크립트만 자동 스크롤
-- [ ] **루프 기능**: `isLooping=true`이고 position >= 현재 문장 end_time → `player.seek(start_time)`
-- [ ] 루프 ON 시 Auto-pause 비활성화 (루프가 우선)
+- [x] **1문장 모드**: position이 현재 문장 `end_time` 초과 시 `player.pause()` 자동 실행
+- [x] **3문장 모드**: 3문장 블록 단위 계산 (index를 3으로 나눈 몫으로 블록 결정), 블록 마지막 문장 end_time 초과 시 pause
+- [x] **전체 모드**: pause 없이 스크립트만 자동 스크롤
+- [x] **루프 기능**: `isLooping=true`이고 position >= 현재 문장 end_time → `player.seek(start_time)`
+- [x] 루프 ON 시 Auto-pause 비활성화 (루프가 우선)
+- [x] `isPausedRef` 플래그로 auto-pause 중복 실행 방지 (모드 변경 시 자동 리셋)
+- [x] `scriptsRef`, `shadowingModeRef`, `isLoopingRef`로 stale closure 방지
 
 **완료 기준:** 1문장 모드에서 문장 끝마다 자동 정지 확인, 루프 ON 시 해당 문장만 반복 확인
 
@@ -335,14 +339,15 @@ CREATE INDEX idx_shadowing_sessions_user   ON shadowing_sessions(user_id, create
 **대상 파일:** `mobile-app/components/shadowing/ControlBar.tsx` (신규)
 
 **구현 사항:**
-- [ ] `ControlBar.tsx` 구현 — 아이콘 5개 배치 (좌2 / 중앙 마이크 / 우2)
+- [x] `ControlBar.tsx` 구현 — 아이콘 5개 배치 (좌2 / 중앙 마이크 / 우2)
   - 좌측: 🐢 속도 토글 (1.0x ↔ 0.75x) / 👁 블라인드 모드 순환 (0→1→2→0)
-  - 우측: 📄 전체 스크립트 BottomSheet / 🔁 루프 토글
+  - 우측: 📄 전체 스크립트 버튼 (Toast "준비 중" — BottomSheet는 미구현) / 🔁 루프 토글
   - 중앙: 마이크 버튼 (크고 둥근 cobalt blue 원형, `isRecording` 상태 시 red pulse)
-- [ ] 속도 토글 시 `setPlaybackRate()` + `player.playbackRate` 동기화
-- [ ] 블라인드 모드 토글 시 `setBlindMode((prev + 1) % 3)` 순환
-- [ ] 루프 토글 시 `setIsLooping(!isLooping)` + 활성 아이콘 cobalt blue 표시
-- [ ] 마이크 버튼 Reanimated pulse 애니메이션 (`isRecording` 시 scale 1→1.15→1 반복)
+- [x] 속도 토글 시 `setPlaybackRate()` + `player.playbackRate` 동기화
+- [x] 블라인드 모드 토글 시 `setBlindMode((prev + 1) % 3)` 순환
+- [x] 루프 토글 시 `setIsLooping(!isLooping)` + 활성 아이콘 cobalt blue 표시
+- [x] 마이크 버튼 Reanimated pulse 애니메이션 (`isRecording` 시 scale 1→1.15→1 반복, 웹 스킵)
+- [ ] 📄 전체 스크립트 BottomSheet 구현 (현재 Toast로 대체 중 — Task 036에서 완성)
 
 **완료 기준:** 각 버튼 탭 시 상태 변경 및 UI 반영 확인
 
@@ -401,3 +406,191 @@ CREATE INDEX idx_shadowing_sessions_user   ON shadowing_sessions(user_id, create
 | Task 034 | ControlBar 보조 기능 전체 | rn-expo-frontend | ✅ 완료 |
 | Task 035 | 녹음 → 비교 재생 | rn-expo-frontend | ⬜ 대기 |
 | Task 036 | 완료 처리 + 세션 저장 + 폴리싱 | rn-expo-frontend + contexttalk-code-auditor | ⬜ 대기 |
+
+---
+
+## AI 프리토킹 — 출시 전 개선 작업 계획
+
+> `/clear` 후에도 컨텍스트 유지를 위해 기록. 코드 검증 기반 분석 결과 (2026-03-28)
+
+### 🔴 1순위 — 출시 전 필수 수정
+
+#### 작업 A: Supabase RPC `process_turn` 생성 (DB 트랜잭션 + 턴 레이스 + userMsgId 동시 해결)
+
+**문제:**
+- `conversations.js:177-210` — user INSERT → ai INSERT가 별개 쿼리 → ai INSERT 실패 시 고아 메시지 발생
+- `turnLimit.js:16-22` — count 조회 후 INSERT 사이에 동시 요청 끼면 20턴 초과 가능
+- `[id].tsx:142` — optimistic UI 턴의 `userMsgId: null` → 사용자 발화 저장 버튼 비활성화
+
+**해결책: Supabase RPC 단일 함수로 세 문제를 동시 해결**
+
+```sql
+CREATE OR REPLACE FUNCTION process_turn(
+  p_conversation_id uuid,
+  p_user_id         uuid,
+  p_text            text,
+  p_feedback        jsonb,
+  p_next_response   text
+) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+  v_today_start     timestamptz;
+  v_turn_count      int;
+  v_max_turn        int;
+  v_user_msg_id     uuid;
+  v_ai_msg_id       uuid;
+BEGIN
+  -- KST 오늘 자정 기준
+  v_today_start := date_trunc('day', now() AT TIME ZONE 'Asia/Seoul')
+                   AT TIME ZONE 'Asia/Seoul';
+
+  -- 턴 카운트 (트랜잭션 내 원자적 조회)
+  SELECT COUNT(*) INTO v_turn_count
+  FROM messages
+  WHERE user_id = p_user_id
+    AND content_type = 'user_speech'
+    AND created_at >= v_today_start;
+
+  IF v_turn_count >= 20 THEN
+    RETURN jsonb_build_object('error', 'TURN_LIMIT_EXCEEDED');
+  END IF;
+
+  -- 현재 최대 turn_number 조회
+  SELECT COALESCE(MAX(turn_number), 0) INTO v_max_turn
+  FROM messages WHERE conversation_id = p_conversation_id;
+
+  -- user_speech INSERT
+  INSERT INTO messages (conversation_id, turn_number, role, content_type, content, user_id)
+  VALUES (p_conversation_id, v_max_turn + 1, 'user', 'user_speech',
+          jsonb_build_object('text', p_text), p_user_id)
+  RETURNING id INTO v_user_msg_id;
+
+  -- ai_turn INSERT
+  INSERT INTO messages (conversation_id, turn_number, role, content_type, content, user_id)
+  VALUES (p_conversation_id, v_max_turn + 2, 'assistant', 'ai_turn',
+          jsonb_build_object('feedback', p_feedback, 'next_response', p_next_response), p_user_id)
+  RETURNING id INTO v_ai_msg_id;
+
+  RETURN jsonb_build_object(
+    'user_message_id', v_user_msg_id,
+    'ai_message_id',   v_ai_msg_id,
+    'turn_number',     v_max_turn + 2
+  );
+END;
+$$;
+```
+
+**백엔드 변경 (`conversations.js`):**
+- `turnLimitMiddleware` 제거 (RPC 내부에서 처리)
+- `POST /:id/messages` — GPT 호출 후 `supabase.rpc('process_turn', {...})` 단일 호출로 교체
+- 응답에 `user_message_id` 포함: `{ message_id, user_message_id, turn_number, content }`
+
+**프론트엔드 변경 (`[id].tsx` + `api/chat.ts`):**
+- `sendMessage` 응답 타입에 `user_message_id: string` 추가
+- `fetchAIResponse`에서 받은 `user_message_id`로 optimistic 턴의 `userMsgId` 업데이트
+
+---
+
+#### 작업 B: Supabase RPC `get_conversations_with_turns` 생성 (N+1 쿼리 해결)
+
+**문제:** `conversations.js:29-38` — 대화 목록 조회 시 conversation 개수만큼 개별 count 쿼리 발생
+
+**해결책:**
+
+```sql
+CREATE OR REPLACE FUNCTION get_conversations_with_turns(p_user_id uuid)
+RETURNS TABLE (
+  id          uuid,
+  topic_id    text,
+  topic_label text,
+  updated_at  timestamptz,
+  created_at  timestamptz,
+  turn_count  bigint
+)
+LANGUAGE sql SECURITY DEFINER AS $$
+  SELECT c.id, c.topic_id, c.topic_label, c.updated_at, c.created_at,
+         COUNT(m.id) FILTER (WHERE m.content_type = 'user_speech') AS turn_count
+  FROM conversations c
+  LEFT JOIN messages m ON m.conversation_id = c.id
+  WHERE c.user_id = p_user_id
+  GROUP BY c.id
+  ORDER BY c.updated_at DESC;
+$$;
+```
+
+**백엔드 변경:** `GET /api/conversations` — `Promise.all` N+1 → `supabase.rpc('get_conversations_with_turns', { p_user_id })` 단일 호출
+
+---
+
+#### 작업 C: `buildPrompt.js` 동기 I/O 제거
+
+**문제:** `buildPrompt.js:13-21` — 매 LLM 요청마다 `readFileSync` 2번 호출 → Node.js 이벤트 루프 블로킹
+
+**해결책:** 모듈 로드 시점에 전체 프롬프트 파일을 Map에 프리로드
+
+```javascript
+// 모듈 상단 — 서버 구동 시 1회만 읽음
+const promptCache = new Map();
+const promptDir = path.join(__dirname, '../prompts');
+const base = fs.readFileSync(path.join(promptDir, '_base.txt'), 'utf-8');
+for (const file of fs.readdirSync(promptDir)) {
+  if (file === '_base.txt') continue;
+  const topicId = path.basename(file, '.txt');
+  promptCache.set(topicId, fs.readFileSync(path.join(promptDir, file), 'utf-8'));
+}
+
+function buildPrompt(topicId) {
+  const topic = promptCache.get(topicId) ?? '';
+  return `${topic}\n\n${base}`.trim();
+}
+```
+
+---
+
+### 🟡 2순위 — UX 개선
+
+#### 작업 D: TTS 로딩 상태 분리
+
+**문제:** `useTTSButton.ts` — `isPlaying`이 "로딩 중"과 "재생 중"을 구분하지 않음. API 응답 전 1~2초 무반응처럼 보임
+
+**해결책:** `useTTSButton.ts`에 `isLoading` 상태 추가, `TTSButton.tsx`에 스피너 분기
+
+```typescript
+// useTTSButton.ts
+const [isLoading, setIsLoading] = useState(false);
+const [isPlaying, setIsPlaying] = useState(false);
+
+async function handlePress() {
+  if (isPlaying || isLoading) { stopTTS(); setIsPlaying(false); return; }
+  setIsLoading(true);
+  try {
+    await playTTS(text, () => setIsPlaying(false));
+    setIsPlaying(true);
+  } finally {
+    setIsLoading(false);
+  }
+}
+return { isPlaying, isLoading, handlePress };
+```
+
+---
+
+### 🟢 3순위 — 추후 고도화 (MVP 이후)
+
+| 항목 | 설명 | 시점 |
+|------|------|------|
+| TTS 캐싱 | Supabase Storage에 `{message_id}.mp3` 저장, 재탭 시 URL 직접 재생 | 실사용 비용 확인 후 |
+| GPT-4o-Audio 통합 | STT+LLM 단일 호출로 응답 속도 개선 | 서비스 안정화 후 |
+
+---
+
+### 작업 순서 요약
+
+| 순서 | 작업 | 대상 파일 | 우선순위 |
+|------|------|-----------|----------|
+| 1 | Supabase RPC `process_turn` 생성 (마이그레이션) | Supabase SQL Editor | 🔴 |
+| 2 | Supabase RPC `get_conversations_with_turns` 생성 | Supabase SQL Editor | 🔴 |
+| 3 | `conversations.js` 리팩토링 (RPC 호출로 교체, turnLimitMiddleware 제거) | `ai-server/routes/conversations.js`, `ai-server/middleware/turnLimit.js` | 🔴 |
+| 4 | `buildPrompt.js` 프리로드 방식으로 수정 | `ai-server/utils/buildPrompt.js` | 🔴 |
+| 5 | 프론트엔드 `user_message_id` 수신 및 적용 | `mobile-app/api/chat.ts`, `mobile-app/app/chat/[id].tsx` | 🟡 |
+| 6 | TTS 로딩 UI 개선 | `mobile-app/hooks/useTTSButton.ts`, `mobile-app/components/common/TTSButton.tsx` | 🟡 |
