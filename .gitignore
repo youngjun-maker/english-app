@@ -21,6 +21,9 @@ Thumbs.db
 .vscode/
 .idea/
 
+# Claude Code (personal tool config)
+.claude/
+
 # Expo
 mobile-app/.expo/
 mobile-app/dist/
@@ -28,3 +31,4 @@ mobile-app/dist/
 # Build outputs
 build/
 dist/
+data/

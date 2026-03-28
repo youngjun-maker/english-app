@@ -10,9 +10,15 @@ import { useTTSButton } from '@/hooks/useTTSButton';
 import type { AITurnContent } from '@/types';
 
 const SOURCE_BLOCK_LABEL: Record<string, string> = {
-  user_speech: '내 발화',
-  feedback: '교정 표현',
-  response: 'AI 응답',
+  user_speech: 'My Speech',
+  feedback: 'Correction',
+  response: 'AI Response',
+};
+
+const SOURCE_BLOCK_BADGE: Record<string, { bg: string; text: string }> = {
+  user_speech: { bg: 'bg-emerald-50', text: 'text-emerald-600' },
+  feedback: { bg: 'bg-indigo-50', text: 'text-indigo-500' },
+  response: { bg: 'bg-purple-50', text: 'text-purple-600' },
 };
 
 type ContextTurn = {
@@ -23,7 +29,6 @@ type ContextTurn = {
 
 export default function ExpressionDetailScreen() {
   const {
-    expressionId,
     conversationId,
     messageId,
     expressionText,
@@ -42,6 +47,9 @@ export default function ExpressionDetailScreen() {
   const { isPlaying, handlePress } = useTTSButton(expressionText ?? '');
   const [contextTurns, setContextTurns] = useState<ContextTurn[]>([]);
   const [highlightedTurnId, setHighlightedTurnId] = useState<string | null>(null);
+
+  const badgeConfig = SOURCE_BLOCK_BADGE[sourceBlock ?? ''] ?? { bg: 'bg-gray-100', text: 'text-gray-500' };
+  const sourceLabel = SOURCE_BLOCK_LABEL[sourceBlock ?? ''] ?? sourceBlock ?? '';
 
   useEffect(() => {
     if (!conversationId) return;
@@ -72,14 +80,14 @@ export default function ExpressionDetailScreen() {
 
   if (!expressionText) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
+      <View className="flex-1 items-center justify-center bg-[#FAF9F7]">
         <Text className="text-gray-400">표현을 찾을 수 없습니다.</Text>
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-white">
+    <View className="flex-1 bg-[#FAF9F7]">
       {/* 헤더 */}
       <View className="bg-white px-5 pt-14 pb-4 border-b border-gray-100 flex-row items-center gap-3">
         <Pressable
@@ -90,32 +98,51 @@ export default function ExpressionDetailScreen() {
         </Pressable>
         <View className="flex-1">
           <Text className="text-lg font-bold text-gray-900" numberOfLines={1}>
-            {topicLabel ?? '표현 상세'}
+            {topicLabel ?? 'Expression Detail'}
           </Text>
-          <Text className="text-xs text-gray-400">
-            {SOURCE_BLOCK_LABEL[sourceBlock ?? ''] ?? sourceBlock ?? ''}에서 저장
-          </Text>
+          <Text className="text-xs text-gray-400">{sourceLabel}에서 저장</Text>
         </View>
+        <Pressable className="w-9 h-9 rounded-full bg-gray-100 items-center justify-center active:opacity-60">
+          <Ionicons name="trash-outline" size={18} color="#9CA3AF" />
+        </Pressable>
       </View>
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {/* Section 1: 저장한 표현 강조 */}
-        <View className="mx-4 mt-4 mb-6 bg-blue-50 border border-blue-200 rounded-2xl px-4 py-4">
-          <Text className="text-xs text-blue-500 font-medium mb-2">저장한 표현</Text>
-          <Text className="text-xl font-bold text-blue-700 mb-2">
+        {/* 저장된 표현 카드 */}
+        <View className="mx-4 mt-4 mb-5 bg-indigo-50 border border-indigo-200 rounded-2xl px-4 py-4">
+          <Text className="text-xs text-indigo-500 font-semibold uppercase tracking-wide mb-2">
+            Saved Expression
+          </Text>
+          <Text className="text-lg font-bold text-indigo-800 mb-3">
             {expressionText}
           </Text>
-          <TTSButton
-            text={expressionText}
-            isPlaying={isPlaying}
-            onPress={handlePress}
-          />
+
+          {/* 배지 + 날짜 | Listen 버튼 */}
+          <View className="flex-row items-center justify-between">
+            <View className="flex-row items-center gap-2">
+              <View className={`rounded-full px-2 py-0.5 ${badgeConfig.bg}`}>
+                <Text className={`text-xs font-medium ${badgeConfig.text}`}>
+                  {sourceLabel}
+                </Text>
+              </View>
+            </View>
+            <View className="bg-indigo-100 rounded-full px-3 py-1.5 flex-row items-center gap-1.5">
+              <TTSButton
+                text={expressionText}
+                isPlaying={isPlaying}
+                onPress={handlePress}
+              />
+              <Text className="text-xs text-indigo-600 font-medium">Listen</Text>
+            </View>
+          </View>
         </View>
 
-        {/* Section 2: 원본 대화 문맥 */}
+        {/* 원본 대화 섹션 */}
         {contextTurns.length > 0 && (
-          <View className="mb-6">
-            <Text className="text-base font-bold text-gray-900 px-4 mb-3">원본 대화</Text>
+          <View className="mb-8">
+            <Text className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-4 mb-3">
+              Original Conversation
+            </Text>
             <View className="px-4">
               {contextTurns.map((turn) => {
                 const isHighlighted = turn.id === highlightedTurnId;
@@ -124,13 +151,13 @@ export default function ExpressionDetailScreen() {
                     key={turn.id}
                     className={
                       isHighlighted
-                        ? 'bg-blue-50 border border-blue-200 rounded-2xl px-2 py-2 mb-4'
-                        : 'mb-4'
+                        ? 'bg-white border-2 border-indigo-200 rounded-2xl px-3 pt-2 pb-3 mb-4'
+                        : 'mb-4 opacity-55'
                     }
                   >
                     {isHighlighted && (
-                      <Text className="text-blue-500 text-xs font-medium mb-1 px-2">
-                        📌 저장된 표현이 포함된 대화
+                      <Text className="text-indigo-500 text-xs font-medium mb-2">
+                        📌 Saved expression in this turn
                       </Text>
                     )}
                     <UserBubble text={turn.userText} />

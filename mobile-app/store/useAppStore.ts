@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { Session } from '@supabase/supabase-js';
 import type { User } from '@/types';
+import type { ShadowingMode, BlindMode } from '@/types/shadowing';
 
 const TURN_LIMIT = 20;
 
@@ -30,6 +31,21 @@ interface AppState {
   // 네트워크 상태
   isOffline: boolean;
   setIsOffline: (value: boolean) => void;
+
+  // 섀도잉 상태
+  shadowingMode: ShadowingMode;
+  isLooping: boolean;
+  blindMode: BlindMode;
+  playbackRate: 0.75 | 1.0;
+  currentSentenceIndex: number;
+  isRecording: boolean;
+  setShadowingMode: (mode: ShadowingMode) => void;
+  setIsLooping: (v: boolean) => void;
+  setBlindMode: (v: BlindMode) => void;
+  setPlaybackRate: (v: 0.75 | 1.0) => void;
+  setCurrentSentenceIndex: (i: number) => void;
+  setIsRecording: (v: boolean) => void;
+  resetShadowingState: () => void;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -78,4 +94,26 @@ export const useAppStore = create<AppState>((set, get) => ({
   // 네트워크 상태
   isOffline: false,
   setIsOffline: (value) => set({ isOffline: value }),
+
+  // 섀도잉 상태
+  shadowingMode: '1',
+  isLooping: false,
+  blindMode: 0,
+  playbackRate: 1.0,
+  currentSentenceIndex: 0,
+  isRecording: false,
+  setShadowingMode: (mode) => set({ shadowingMode: mode }),
+  setIsLooping: (v) => set({ isLooping: v }),
+  setBlindMode: (v) => set({ blindMode: v }),
+  setPlaybackRate: (v) => set({ playbackRate: v }),
+  setCurrentSentenceIndex: (i) => set({ currentSentenceIndex: i }),
+  setIsRecording: (v) => set({ isRecording: v }),
+  resetShadowingState: () => set({
+    shadowingMode: '1',
+    isLooping: false,
+    blindMode: 0,
+    playbackRate: 1.0,
+    currentSentenceIndex: 0,
+    isRecording: false,
+  }),
 }));

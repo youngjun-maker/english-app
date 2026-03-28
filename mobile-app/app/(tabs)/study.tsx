@@ -1,21 +1,31 @@
-import { View, Text, FlatList, ListRenderItem } from 'react-native';
+import { View, Text, FlatList, ListRenderItem, Pressable, ScrollView } from 'react-native';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import type { Expression } from '@/types';
 import ExpressionCard from '@/components/study/ExpressionCard';
 import DeleteConfirmModal from '@/components/study/DeleteConfirmModal';
 import { fetchExpressions, deleteExpression } from '@/api/chat';
 import { useAppStore } from '@/store/useAppStore';
 
+type FilterType = 'all' | 'user_speech' | 'feedback' | 'response';
+
+const FILTER_CHIPS: { key: FilterType; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'user_speech', label: 'My Speech' },
+  { key: 'feedback', label: 'Corrections' },
+  { key: 'response', label: 'AI Response' },
+];
+
 function EmptyState() {
   return (
     <View className="flex-1 items-center justify-center px-8">
       <Text className="text-5xl mb-4">📚</Text>
       <Text className="text-xl font-bold text-gray-800 mb-2 text-center">
-        저장된 표현이 없어요
+        No saved expressions yet
       </Text>
       <Text className="text-sm text-gray-400 text-center leading-5">
-        {'대화 중 표현을 길게 눌러\n학습장에 저장해 보세요'}
+  {"Tap on a message during a conversation\nto save expressions here."}
       </Text>
     </View>
   );
@@ -26,12 +36,18 @@ export default function StudyScreen() {
   const showToast = useAppStore((s) => s.showToast);
   const [expressions, setExpressions] = useState<Expression[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<Expression | null>(null);
+  const [filterType, setFilterType] = useState<FilterType>('all');
 
   useEffect(() => {
     fetchExpressions()
       .then(setExpressions)
       .catch(() => showToast('표현 목록을 불러오지 못했어요.'));
   }, []);
+
+  const filteredExpressions =
+    filterType === 'all'
+      ? expressions
+      : expressions.filter((e) => e.source_block === filterType);
 
   function handleCardPress(item: Expression) {
     router.push({
@@ -77,22 +93,58 @@ export default function StudyScreen() {
   );
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <View className="flex-1 bg-[#FAF9F7]">
       {/* 헤더 */}
-      <View className="bg-white px-5 pt-14 pb-4 border-b border-gray-100">
-        <Text className="text-2xl font-bold text-gray-900">학습장</Text>
-        <Text className="text-sm text-gray-400 mt-1">{expressions.length}개의 표현</Text>
+      <View className="px-5 pt-14 pb-3 flex-row items-center justify-between">
+        <View>
+          <Text className="text-2xl font-black text-gray-900">Learn</Text>
+          <Text className="text-xs text-gray-400 mt-0.5">{expressions.length} expressions saved</Text>
+        </View>
+        <Pressable className="w-9 h-9 rounded-full bg-white border border-gray-100 items-center justify-center active:opacity-60">
+          <Ionicons name="search-outline" size={18} color="#6B7280" />
+        </Pressable>
       </View>
+
+      {/* 필터 칩 */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        className="flex-grow-0 mb-3"
+        contentContainerClassName="px-5 gap-2"
+      >
+        {FILTER_CHIPS.map((chip) => {
+          const isSelected = filterType === chip.key;
+          return (
+            <Pressable
+              key={chip.key}
+              onPress={() => setFilterType(chip.key)}
+              className={`px-4 py-1.5 rounded-full border active:opacity-70 ${
+                isSelected
+                  ? 'bg-gray-900 border-gray-900'
+                  : 'bg-white border-gray-200'
+              }`}
+            >
+              <Text
+                className={`text-sm font-medium ${
+                  isSelected ? 'text-white' : 'text-gray-500'
+                }`}
+              >
+                {chip.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
 
       {/* 목록 */}
       <FlatList
-        data={expressions}
+        data={filteredExpressions}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
-        className="flex-1 px-4 pt-4"
+        className="flex-1 px-4"
         ListEmptyComponent={<EmptyState />}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={expressions.length === 0 ? { flex: 1 } : undefined}
+        contentContainerStyle={filteredExpressions.length === 0 ? { flex: 1 } : { paddingBottom: 24 }}
       />
 
       <DeleteConfirmModal

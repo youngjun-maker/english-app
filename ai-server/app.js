@@ -17,6 +17,7 @@ app.use('/api/tts', require('./routes/tts'));
 app.use('/api/conversations', require('./routes/conversations'));
 app.use('/api/expressions', require('./routes/expressions'));
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/shadowing', require('./routes/shadowing'));
 
 // Health check
 app.get('/health', (req, res) => {

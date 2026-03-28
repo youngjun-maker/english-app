@@ -1,0 +1,146 @@
+import { View, Pressable, useWindowDimensions, Platform } from 'react-native';
+import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
+import Ionicons from '@expo/vector-icons/Ionicons';
+
+// expo-video는 웹 미지원 — 웹에서는 placeholder 렌더링
+let useVideoPlayer: (url: string, cb: (p: any) => void) => any = () => ({
+  pause: () => {}, play: () => {}, playing: false,
+  get playbackRate() { return 1.0; },
+  set playbackRate(_v: number) {},
+  get currentTime() { return 0; },
+  set currentTime(_v: number) {},
+  addListener: () => ({ remove: () => {} }),
+  release: () => {},
+});
+let VideoView: React.ComponentType<any> = () => null;
+
+if (Platform.OS !== 'web') {
+  const expoVideo = require('expo-video');
+  useVideoPlayer = expoVideo.useVideoPlayer;
+  VideoView = expoVideo.VideoView;
+}
+
+export type VideoPlayerHandle = {
+  pause: () => void;
+  play: () => void;
+  seek: (seconds: number) => void;
+};
+
+type Props = {
+  videoUrl: string;
+  duration: number;
+  playbackRate: 0.75 | 1.0;
+  onTimeUpdate?: (currentTime: number) => void;
+  onPlayingChange?: (isPlaying: boolean) => void;
+};
+
+const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
+  ({ videoUrl, duration, playbackRate, onTimeUpdate, onPlayingChange }, ref) => {
+    const { width: windowWidth } = useWindowDimensions();
+    // 웹에서는 브라우저 전체 너비를 반환하므로 최대 393px로 제한
+    const width = Platform.OS === 'web' ? Math.min(windowWidth, 393) : windowWidth;
+    const videoHeight = width * (9 / 16);
+    const [progress, setProgress] = useState(0);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const onTimeUpdateRef = useRef(onTimeUpdate);
+    const onPlayingChangeRef = useRef(onPlayingChange);
+    onTimeUpdateRef.current = onTimeUpdate;
+    onPlayingChangeRef.current = onPlayingChange;
+
+    const player = useVideoPlayer(videoUrl, (p) => {
+      p.loop = false;
+      p.playbackRate = playbackRate;
+    });
+
+    // 외부에서 player 제어
+    useImperativeHandle(ref, () => ({
+      pause: () => player.pause(),
+      play: () => player.play(),
+      seek: (seconds: number) => {
+        player.currentTime = seconds;
+      },
+    }));
+
+    // playbackRate 동기화
+    useEffect(() => {
+      player.playbackRate = playbackRate;
+    }, [playbackRate, player]);
+
+    // timeUpdate / playingChange 이벤트 구독
+    useEffect(() => {
+      const timeSub = player.addListener('timeUpdate', (e) => {
+        const current = e.currentTime ?? 0;
+        onTimeUpdateRef.current?.(current);
+        setProgress(duration > 0 ? current / duration : 0);
+      });
+
+      const playingSub = player.addListener('playingChange', (e) => {
+        setIsPlaying(e.isPlaying);
+        onPlayingChangeRef.current?.(e.isPlaying);
+      });
+
+      return () => {
+        timeSub.remove();
+        playingSub.remove();
+      };
+    }, [player, duration]);
+
+    // 언마운트 시 리소스 해제
+    useEffect(() => {
+      return () => {
+        player.release();
+      };
+    }, [player]);
+
+    function togglePlayPause() {
+      if (player.playing) {
+        player.pause();
+      } else {
+        player.play();
+      }
+    }
+
+    return (
+      <View style={{ width, height: videoHeight }} className="bg-black">
+        {Platform.OS === 'web' ? (
+          /* 웹 미리보기용 placeholder */
+          <View className="flex-1 items-center justify-center bg-gray-900">
+            <Ionicons name="play-circle-outline" size={56} color="white" />
+          </View>
+        ) : (
+          <VideoView
+            player={player}
+            style={{ width, height: videoHeight }}
+            nativeControls={false}
+            contentFit="contain"
+          />
+        )}
+
+        {/* 재생/일시정지 오버레이 */}
+        <Pressable
+          onPress={togglePlayPause}
+          className="absolute inset-0 items-center justify-center"
+          style={{ backgroundColor: 'transparent' }}
+        >
+          {!isPlaying && Platform.OS !== 'web' && (
+            <View className="w-14 h-14 rounded-full bg-black/40 items-center justify-center">
+              <Ionicons name="play" size={28} color="white" />
+            </View>
+          )}
+        </Pressable>
+
+        {/* Progress bar */}
+        <View className="absolute bottom-0 left-0 right-0 h-0.5 bg-white/20">
+          <View
+            className="h-full bg-blue-500"
+            style={{ width: `${Math.min(progress * 100, 100)}%` }}
+          />
+        </View>
+      </View>
+    );
+  },
+);
+
+VideoPlayer.displayName = 'VideoPlayer';
+
+export default VideoPlayer;

@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Design Preview v2 — B Plan</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { offwhite: '#FAF9F7', cream: '#F5F4F0' },
+          fontFamily: { sans: ['-apple-system','BlinkMacSystemFont','SF Pro Display','Segoe UI','sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { background: #1a1a1a; }
+    .phone {
+      width: 390px; height: 844px; border-radius: 44px;
+      overflow: hidden; position: relative; flex-shrink: 0;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.6), inset 0 0 0 1.5px rgba(255,255,255,0.15);
+    }
+    .screen { width:100%; height:100%; overflow-y:auto; overflow-x:hidden; }
+    .screen::-webkit-scrollbar { display:none; }
+    .label { color:#888; font-size:13px; font-family:monospace; text-align:center; margin-top:16px; margin-bottom:4px; letter-spacing:1px; text-transform:uppercase; }
+
+    @keyframes pulse-ring { 0%{transform:scale(1);opacity:.6} 100%{transform:scale(1.5);opacity:0} }
+    .pulse-ring { animation: pulse-ring 1.4s ease-out infinite; }
+
+    @keyframes bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-5px)} }
+    .dot { animation: bounce 1.2s ease infinite; }
+    .dot:nth-child(2){animation-delay:.15s} .dot:nth-child(3){animation-delay:.3s}
+
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+    .float { animation: float 3s ease-in-out infinite; }
+
+    @keyframes sparkle { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.6;transform:scale(1.2)} }
+    .sparkle { animation: sparkle 1.5s ease-in-out infinite; }
+
+    @keyframes confetti-drop { 0%{transform:translateY(-20px) rotate(0deg);opacity:1} 100%{transform:translateY(60px) rotate(360deg);opacity:0} }
+    .confetti { animation: confetti-drop 2s ease-in forwards; }
+
+    .tab-active { color: #1a1a1a; }
+    .tab-inactive { color: #9ca3af; }
+  </style>
+</head>
+<body class="min-h-screen py-12 px-8">
+
+  <div class="text-center mb-10">
+    <h1 class="text-white text-3xl font-bold tracking-tight">English App — Design Preview</h1>
+    <p class="text-gray-500 text-sm mt-1">B Plan · Character elements added</p>
+  </div>
+
+  <div class="flex gap-10 items-start overflow-x-auto pb-8" style="min-width:max-content; margin:0 auto;">
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- 01 · ONBOARDING (with SVG illustration)        -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div>
+      <div class="label">01 · Onboarding</div>
+      <div class="phone">
+        <div class="screen bg-offwhite flex flex-col">
+          <div class="flex justify-between items-center px-8 pt-5 pb-2">
+            <span class="text-xs font-semibold text-gray-800">9:41</span>
+          </div>
+
+          <div class="flex-1 flex flex-col items-center justify-center px-10 pb-4">
+            <!-- SVG illustration: Real-proportioned red bear -->
+            <div class="float mb-8">
+              <svg width="170" height="170" viewBox="0 0 170 170" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Shadow -->
+                <ellipse cx="85" cy="163" rx="34" ry="7" fill="#FCA5A5" opacity="0.3"/>
+                <!-- Background glow -->
+                <circle cx="85" cy="85" r="72" fill="#FFF1F2"/>
+                <!-- Body / chest at bottom -->
+                <ellipse cx="85" cy="155" rx="52" ry="36" fill="#C53030"/>
+                <rect x="63" y="120" width="44" height="34" rx="10" fill="#C53030"/>
+                <!-- Head — slightly wide oval, like real bear -->
+                <ellipse cx="85" cy="84" rx="58" ry="54" fill="#E53E3E"/>
+                <!-- Left ear — small, round, dark inner -->
+                <circle cx="38" cy="36" r="20" fill="#E53E3E"/>
+                <circle cx="38" cy="36" r="11" fill="#B91C1C"/>
+                <!-- Right ear -->
+                <circle cx="132" cy="36" r="20" fill="#E53E3E"/>
+                <circle cx="132" cy="36" r="11" fill="#B91C1C"/>
+                <!-- Muzzle — protrudes, lighter, lower face -->
+                <ellipse cx="85" cy="104" rx="33" ry="26" fill="#FC8181"/>
+                <!-- Eyes — small, dark, realistic position above muzzle -->
+                <ellipse cx="62" cy="74" rx="10" ry="9" fill="#1a1a1a"/>
+                <ellipse cx="108" cy="74" rx="10" ry="9" fill="#1a1a1a"/>
+                <circle cx="66" cy="70" r="3.5" fill="white"/>
+                <circle cx="112" cy="70" r="3.5" fill="white"/>
+                <!-- Nose — large, prominent, on muzzle -->
+                <ellipse cx="85" cy="99" rx="15" ry="12" fill="#1a1a1a"/>
+                <ellipse cx="80" cy="96" rx="4.5" ry="3.5" fill="white" opacity="0.28"/>
+                <!-- Bear mouth — line down from nose, then Y fork -->
+                <path d="M85 111 L85 119" stroke="#1a1a1a" stroke-width="3" stroke-linecap="round"/>
+                <path d="M73 119 Q85 128 97 119" stroke="#1a1a1a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                <!-- Speech bubble -->
+                <rect x="112" y="12" width="52" height="32" rx="12" fill="white" stroke="#FECDD3" stroke-width="1.5"/>
+                <path d="M116 44 L110 57 L128 44" fill="white" stroke="#FECDD3" stroke-width="1.5" stroke-linejoin="round"/>
+                <text x="138" y="33" text-anchor="middle" font-size="13" font-weight="800" fill="#E53E3E">Hi!</text>
+                <!-- Sparkles -->
+                <text x="8" y="52" font-size="15" class="sparkle" style="animation-delay:0s">✨</text>
+                <text x="136" y="130" font-size="13" class="sparkle" style="animation-delay:.5s">⭐</text>
+                <text x="10" y="134" font-size="11" class="sparkle" style="animation-delay:1s">✦</text>
+              </svg>
+            </div>
+
+            <h1 class="text-4xl font-black text-gray-900 text-center leading-tight mb-4" style="letter-spacing:-1px">
+              Chat in English<br/>without fear.
+            </h1>
+            <p class="text-sm text-gray-500 text-center leading-relaxed">
+              Practice real conversations with AI. Get instant feedback. Speak with confidence.
+            </p>
+          </div>
+
+          <!-- Dots -->
+          <div class="flex justify-center gap-2 mb-6">
+            <div class="w-6 h-1.5 rounded-full bg-indigo-500"></div>
+            <div class="w-1.5 h-1.5 rounded-full bg-gray-300"></div>
+            <div class="w-1.5 h-1.5 rounded-full bg-gray-300"></div>
+          </div>
+
+          <div class="px-6 pb-12 flex flex-col gap-3">
+            <button class="w-full bg-gray-900 rounded-2xl py-4 flex items-center justify-center gap-3">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+              <span class="text-white font-semibold text-base">Continue with Google</span>
+            </button>
+            <button class="w-full bg-gray-900 rounded-2xl py-4 flex items-center justify-center gap-3">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+              <span class="text-white font-semibold text-base">Continue with Apple</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- 02 · HOME (streak card + practice cards)       -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div>
+      <div class="label">02 · Home</div>
+      <div class="phone">
+        <div class="screen bg-offwhite flex flex-col">
+          <div class="flex justify-between items-center px-6 pt-5 pb-2">
+            <span class="text-xs font-semibold text-gray-800">9:41</span>
+          </div>
+
+          <!-- Header -->
+          <div class="px-5 pt-1 pb-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-red-50 flex items-center justify-center overflow-hidden flex-shrink-0">
+                <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+                  <ellipse cx="18" cy="22" rx="16" ry="15" fill="#E53E3E"/>
+                  <circle cx="6" cy="9" r="6" fill="#E53E3E"/><circle cx="6" cy="9" r="3.5" fill="#B91C1C"/>
+                  <circle cx="30" cy="9" r="6" fill="#E53E3E"/><circle cx="30" cy="9" r="3.5" fill="#B91C1C"/>
+                  <ellipse cx="18" cy="28" rx="10" ry="8" fill="#FC8181"/>
+                  <ellipse cx="12" cy="19" rx="3.5" ry="3" fill="#1a1a1a"/><ellipse cx="24" cy="19" rx="3.5" ry="3" fill="#1a1a1a"/>
+                  <circle cx="13.5" cy="17.5" r="1.2" fill="white"/><circle cx="25.5" cy="17.5" r="1.2" fill="white"/>
+                  <ellipse cx="18" cy="26" rx="5" ry="4" fill="#1a1a1a"/>
+                  <ellipse cx="16" cy="24.5" rx="1.5" ry="1.2" fill="white" opacity="0.28"/>
+                  <path d="M18 30 L18 33" stroke="#1a1a1a" stroke-width="1.3" stroke-linecap="round"/>
+                  <path d="M13.5 33 Q18 36.5 22.5 33" stroke="#1a1a1a" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div>
+                <p class="text-xs text-gray-400 font-medium">Good morning,</p>
+                <p class="text-base font-bold text-gray-900">Youngjun 👋</p>
+              </div>
+            </div>
+            <button class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </button>
+          </div>
+
+          <div class="flex-1 overflow-y-auto px-4" style="padding-bottom:88px">
+
+            <!-- Streak + Goal card -->
+            <div class="bg-white rounded-2xl px-4 py-3.5 mb-4 shadow-sm border border-gray-100 relative overflow-visible">
+              <!-- Bear peeking from top-right corner -->
+              <div class="absolute -top-5 -right-1 pointer-events-none">
+                <svg width="58" height="64" viewBox="0 0 58 64" fill="none">
+                  <!-- body -->
+                  <ellipse cx="29" cy="52" rx="18" ry="14" fill="#C53030"/>
+                  <!-- right arm raised — real bear foreleg -->
+                  <path d="M45 40 Q56 26 50 14" stroke="#C53030" stroke-width="9" stroke-linecap="round" fill="none"/>
+                  <ellipse cx="50" cy="13" rx="6" ry="5" fill="#C53030"/>
+                  <!-- head — wide oval -->
+                  <ellipse cx="29" cy="32" rx="24" ry="22" fill="#E53E3E"/>
+                  <!-- ears — small, dark inner -->
+                  <circle cx="10" cy="14" r="9" fill="#E53E3E"/><circle cx="10" cy="14" r="5" fill="#B91C1C"/>
+                  <circle cx="48" cy="14" r="9" fill="#E53E3E"/><circle cx="48" cy="14" r="5" fill="#B91C1C"/>
+                  <!-- muzzle -->
+                  <ellipse cx="29" cy="40" rx="14" ry="11" fill="#FC8181"/>
+                  <!-- eyes small, dark -->
+                  <ellipse cx="20" cy="28" rx="4.5" ry="4" fill="#1a1a1a"/><ellipse cx="38" cy="28" rx="4.5" ry="4" fill="#1a1a1a"/>
+                  <circle cx="21.5" cy="26.5" r="1.5" fill="white"/><circle cx="39.5" cy="26.5" r="1.5" fill="white"/>
+                  <!-- nose -->
+                  <ellipse cx="29" cy="38" rx="6" ry="5" fill="#1a1a1a"/>
+                  <ellipse cx="27" cy="36.5" rx="2" ry="1.5" fill="white" opacity="0.28"/>
+                  <!-- bear mouth -->
+                  <path d="M29 43 L29 47" stroke="#1a1a1a" stroke-width="1.8" stroke-linecap="round"/>
+                  <path d="M23 47 Q29 52 35 47" stroke="#1a1a1a" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <!-- Streak row -->
+              <div class="flex items-center gap-2 mb-3 pb-3 border-b border-gray-50">
+                <span class="text-xl">🔥</span>
+                <div class="flex-1">
+                  <p class="text-sm font-bold text-gray-900">3-day streak!</p>
+                  <p class="text-xs text-gray-400">Keep it going today</p>
+                </div>
+                <!-- Mini day dots -->
+                <div class="flex gap-1">
+                  <div class="w-5 h-5 rounded-full bg-orange-400 flex items-center justify-center"><svg width="9" height="9" viewBox="0 0 24 24" fill="white"><path d="M20 6L9 17l-5-5"/></svg></div>
+                  <div class="w-5 h-5 rounded-full bg-orange-400 flex items-center justify-center"><svg width="9" height="9" viewBox="0 0 24 24" fill="white"><path d="M20 6L9 17l-5-5"/></svg></div>
+                  <div class="w-5 h-5 rounded-full bg-orange-400 flex items-center justify-center"><svg width="9" height="9" viewBox="0 0 24 24" fill="white"><path d="M20 6L9 17l-5-5"/></svg></div>
+                  <div class="w-5 h-5 rounded-full bg-gray-100"></div>
+                  <div class="w-5 h-5 rounded-full bg-gray-100"></div>
+                  <div class="w-5 h-5 rounded-full bg-gray-100"></div>
+                  <div class="w-5 h-5 rounded-full bg-gray-100"></div>
+                </div>
+              </div>
+              <!-- Goal row -->
+              <div class="flex items-center justify-between mb-1.5">
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Today's Goal</p>
+                <span class="text-xs font-bold text-indigo-600">8 / 20 turns</span>
+              </div>
+              <div class="bg-gray-100 rounded-full h-1.5">
+                <div class="bg-indigo-500 rounded-full h-1.5" style="width:40%"></div>
+              </div>
+            </div>
+
+            <!-- Practice -->
+            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3 px-1">Practice</p>
+            <div class="grid grid-cols-3 gap-2.5 mb-5">
+              <button class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col items-start">
+                <div class="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center mb-3 text-xl">💬</div>
+                <p class="text-sm font-bold text-gray-900 leading-tight">Free</p>
+                <p class="text-sm font-bold text-gray-900 leading-tight">Talking</p>
+                <p class="text-xs text-gray-400 mt-1.5">Open chat</p>
+              </button>
+              <button class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col items-start opacity-50">
+                <div class="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center mb-3 text-xl">🎧</div>
+                <p class="text-sm font-bold text-gray-900 leading-tight">Shadow</p>
+                <p class="text-sm font-bold text-gray-900 leading-tight">-ing</p>
+                <p class="text-xs text-orange-400 mt-1.5 font-semibold">Soon</p>
+              </button>
+              <button class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col items-start">
+                <div class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center mb-3 text-xl">✈️</div>
+                <p class="text-sm font-bold text-gray-900 leading-tight">Situation</p>
+                <p class="text-sm font-bold text-gray-900 leading-tight">Talking</p>
+                <p class="text-xs text-gray-400 mt-1.5">Role play</p>
+              </button>
+            </div>
+
+            <!-- Recent History -->
+            <div class="flex items-center justify-between mb-3 px-1">
+              <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Recent History</p>
+              <span class="text-xs text-indigo-500 font-medium">See all</span>
+            </div>
+            <div class="flex flex-col gap-2">
+              <div class="bg-white rounded-2xl px-4 py-3.5 border border-gray-100 shadow-sm flex items-center">
+                <div class="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center mr-3 text-sm flex-shrink-0">☕</div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-semibold text-gray-900">Cafe Order</p>
+                  <p class="text-xs text-gray-400">5 mins ago</p>
+                </div>
+                <span class="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">3 turns</span>
+              </div>
+              <div class="bg-white rounded-2xl px-4 py-3.5 border border-gray-100 shadow-sm flex items-center">
+                <div class="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center mr-3 text-sm flex-shrink-0">🏨</div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-semibold text-gray-900">Hotel Check-in</p>
+                  <p class="text-xs text-gray-400">1 hour ago</p>
+                </div>
+                <span class="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">5 turns</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- FAB — Bear face + mic badge -->
+          <div class="absolute right-5" style="bottom:90px">
+            <div class="relative">
+              <button class="w-14 h-14 bg-red-500 rounded-full flex items-center justify-center shadow-xl overflow-hidden" style="box-shadow:0 6px 20px rgba(229,62,62,0.45)">
+                <svg width="52" height="52" viewBox="0 0 52 52" fill="none">
+                  <!-- head — wide oval -->
+                  <ellipse cx="26" cy="30" rx="22" ry="21" fill="#E53E3E"/>
+                  <!-- ears — small, dark inner -->
+                  <circle cx="8" cy="13" r="8" fill="#E53E3E"/><circle cx="8" cy="13" r="4.5" fill="#B91C1C"/>
+                  <circle cx="44" cy="13" r="8" fill="#E53E3E"/><circle cx="44" cy="13" r="4.5" fill="#B91C1C"/>
+                  <!-- muzzle -->
+                  <ellipse cx="26" cy="37" rx="13" ry="10" fill="#FC8181"/>
+                  <!-- eyes small realistic -->
+                  <ellipse cx="17" cy="25" rx="4.5" ry="4" fill="#1a1a1a"/><ellipse cx="35" cy="25" rx="4.5" ry="4" fill="#1a1a1a"/>
+                  <circle cx="18.5" cy="23" r="1.5" fill="white"/><circle cx="36.5" cy="23" r="1.5" fill="white"/>
+                  <!-- nose large -->
+                  <ellipse cx="26" cy="34.5" rx="6" ry="5" fill="#1a1a1a"/>
+                  <ellipse cx="23.5" cy="33" rx="2" ry="1.5" fill="white" opacity="0.28"/>
+                  <!-- bear mouth -->
+                  <path d="M26 39.5 L26 43.5" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M19.5 43.5 Q26 48.5 32.5 43.5" stroke="#1a1a1a" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+                </svg>
+              </button>
+              <!-- mic badge -->
+              <div class="absolute -bottom-1 -right-1 w-6 h-6 bg-gray-900 rounded-full flex items-center justify-center border-2 border-white">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="white"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2" stroke="white" stroke-width="2.5" fill="none"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab Bar -->
+          <div class="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex items-end pb-6 pt-2 px-2">
+            <div class="flex-1 flex flex-col items-center gap-1 tab-active">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+              <span class="text-xs font-bold">Home</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1 tab-inactive">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+              <span class="text-xs">Learn</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1 tab-inactive">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <span class="text-xs">Quiz</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1 tab-inactive">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span class="text-xs">Settings</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- 03 · CHAT (AI avatar per role)                 -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div>
+      <div class="label">03 · Chat (AI Avatar)</div>
+      <div class="phone">
+        <div class="screen bg-offwhite flex flex-col">
+          <div class="flex justify-between items-center px-6 pt-5 pb-2">
+            <span class="text-xs font-semibold text-gray-800">9:41</span>
+          </div>
+
+          <!-- Header with AI role avatar -->
+          <div class="px-5 pt-1 pb-3 flex items-center gap-3 border-b border-gray-100">
+            <!-- AI mascot avatar -->
+            <div class="relative">
+              <div class="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center shadow-sm overflow-hidden">
+                <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                  <ellipse cx="20" cy="25" rx="18" ry="16" fill="#E53E3E"/>
+                  <circle cx="5" cy="10" r="7" fill="#E53E3E"/><circle cx="5" cy="10" r="4" fill="#B91C1C"/>
+                  <circle cx="35" cy="10" r="7" fill="#E53E3E"/><circle cx="35" cy="10" r="4" fill="#B91C1C"/>
+                  <ellipse cx="20" cy="31" rx="11" ry="9" fill="#FC8181"/>
+                  <ellipse cx="13" cy="21" rx="4" ry="3.5" fill="#1a1a1a"/><ellipse cx="27" cy="21" rx="4" ry="3.5" fill="#1a1a1a"/>
+                  <circle cx="14.5" cy="19.5" r="1.4" fill="white"/><circle cx="28.5" cy="19.5" r="1.4" fill="white"/>
+                  <ellipse cx="20" cy="29" rx="5.5" ry="4.5" fill="#1a1a1a"/>
+                  <ellipse cx="18" cy="27.5" rx="1.8" ry="1.3" fill="white" opacity="0.28"/>
+                  <path d="M20 33.5 L20 37" stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round"/>
+                  <path d="M14.5 37 Q20 41 25.5 37" stroke="#1a1a1a" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-amber-50 border-2 border-white flex items-center justify-center text-xs">☕</div>
+            </div>
+            <div class="flex-1">
+              <p class="text-xs text-gray-400">Situation Talking · Barista</p>
+              <p class="text-base font-bold text-gray-900">Cafe Order</p>
+            </div>
+            <button class="bg-gray-100 rounded-xl px-3.5 py-1.5">
+              <span class="text-xs font-semibold text-gray-600">End</span>
+            </button>
+          </div>
+
+          <!-- Messages -->
+          <div class="flex-1 overflow-y-auto px-4 pt-4 flex flex-col gap-5" style="padding-bottom:8px">
+
+            <!-- AI opening (with small avatar) -->
+            <div class="flex gap-2.5 items-start">
+              <div class="w-7 h-7 rounded-full bg-red-50 flex items-center justify-center flex-shrink-0 mt-0.5 overflow-hidden">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                  <ellipse cx="14" cy="18" rx="12" ry="11" fill="#E53E3E"/>
+                  <circle cx="4" cy="8" r="5" fill="#E53E3E"/><circle cx="4" cy="8" r="2.8" fill="#B91C1C"/>
+                  <circle cx="24" cy="8" r="5" fill="#E53E3E"/><circle cx="24" cy="8" r="2.8" fill="#B91C1C"/>
+                  <ellipse cx="14" cy="23" rx="8" ry="6.5" fill="#FC8181"/>
+                  <ellipse cx="9" cy="15" rx="3" ry="2.8" fill="#1a1a1a"/><ellipse cx="19" cy="15" rx="3" ry="2.8" fill="#1a1a1a"/>
+                  <circle cx="10" cy="13.8" r="1" fill="white"/><circle cx="20" cy="13.8" r="1" fill="white"/>
+                  <ellipse cx="14" cy="21.5" rx="4" ry="3.2" fill="#1a1a1a"/>
+                  <ellipse cx="12.5" cy="20.3" rx="1.3" ry="1" fill="white" opacity="0.28"/>
+                  <path d="M14 24.7 L14 27" stroke="#1a1a1a" stroke-width="1.3" stroke-linecap="round"/>
+                  <path d="M10 27 Q14 30 18 27" stroke="#1a1a1a" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="max-w-xs">
+                <p class="text-gray-700 text-sm leading-relaxed">Hi there! Welcome to Brew & Bean. What can I get started for you today?</p>
+                <button class="mt-1.5 flex items-center gap-1 text-gray-400">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                  <span class="text-xs">Listen</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- User bubble -->
+            <div class="flex justify-end">
+              <div class="bg-gray-900 rounded-2xl rounded-br-sm px-4 py-3 max-w-xs">
+                <p class="text-white text-sm leading-relaxed">I want a flat white with oat milk please.</p>
+              </div>
+            </div>
+
+            <!-- AI response with avatar + feedback -->
+            <div class="flex gap-2.5 items-start">
+              <div class="w-7 h-7 rounded-full bg-red-50 flex items-center justify-center flex-shrink-0 mt-0.5 overflow-hidden">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                  <ellipse cx="14" cy="18" rx="12" ry="11" fill="#E53E3E"/>
+                  <circle cx="4" cy="8" r="5" fill="#E53E3E"/><circle cx="4" cy="8" r="2.8" fill="#B91C1C"/>
+                  <circle cx="24" cy="8" r="5" fill="#E53E3E"/><circle cx="24" cy="8" r="2.8" fill="#B91C1C"/>
+                  <ellipse cx="14" cy="23" rx="8" ry="6.5" fill="#FC8181"/>
+                  <ellipse cx="9" cy="15" rx="3" ry="2.8" fill="#1a1a1a"/><ellipse cx="19" cy="15" rx="3" ry="2.8" fill="#1a1a1a"/>
+                  <circle cx="10" cy="13.8" r="1" fill="white"/><circle cx="20" cy="13.8" r="1" fill="white"/>
+                  <ellipse cx="14" cy="21.5" rx="4" ry="3.2" fill="#1a1a1a"/>
+                  <ellipse cx="12.5" cy="20.3" rx="1.3" ry="1" fill="white" opacity="0.28"/>
+                  <path d="M14 24.7 L14 27" stroke="#1a1a1a" stroke-width="1.3" stroke-linecap="round"/>
+                  <path d="M10 27 Q14 30 18 27" stroke="#1a1a1a" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="max-w-xs flex flex-col gap-2">
+                <!-- Feedback card -->
+                <div class="bg-amber-50 rounded-xl px-3.5 py-2.5 border border-amber-100">
+                  <p class="text-gray-400 text-xs line-through mb-1">I want a flat white</p>
+                  <div class="flex items-center justify-between">
+                    <p class="text-gray-800 text-sm font-semibold">I'd like a flat white</p>
+                    <button class="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center ml-2 flex-shrink-0">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#92400e" stroke-width="2.5"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <!-- Perfect badge -->
+                <div class="bg-emerald-50 rounded-xl px-3 py-2 border border-emerald-100 flex items-center gap-2">
+                  <span class="text-sm">✅</span>
+                  <p class="text-emerald-700 text-xs font-semibold">Perfect expression!</p>
+                </div>
+                <!-- AI reply -->
+                <p class="text-gray-700 text-sm leading-relaxed pt-1">
+                  Great choice! One oat milk flat white. For here or to go?
+                </p>
+                <button class="flex items-center gap-1 text-gray-400">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                  <span class="text-xs">Listen</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- User bubble 2 -->
+            <div class="flex justify-end">
+              <div class="bg-gray-900 rounded-2xl rounded-br-sm px-4 py-3 max-w-xs">
+                <p class="text-white text-sm leading-relaxed">To go please!</p>
+              </div>
+            </div>
+
+            <!-- Typing -->
+            <div class="flex gap-2.5 items-center">
+              <div class="w-7 h-7 rounded-full bg-red-50 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                  <ellipse cx="14" cy="18" rx="12" ry="11" fill="#E53E3E"/>
+                  <circle cx="4" cy="8" r="5" fill="#E53E3E"/><circle cx="4" cy="8" r="2.8" fill="#B91C1C"/>
+                  <circle cx="24" cy="8" r="5" fill="#E53E3E"/><circle cx="24" cy="8" r="2.8" fill="#B91C1C"/>
+                  <ellipse cx="14" cy="23" rx="8" ry="6.5" fill="#FC8181"/>
+                  <ellipse cx="9" cy="15" rx="3" ry="2.8" fill="#1a1a1a"/><ellipse cx="19" cy="15" rx="3" ry="2.8" fill="#1a1a1a"/>
+                  <circle cx="10" cy="13.8" r="1" fill="white"/><circle cx="20" cy="13.8" r="1" fill="white"/>
+                  <ellipse cx="14" cy="21.5" rx="4" ry="3.2" fill="#1a1a1a"/>
+                  <ellipse cx="12.5" cy="20.3" rx="1.3" ry="1" fill="white" opacity="0.28"/>
+                  <path d="M14 24.7 L14 27" stroke="#1a1a1a" stroke-width="1.3" stroke-linecap="round"/>
+                  <path d="M10 27 Q14 30 18 27" stroke="#1a1a1a" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="flex gap-1 items-center">
+                <div class="w-2 h-2 rounded-full bg-gray-400 dot"></div>
+                <div class="w-2 h-2 rounded-full bg-gray-400 dot"></div>
+                <div class="w-2 h-2 rounded-full bg-gray-400 dot"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Input bar -->
+          <div class="bg-white border-t border-gray-100 px-4 py-3">
+            <div class="flex items-center gap-3">
+              <button class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+              </button>
+              <div class="flex-1 flex justify-center">
+                <div class="relative flex items-center justify-center">
+                  <div class="absolute w-16 h-16 rounded-full bg-indigo-200 opacity-40 pulse-ring"></div>
+                  <button class="w-14 h-14 bg-gray-900 rounded-full flex items-center justify-center shadow-md relative z-10">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2" stroke="white" stroke-width="2" fill="none"/><line x1="12" y1="19" x2="12" y2="23" stroke="white" stroke-width="2"/><line x1="8" y1="23" x2="16" y2="23" stroke="white" stroke-width="2"/></svg>
+                  </button>
+                </div>
+              </div>
+              <div class="w-9 h-9"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- 04 · SESSION COMPLETE                          -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div>
+      <div class="label">04 · Session Complete</div>
+      <div class="phone">
+        <div class="screen bg-offwhite flex flex-col items-center justify-center px-8">
+
+          <!-- Confetti dots (decorative) -->
+          <div class="absolute top-24 left-8 text-2xl" style="animation: confetti-drop 2.5s ease-in infinite; animation-delay:0s">🎊</div>
+          <div class="absolute top-16 right-12 text-xl" style="animation: confetti-drop 2.5s ease-in infinite; animation-delay:0.4s">⭐</div>
+          <div class="absolute top-32 right-8 text-lg" style="animation: confetti-drop 2.5s ease-in infinite; animation-delay:0.8s">✨</div>
+          <div class="absolute top-20 left-20 text-lg" style="animation: confetti-drop 2.5s ease-in infinite; animation-delay:1.2s">🎉</div>
+
+          <!-- Real bear celebrating with trophy -->
+          <div class="float mb-6">
+            <svg width="170" height="170" viewBox="0 0 170 170" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Shadow -->
+              <ellipse cx="85" cy="163" rx="32" ry="7" fill="#FCA5A5" opacity="0.28"/>
+              <!-- Background glow -->
+              <circle cx="85" cy="88" r="70" fill="#FFF1F2"/>
+              <!-- Body / chest -->
+              <ellipse cx="85" cy="158" rx="50" ry="32" fill="#C53030"/>
+              <rect x="65" y="124" width="40" height="32" rx="10" fill="#C53030"/>
+              <!-- Left foreleg up — holding trophy -->
+              <path d="M38 88 Q22 62 32 44" stroke="#C53030" stroke-width="15" stroke-linecap="round" fill="none"/>
+              <ellipse cx="31" cy="42" rx="8" ry="7" fill="#C53030"/>
+              <!-- Right foreleg up — waving -->
+              <path d="M132 88 Q148 62 138 44" stroke="#C53030" stroke-width="15" stroke-linecap="round" fill="none"/>
+              <ellipse cx="139" cy="42" rx="8" ry="7" fill="#C53030"/>
+              <!-- Trophy held left -->
+              <rect x="12" y="22" width="36" height="8" rx="4" fill="#FCD34D"/>
+              <rect x="20" y="30" width="20" height="6" rx="3" fill="#F59E0B"/>
+              <path d="M16 7 Q11 18 16 26 Q30 32 44 26 Q49 18 44 7 Z" fill="#FCD34D"/>
+              <path d="M16 13 Q7 13 7 21 Q7 28 16 26" stroke="#F59E0B" stroke-width="3" fill="none" stroke-linecap="round"/>
+              <path d="M44 13 Q53 13 53 21 Q53 28 44 26" stroke="#F59E0B" stroke-width="3" fill="none" stroke-linecap="round"/>
+              <text x="30" y="22" text-anchor="middle" font-size="12">⭐</text>
+              <!-- Head — wide oval -->
+              <ellipse cx="85" cy="86" rx="58" ry="52" fill="#E53E3E"/>
+              <!-- Ears — small, dark inner -->
+              <circle cx="38" cy="38" r="20" fill="#E53E3E"/>
+              <circle cx="38" cy="38" r="11" fill="#B91C1C"/>
+              <circle cx="132" cy="38" r="20" fill="#E53E3E"/>
+              <circle cx="132" cy="38" r="11" fill="#B91C1C"/>
+              <!-- Muzzle -->
+              <ellipse cx="85" cy="105" rx="33" ry="26" fill="#FC8181"/>
+              <!-- Eyes — small, realistic -->
+              <ellipse cx="62" cy="74" rx="10" ry="9" fill="#1a1a1a"/>
+              <ellipse cx="108" cy="74" rx="10" ry="9" fill="#1a1a1a"/>
+              <circle cx="66" cy="70" r="3.5" fill="white"/>
+              <circle cx="112" cy="70" r="3.5" fill="white"/>
+              <!-- Nose -->
+              <ellipse cx="85" cy="100" rx="15" ry="12" fill="#1a1a1a"/>
+              <ellipse cx="80" cy="97" rx="4.5" ry="3.5" fill="white" opacity="0.28"/>
+              <!-- Bear mouth -->
+              <path d="M85 112 L85 120" stroke="#1a1a1a" stroke-width="3" stroke-linecap="round"/>
+              <path d="M73 120 Q85 130 97 120" stroke="#1a1a1a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+              <!-- Sparkles -->
+              <text x="112" y="28" font-size="16" class="sparkle" style="animation-delay:.2s">✨</text>
+              <text x="122" y="102" font-size="12" class="sparkle" style="animation-delay:.6s">⭐</text>
+              <text x="12" y="112" font-size="11" class="sparkle" style="animation-delay:.9s">✦</text>
+            </svg>
+          </div>
+
+          <h1 class="text-3xl font-black text-gray-900 text-center mb-2" style="letter-spacing:-0.5px">Great session! 🎯</h1>
+          <p class="text-gray-500 text-sm text-center mb-8">You completed 5 turns in Cafe Order</p>
+
+          <!-- Stats row -->
+          <div class="flex gap-4 mb-8 w-full">
+            <div class="flex-1 bg-white rounded-2xl px-3 py-4 text-center shadow-sm border border-gray-100">
+              <p class="text-2xl font-black text-indigo-600">5</p>
+              <p class="text-xs text-gray-400 mt-1">Turns</p>
+            </div>
+            <div class="flex-1 bg-white rounded-2xl px-3 py-4 text-center shadow-sm border border-gray-100">
+              <p class="text-2xl font-black text-amber-500">3</p>
+              <p class="text-xs text-gray-400 mt-1">Corrections</p>
+            </div>
+            <div class="flex-1 bg-white rounded-2xl px-3 py-4 text-center shadow-sm border border-gray-100">
+              <p class="text-2xl font-black text-orange-500">🔥4</p>
+              <p class="text-xs text-gray-400 mt-1">Day streak</p>
+            </div>
+          </div>
+
+          <!-- Streak milestone -->
+          <div class="w-full bg-orange-50 rounded-2xl px-4 py-3 flex items-center gap-3 mb-8 border border-orange-100">
+            <span class="text-2xl">🔥</span>
+            <div>
+              <p class="text-sm font-bold text-orange-700">New streak record!</p>
+              <p class="text-xs text-orange-500">4 days in a row — keep it up!</p>
+            </div>
+          </div>
+
+          <!-- Buttons -->
+          <button class="w-full bg-gray-900 rounded-2xl py-4 mb-3">
+            <span class="text-white font-semibold">Practice Again</span>
+          </button>
+          <button class="w-full bg-white rounded-2xl py-4 border border-gray-200">
+            <span class="text-gray-700 font-semibold">Go Home</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- 05 · TOPIC SELECT                              -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div>
+      <div class="label">05 · Topic Select</div>
+      <div class="phone">
+        <div class="screen bg-offwhite flex flex-col">
+          <div class="flex justify-between items-center px-6 pt-5 pb-2">
+            <span class="text-xs font-semibold text-gray-800">9:41</span>
+          </div>
+          <div class="px-5 pt-1 pb-4">
+            <button class="text-indigo-500 text-sm font-medium mb-3 flex items-center gap-1">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+              Back
+            </button>
+            <h1 class="text-2xl font-black text-gray-900" style="letter-spacing:-0.5px">Choose a topic</h1>
+            <p class="text-sm text-gray-400 mt-1">Select a scenario to practice</p>
+          </div>
+          <div class="flex-1 px-4 overflow-y-auto" style="padding-bottom:32px">
+            <div class="grid grid-cols-2 gap-3">
+              <button class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col items-start">
+                <div class="w-11 h-11 rounded-2xl bg-amber-50 flex items-center justify-center mb-3 text-2xl">☕</div>
+                <p class="text-sm font-bold text-gray-900">Cafe Order</p>
+                <p class="text-xs text-gray-400 mt-0.5">Barista role</p>
+              </button>
+              <button class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col items-start">
+                <div class="w-11 h-11 rounded-2xl bg-sky-50 flex items-center justify-center mb-3 text-2xl">✈️</div>
+                <p class="text-sm font-bold text-gray-900">Airport</p>
+                <p class="text-xs text-gray-400 mt-0.5">Immigration officer</p>
+              </button>
+              <button class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col items-start">
+                <div class="w-11 h-11 rounded-2xl bg-blue-50 flex items-center justify-center mb-3 text-2xl">🏨</div>
+                <p class="text-sm font-bold text-gray-900">Hotel Check-in</p>
+                <p class="text-xs text-gray-400 mt-0.5">Front desk staff</p>
+              </button>
+              <button class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col items-start">
+                <div class="w-11 h-11 rounded-2xl bg-pink-50 flex items-center justify-center mb-3 text-2xl">🛍️</div>
+                <p class="text-sm font-bold text-gray-900">Shopping</p>
+                <p class="text-xs text-gray-400 mt-0.5">Store clerk</p>
+              </button>
+              <button class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col items-start">
+                <div class="w-11 h-11 rounded-2xl bg-green-50 flex items-center justify-center mb-3 text-2xl">💬</div>
+                <p class="text-sm font-bold text-gray-900">Small Talk</p>
+                <p class="text-xs text-gray-400 mt-0.5">Casual chat</p>
+              </button>
+              <button class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col items-start">
+                <div class="w-11 h-11 rounded-2xl bg-purple-50 flex items-center justify-center mb-3 text-2xl">🗣️</div>
+                <p class="text-sm font-bold text-gray-900">Opinion</p>
+                <p class="text-xs text-gray-400 mt-0.5">Debate partner</p>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- 06 · SETTINGS                                  -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div>
+      <div class="label">06 · Settings</div>
+      <div class="phone">
+        <div class="screen bg-offwhite flex flex-col">
+          <div class="flex justify-between items-center px-6 pt-5 pb-2">
+            <span class="text-xs font-semibold text-gray-800">9:41</span>
+          </div>
+          <div class="px-5 pt-1 pb-5">
+            <h1 class="text-2xl font-black text-gray-900" style="letter-spacing:-0.5px">Settings</h1>
+          </div>
+          <div class="mx-4 mb-4 bg-white rounded-2xl px-4 py-4 shadow-sm border border-gray-100 flex items-center gap-3">
+            <div class="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-2xl flex-shrink-0">🧑</div>
+            <div class="flex-1">
+              <p class="text-base font-bold text-gray-900">Youngjun</p>
+              <p class="text-xs text-gray-400">youngjun@example.com</p>
+            </div>
+            <!-- Streak badge -->
+            <div class="flex items-center gap-1 bg-orange-50 rounded-full px-2.5 py-1">
+              <span class="text-sm">🔥</span>
+              <span class="text-xs font-bold text-orange-600">3</span>
+            </div>
+          </div>
+          <div class="mx-4 flex flex-col gap-2">
+            <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+              <div class="px-4 py-3.5 flex items-center justify-between border-b border-gray-50">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6366F1" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                  </div>
+                  <span class="text-sm font-medium text-gray-800">Subscription</span>
+                </div>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+              <div class="px-4 py-3.5 flex items-center justify-between border-b border-gray-50">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-xl bg-amber-50 flex items-center justify-center">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                  </div>
+                  <span class="text-sm font-medium text-gray-800">Notifications</span>
+                </div>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+              <div class="px-4 py-3.5 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-xl bg-gray-100 flex items-center justify-center">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                  </div>
+                  <span class="text-sm font-medium text-gray-800">Preferences</span>
+                </div>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+            </div>
+            <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 mt-1">
+              <button class="w-full px-4 py-3.5 flex items-center gap-3">
+                <div class="w-8 h-8 rounded-xl bg-red-50 flex items-center justify-center">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                </div>
+                <span class="text-sm font-medium text-red-500">Sign Out</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Tab Bar -->
+          <div class="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex items-end pb-6 pt-2 px-2">
+            <div class="flex-1 flex flex-col items-center gap-1 tab-inactive">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" style="color:#9ca3af"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+              <span class="text-xs" style="color:#9ca3af">Home</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1 tab-inactive">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+              <span class="text-xs" style="color:#9ca3af">Learn</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1 tab-inactive">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <span class="text-xs" style="color:#9ca3af">Quiz</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1" style="color:#1a1a1a">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span class="text-xs font-bold">Settings</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- 07 · LEARN TAB (Expression list)               -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div>
+      <div class="label">07 · Learn Tab</div>
+      <div class="phone">
+        <div class="screen bg-offwhite flex flex-col">
+          <div class="flex justify-between items-center px-6 pt-5 pb-2">
+            <span class="text-xs font-semibold text-gray-800">9:41</span>
+          </div>
+
+          <!-- Header -->
+          <div class="px-5 pt-1 pb-3 border-b border-gray-100">
+            <div class="flex items-center justify-between">
+              <div>
+                <h1 class="text-2xl font-black text-gray-900" style="letter-spacing:-0.5px">Learn</h1>
+                <p class="text-xs text-gray-400 mt-0.5">12 expressions saved</p>
+              </div>
+              <!-- search icon -->
+              <button class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              </button>
+            </div>
+            <!-- Filter chips -->
+            <div class="flex gap-2 mt-3 overflow-x-auto" style="scrollbar-width:none">
+              <span class="flex-shrink-0 text-xs font-semibold text-white bg-gray-900 px-3 py-1.5 rounded-full">All</span>
+              <span class="flex-shrink-0 text-xs font-medium text-gray-500 bg-white border border-gray-200 px-3 py-1.5 rounded-full">My Speech</span>
+              <span class="flex-shrink-0 text-xs font-medium text-gray-500 bg-white border border-gray-200 px-3 py-1.5 rounded-full">Corrections</span>
+              <span class="flex-shrink-0 text-xs font-medium text-gray-500 bg-white border border-gray-200 px-3 py-1.5 rounded-full">AI Response</span>
+            </div>
+          </div>
+
+          <!-- Expression list -->
+          <div class="flex-1 overflow-y-auto px-4 pt-3" style="padding-bottom:88px">
+
+            <!-- Card 1 — correction -->
+            <div class="bg-white rounded-2xl px-4 py-3.5 mb-3 border border-gray-100 shadow-sm">
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <p class="text-gray-900 font-semibold text-sm flex-1 leading-snug">"I'd like a flat white, please."</p>
+                <button class="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                </button>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full font-medium">☕ Cafe Order</span>
+                <span class="text-gray-300 text-xs">·</span>
+                <span class="text-xs font-medium text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full">Correction</span>
+                <span class="text-gray-300 text-xs">·</span>
+                <span class="text-xs text-gray-400">Mar 24</span>
+              </div>
+            </div>
+
+            <!-- Card 2 — my speech -->
+            <div class="bg-white rounded-2xl px-4 py-3.5 mb-3 border border-gray-100 shadow-sm">
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <p class="text-gray-900 font-semibold text-sm flex-1 leading-snug">"Could I have it to go, please?"</p>
+                <button class="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                </button>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full font-medium">☕ Cafe Order</span>
+                <span class="text-gray-300 text-xs">·</span>
+                <span class="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">My Speech</span>
+                <span class="text-gray-300 text-xs">·</span>
+                <span class="text-xs text-gray-400">Mar 24</span>
+              </div>
+            </div>
+
+            <!-- Card 3 — AI response -->
+            <div class="bg-white rounded-2xl px-4 py-3.5 mb-3 border border-gray-100 shadow-sm">
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <p class="text-gray-900 font-semibold text-sm flex-1 leading-snug">"Would you like to leave your luggage with us?"</p>
+                <button class="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                </button>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full font-medium">🏨 Hotel</span>
+                <span class="text-gray-300 text-xs">·</span>
+                <span class="text-xs font-medium text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">AI Response</span>
+                <span class="text-gray-300 text-xs">·</span>
+                <span class="text-xs text-gray-400">Mar 23</span>
+              </div>
+            </div>
+
+            <!-- Card 4 — correction -->
+            <div class="bg-white rounded-2xl px-4 py-3.5 mb-3 border border-gray-100 shadow-sm">
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <p class="text-gray-900 font-semibold text-sm flex-1 leading-snug">"I'd like to check in, please."</p>
+                <button class="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                </button>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full font-medium">🏨 Hotel</span>
+                <span class="text-gray-300 text-xs">·</span>
+                <span class="text-xs font-medium text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full">Correction</span>
+                <span class="text-gray-300 text-xs">·</span>
+                <span class="text-xs text-gray-400">Mar 23</span>
+              </div>
+            </div>
+
+            <!-- Card 5 -->
+            <div class="bg-white rounded-2xl px-4 py-3.5 mb-3 border border-gray-100 shadow-sm">
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <p class="text-gray-900 font-semibold text-sm flex-1 leading-snug">"Do you have any rooms available?"</p>
+                <button class="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                </button>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full font-medium">🏨 Hotel</span>
+                <span class="text-gray-300 text-xs">·</span>
+                <span class="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">My Speech</span>
+                <span class="text-gray-300 text-xs">·</span>
+                <span class="text-xs text-gray-400">Mar 22</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Tab Bar — Learn active -->
+          <div class="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex items-end pb-6 pt-2 px-2">
+            <div class="flex-1 flex flex-col items-center gap-1 tab-inactive">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" style="color:#9ca3af"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+              <span class="text-xs" style="color:#9ca3af">Home</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1 tab-active">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+              <span class="text-xs font-bold">Learn</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1 tab-inactive">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <span class="text-xs" style="color:#9ca3af">Quiz</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1 tab-inactive">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span class="text-xs" style="color:#9ca3af">Settings</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- 08 · EXPRESSION DETAIL (tap on card)          -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div>
+      <div class="label">08 · Expression Detail</div>
+      <div class="phone">
+        <div class="screen bg-offwhite flex flex-col">
+          <div class="flex justify-between items-center px-6 pt-5 pb-2">
+            <span class="text-xs font-semibold text-gray-800">9:41</span>
+          </div>
+
+          <!-- Header -->
+          <div class="bg-white px-5 pt-1 pb-4 border-b border-gray-100 flex items-center gap-3">
+            <button class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111827" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <div class="flex-1">
+              <p class="text-base font-bold text-gray-900">Cafe Order</p>
+              <p class="text-xs text-gray-400">교정 표현에서 저장</p>
+            </div>
+            <!-- delete button -->
+            <button class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            </button>
+          </div>
+
+          <div class="flex-1 overflow-y-auto" style="padding-bottom:32px">
+
+            <!-- Saved expression highlight card -->
+            <div class="mx-4 mt-4 mb-5 bg-indigo-50 border border-indigo-200 rounded-2xl px-4 py-4">
+              <p class="text-xs text-indigo-500 font-semibold mb-2 uppercase tracking-wide">Saved Expression</p>
+              <p class="text-lg font-bold text-indigo-800 leading-snug mb-3">"I'd like a flat white, please."</p>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-medium text-indigo-500 bg-indigo-100 px-2.5 py-1 rounded-full">Correction</span>
+                  <span class="text-xs text-gray-400">Mar 24, 2026</span>
+                </div>
+                <button class="flex items-center gap-1.5 bg-indigo-100 rounded-full px-3 py-1.5">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                  <span class="text-xs font-semibold text-indigo-600">Listen</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Original conversation context -->
+            <div class="px-4">
+              <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Original Conversation</p>
+
+              <!-- Non-highlighted turn (context) -->
+              <div class="mb-4 opacity-60">
+                <!-- AI message -->
+                <div class="flex gap-2.5 items-start mb-3">
+                  <div class="w-6 h-6 rounded-full bg-red-50 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
+                      <ellipse cx="14" cy="18" rx="12" ry="11" fill="#E53E3E"/>
+                      <circle cx="4" cy="8" r="5" fill="#E53E3E"/><circle cx="4" cy="8" r="2.8" fill="#B91C1C"/>
+                      <circle cx="24" cy="8" r="5" fill="#E53E3E"/><circle cx="24" cy="8" r="2.8" fill="#B91C1C"/>
+                      <ellipse cx="14" cy="23" rx="8" ry="6.5" fill="#FC8181"/>
+                      <ellipse cx="9" cy="15" rx="3" ry="2.8" fill="#1a1a1a"/><ellipse cx="19" cy="15" rx="3" ry="2.8" fill="#1a1a1a"/>
+                      <circle cx="10" cy="13.8" r="1" fill="white"/><circle cx="20" cy="13.8" r="1" fill="white"/>
+                      <ellipse cx="14" cy="21.5" rx="4" ry="3.2" fill="#1a1a1a"/>
+                      <path d="M14 24.7 L14 27" stroke="#1a1a1a" stroke-width="1.3" stroke-linecap="round"/>
+                      <path d="M10 27 Q14 30 18 27" stroke="#1a1a1a" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                  <p class="text-gray-600 text-xs leading-relaxed">Hi! Welcome to Brew & Bean. What can I get started for you?</p>
+                </div>
+                <!-- User bubble -->
+                <div class="flex justify-end mb-1">
+                  <div class="bg-gray-800 rounded-2xl rounded-br-sm px-3 py-2 max-w-xs">
+                    <p class="text-white text-xs">A large latte please.</p>
+                  </div>
+                </div>
+                <!-- AI feedback (no correction) -->
+                <div class="flex gap-2 items-start">
+                  <div class="w-6 h-6 flex-shrink-0"></div>
+                  <div class="bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-2 text-xs text-emerald-700 font-medium">✅ Perfect!</div>
+                </div>
+              </div>
+
+              <!-- ★ Highlighted turn — the saved expression is here -->
+              <div class="mb-4 bg-white border-2 border-indigo-200 rounded-2xl px-3 pt-2 pb-3">
+                <div class="flex items-center gap-1.5 mb-2">
+                  <span class="text-indigo-400 text-sm">📌</span>
+                  <p class="text-xs text-indigo-500 font-semibold">Saved expression in this turn</p>
+                </div>
+                <!-- User bubble -->
+                <div class="flex justify-end mb-3">
+                  <div class="bg-gray-900 rounded-2xl rounded-br-sm px-3 py-2 max-w-xs">
+                    <p class="text-white text-xs">I want a flat white with oat milk please.</p>
+                  </div>
+                </div>
+                <!-- Feedback card -->
+                <div class="flex gap-2 items-start mb-2">
+                  <div class="w-6 h-6 rounded-full bg-red-50 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
+                      <ellipse cx="14" cy="18" rx="12" ry="11" fill="#E53E3E"/>
+                      <circle cx="4" cy="8" r="5" fill="#E53E3E"/><circle cx="4" cy="8" r="2.8" fill="#B91C1C"/>
+                      <circle cx="24" cy="8" r="5" fill="#E53E3E"/><circle cx="24" cy="8" r="2.8" fill="#B91C1C"/>
+                      <ellipse cx="14" cy="23" rx="8" ry="6.5" fill="#FC8181"/>
+                      <ellipse cx="9" cy="15" rx="3" ry="2.8" fill="#1a1a1a"/><ellipse cx="19" cy="15" rx="3" ry="2.8" fill="#1a1a1a"/>
+                      <ellipse cx="14" cy="21.5" rx="4" ry="3.2" fill="#1a1a1a"/>
+                      <path d="M14 24.7 L14 27" stroke="#1a1a1a" stroke-width="1.3" stroke-linecap="round"/>
+                      <path d="M10 27 Q14 30 18 27" stroke="#1a1a1a" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                  <div class="flex-1">
+                    <!-- Feedback: correction highlight -->
+                    <div class="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 mb-2">
+                      <p class="text-gray-400 text-xs line-through mb-0.5">I want a flat white</p>
+                      <div class="flex items-center justify-between">
+                        <p class="text-gray-800 text-xs font-bold text-indigo-600">"I'd like a flat white"</p>
+                        <span class="text-indigo-400 text-xs ml-2">← saved</span>
+                      </div>
+                    </div>
+                    <!-- AI reply -->
+                    <p class="text-gray-600 text-xs leading-relaxed">Great choice! One oat milk flat white. For here or to go?</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Next turn (context) -->
+              <div class="opacity-60">
+                <div class="flex justify-end mb-2">
+                  <div class="bg-gray-800 rounded-2xl rounded-br-sm px-3 py-2 max-w-xs">
+                    <p class="text-white text-xs">To go please!</p>
+                  </div>
+                </div>
+                <div class="flex gap-2 items-start">
+                  <div class="w-6 h-6 flex-shrink-0"></div>
+                  <div class="bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-2 text-xs text-emerald-700 font-medium">✅ Perfect!</div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

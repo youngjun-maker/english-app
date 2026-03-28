@@ -24,53 +24,63 @@ export default function SavePopup({ visible, initialText, onSave, onClose }: Sav
       animationType="fade"
       onRequestClose={onClose}
     >
-      <Pressable
-        className="flex-1 bg-black/50 justify-end"
-        onPress={onClose}
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <KeyboardAvoidingView
-          behavior="padding"
-          keyboardVerticalOffset={Platform.OS === 'android' ? 24 : 0}
+        <Pressable
+          className="flex-1 bg-black/50 justify-center items-center px-6"
+          onPress={onClose}
         >
-          <Pressable onPress={() => {}}>
-            <View className="bg-white rounded-t-2xl p-6">
-              <Text className="text-base font-semibold text-gray-800 mb-3">표현 저장</Text>
+          <Pressable onPress={() => {}} className="w-full">
+            <View className="bg-white rounded-2xl p-6 w-full">
+              {/* 제목 */}
+              <Text className="text-lg font-bold text-gray-900 mb-4">표현 저장</Text>
 
-              <Text className="text-xs text-gray-500 mb-1">표현</Text>
-              <TextInput
-                className="border border-gray-200 rounded-lg px-3 py-2 text-gray-800 mb-3"
-                value={text}
-                onChangeText={setText}
-                multiline
-                placeholder="저장할 표현을 입력하세요"
-              />
+              {/* 표현 미리보기 */}
+              <Text className="text-xs font-medium text-gray-500 mb-1">표현</Text>
+              <View className="bg-blue-50 rounded-xl px-3 py-2 mb-4">
+                <TextInput
+                  className="text-blue-600 font-semibold text-sm"
+                  value={text}
+                  onChangeText={setText}
+                  multiline
+                  placeholder="저장할 표현을 입력하세요"
+                  placeholderTextColor="#93c5fd"
+                />
+              </View>
 
-              <Text className="text-xs text-gray-500 mb-1">메모 (선택)</Text>
-              <TextInput
-                className="border border-gray-200 rounded-lg px-3 py-2 text-gray-800 mb-5"
-                value={memo}
-                onChangeText={setMemo}
-                placeholder="메모를 입력하세요"
-              />
+              {/* 메모 */}
+              <Text className="text-xs font-medium text-gray-500 mb-1">메모 (선택)</Text>
+              <View className="bg-gray-50 rounded-xl px-3 py-2 mb-6">
+                <TextInput
+                  className="text-gray-700 text-sm"
+                  value={memo}
+                  onChangeText={setMemo}
+                  placeholder="메모를 입력하세요"
+                  placeholderTextColor="#d1d5db"
+                />
+              </View>
 
+              {/* 버튼 행 */}
               <View className="flex-row gap-3">
                 <Pressable
-                  className="flex-1 py-3 rounded-xl border border-gray-200 items-center"
                   onPress={onClose}
+                  className="flex-1 bg-gray-100 rounded-xl py-3 items-center active:opacity-70"
                 >
-                  <Text className="text-gray-600 font-medium">취소</Text>
+                  <Text className="text-gray-700 font-semibold text-sm">취소</Text>
                 </Pressable>
                 <Pressable
-                  className="flex-1 py-3 rounded-xl bg-blue-500 items-center"
                   onPress={() => { onSave(text, memo); onClose(); }}
+                  className="flex-1 bg-blue-500 rounded-xl py-3 items-center active:opacity-70"
                 >
-                  <Text className="text-white font-semibold">저장</Text>
+                  <Text className="text-white font-semibold text-sm">저장</Text>
                 </Pressable>
               </View>
             </View>
           </Pressable>
-        </KeyboardAvoidingView>
-      </Pressable>
+        </Pressable>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

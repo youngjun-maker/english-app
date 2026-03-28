@@ -26,9 +26,9 @@ export default function UserBubble({ text, onLongPress, onSave }: UserBubbleProp
     <View className="items-end mb-4">
       <Pressable
         onPress={handleBubblePress}
-        className="bg-blue-500 rounded-2xl rounded-tr-sm px-4 py-3 max-w-[80%]"
+        className="bg-gray-900 rounded-2xl rounded-br-sm px-4 py-3 max-w-[80%]"
       >
-        <Text className="text-white text-sm leading-5">{text}</Text>
+        <Text className="text-white text-sm leading-relaxed">{text}</Text>
       </Pressable>
       <TTSButton
         text={text}

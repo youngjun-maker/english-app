@@ -16,6 +16,7 @@ import UserBubble from '@/components/chat/UserBubble';
 import AIBubble from '@/components/chat/AIBubble';
 import RecordButton from '@/components/chat/RecordButton';
 import TypingIndicator from '@/components/chat/TypingIndicator';
+import BearMascot from '@/components/common/BearMascot';
 import { useAppStore } from '@/store';
 import { transcribeAudio, sendMessage, fetchMessages, saveExpression } from '@/api/chat';
 import type { AITurnContent, Message } from '@/types';
@@ -225,26 +226,43 @@ export default function ChatScreen() {
     </View>
   ), [handleSaveExpression]);
 
+  // 기본 토픽 이모지 (향후 topicId prop 추가 시 매핑 확장)
+  const topicEmoji = '✈️';
+
   return (
     <KeyboardAvoidingView
-      className="flex-1 bg-white"
+      className="flex-1 bg-[#FAF9F7]"
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       {/* ------------------------------------------------------------------ */}
       {/* Header                                                              */}
       {/* ------------------------------------------------------------------ */}
-      <View className="bg-white px-5 pt-14 pb-4 border-b border-gray-100 flex-row items-center justify-between">
-        <View className="flex-1 mr-3">
-          <Text className="text-xs text-gray-400 mb-0.5">대화 #{id}</Text>
-          <Text className="text-lg font-bold text-gray-900" numberOfLines={1}>
-            {topicLabel ?? '대화'}
+      <View className="bg-white px-5 pt-1 pb-3 border-b border-gray-100 flex-row items-center gap-3">
+        {/* Bear avatar + 토픽 이모지 배지 */}
+        <View className="relative">
+          <View className="w-10 h-10 rounded-full bg-red-50 items-center justify-center">
+            <BearMascot size="medium" />
+          </View>
+          {/* 토픽 이모지 배지 — 우하단 */}
+          <View className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-amber-50 items-center justify-center border-2 border-white">
+            <Text className="text-[9px]">{topicEmoji}</Text>
+          </View>
+        </View>
+
+        {/* 타이틀 */}
+        <View className="flex-1">
+          <Text className="text-xs text-gray-400">Situation Talking · Barista</Text>
+          <Text className="text-base font-bold text-gray-900" numberOfLines={1}>
+            {topicLabel ?? 'Conversation'}
           </Text>
         </View>
+
+        {/* End 버튼 */}
         <Pressable
           onPress={handleEndConversation}
-          className="bg-gray-100 rounded-xl px-4 py-2 active:opacity-60"
+          className="bg-gray-100 rounded-xl px-3.5 py-1.5 active:opacity-60"
         >
-          <Text className="text-sm font-medium text-gray-700">대화 끝내기</Text>
+          <Text className="text-sm font-medium text-gray-700">End</Text>
         </Pressable>
       </View>
 
@@ -256,7 +274,7 @@ export default function ChatScreen() {
         data={turns}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
-        className="flex-1 px-4 pt-4"
+        className="flex-1 px-4 pt-4 bg-[#FAF9F7]"
         onContentSizeChange={() =>
           flatListRef.current?.scrollToEnd({ animated: true })
         }

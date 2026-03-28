@@ -63,11 +63,13 @@ export default function RootLayout() {
 
   const content = (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="chat" options={{ headerShown: false }} />
-        <Stack.Screen name="study/[expressionId]" options={{ headerShown: false }} />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(auth)/onboarding" />
+        <Stack.Screen name="(auth)/login" />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="chat/[id]" />
+        <Stack.Screen name="chat/topic-select" />
+        <Stack.Screen name="study/[expressionId]" />
       </Stack>
       {appState === 'unauthenticated' && <Redirect href="/(auth)/onboarding" />}
       {appState === 'home' && <Redirect href="/(tabs)/" />}

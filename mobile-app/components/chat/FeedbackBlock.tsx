@@ -17,8 +17,10 @@ export default function FeedbackBlock({ feedback, onLongPress, onSave }: Feedbac
 
   if (feedback.is_perfect) {
     return (
-      <View className="bg-green-50 rounded-xl px-4 py-3 mb-2">
-        <Text className="text-green-700 text-sm">완벽해요! 자연스럽고 정확한 표현이에요.</Text>
+      <View className="bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-2 mb-2">
+        <Text className="text-emerald-700 text-xs font-semibold">
+          ✅ Perfect expression!
+        </Text>
       </View>
     );
   }
@@ -34,19 +36,19 @@ export default function FeedbackBlock({ feedback, onLongPress, onSave }: Feedbac
   return (
     <Pressable
       onPress={handleBubblePress}
-      className="bg-amber-50 rounded-xl px-4 py-3 mb-2"
+      className="bg-amber-50 border border-amber-100 rounded-xl px-3.5 py-2.5 mb-2"
     >
       {/* 원문 (취소선) */}
       {feedback.original && (
-        <Text className="text-gray-400 text-sm line-through mb-1">
+        <Text className="text-gray-400 text-xs line-through mb-1">
           {feedback.original}
         </Text>
       )}
 
       {/* 교정문 + TTS */}
       {feedback.corrected && (
-        <View className="flex-row items-center justify-between mb-1">
-          <Text className="text-gray-800 font-semibold text-sm flex-1 mr-2">
+        <View className="flex-row items-center justify-between">
+          <Text className="text-gray-800 text-sm font-semibold flex-1 mr-2">
             {feedback.corrected}
           </Text>
           <TTSButton
