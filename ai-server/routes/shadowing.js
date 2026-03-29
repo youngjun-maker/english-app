@@ -43,12 +43,30 @@ router.post('/transcribe', authMiddleware, upload.single('audio'), async (req, r
 
     fs.unlink(filePath, () => {});
 
-    const segments = (transcript.segments || []).map((seg, i) => ({
-      index: i,
+    // Whisper raw segments → 마침표/물음표/느낌표 기준으로 병합
+    const rawSegments = (transcript.segments || []).map((seg) => ({
       start: Math.round(seg.start * 100) / 100,
       end: Math.round(seg.end * 100) / 100,
       text: seg.text.trim(),
     }));
+
+    const merged = [];
+    let buffer = null;
+    for (const seg of rawSegments) {
+      if (!buffer) {
+        buffer = { start: seg.start, end: seg.end, text: seg.text };
+      } else {
+        buffer.text = buffer.text + ' ' + seg.text;
+        buffer.end = seg.end;
+      }
+      if (/[.?!]$/.test(seg.text)) {
+        merged.push({ ...buffer });
+        buffer = null;
+      }
+    }
+    if (buffer) merged.push(buffer);
+
+    const segments = merged.map((s, i) => ({ index: i, ...s }));
 
     return res.json({ segments });
   } catch (err) {
