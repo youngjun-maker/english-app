@@ -109,10 +109,9 @@ export default function ShadowingPlayerScreen() {
     const mode = shadowingModeRef.current;
 
     if (mode === '1') {
-      // 매 문장 진입 시 pause → 해당 문장 시작점에서 대기
+      // 매 문장 진입 시 pause (seek 없이 현재 위치에서 정지)
       isPausedRef.current = true;
       videoRef.current?.pause();
-      videoRef.current?.seek(current.start);
     } else if (mode === '3') {
       // 3문장 블록 경계 진입 시에만 pause
       const prevBlock = Math.floor(prevIndex / 3);
@@ -120,7 +119,6 @@ export default function ShadowingPlayerScreen() {
       if (newBlock > prevBlock) {
         isPausedRef.current = true;
         videoRef.current?.pause();
-        videoRef.current?.seek(current.start);
       }
     }
     // 전체 모드: pause 없음
