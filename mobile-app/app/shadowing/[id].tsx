@@ -67,12 +67,18 @@ export default function ShadowingPlayerScreen() {
     const currentScripts = scriptsRef.current;
     if (currentScripts.length === 0) return;
 
-    // 현재 문장 찾기
+    // 현재 문장 찾기 (정확한 구간)
     const current = currentScripts.find(
       (s) => currentTime >= s.start && currentTime < s.end,
     );
-    if (current) setCurrentSentenceIndex(current.index);
 
+    // current 없으면 가장 가까운 이전 문장으로 fallback (gap 구간 / 마지막 문장 이후 자동 스크롤 유지)
+    const indexToSet =
+      current?.index ??
+      [...currentScripts].reverse().find((s) => currentTime >= s.start)?.index;
+    if (indexToSet !== undefined) setCurrentSentenceIndex(indexToSet);
+
+    // auto-pause / 루프용 currentScript (기존 로직 유지)
     const currentScript =
       current ??
       [...currentScripts].reverse().find((s) => currentTime >= s.start) ??

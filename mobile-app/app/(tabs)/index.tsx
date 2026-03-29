@@ -181,12 +181,15 @@ export default function HomeScreen() {
             <Text className="text-[10px] text-gray-400 text-center mt-0.5">Open chat</Text>
           </Pressable>
 
-          {/* Shadowing — Soon */}
-          <View className="flex-1 bg-white rounded-2xl p-4 border border-gray-100 items-center opacity-50">
+          {/* Shadowing */}
+          <Pressable
+            className="flex-1 bg-white rounded-2xl p-4 border border-gray-100 items-center active:opacity-70"
+            onPress={() => router.push('/(tabs)/shadowing')}
+          >
             <Text className="text-2xl mb-2">🎧</Text>
             <Text className="text-xs font-bold text-gray-800 text-center">Shadowing</Text>
-            <Text className="text-[10px] text-gray-400 text-center mt-0.5">Soon</Text>
-          </View>
+            <Text className="text-[10px] text-gray-400 text-center mt-0.5">Practice</Text>
+          </Pressable>
 
           {/* Situation */}
           <Pressable

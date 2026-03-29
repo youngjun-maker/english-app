@@ -66,22 +66,22 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
       player.playbackRate = playbackRate;
     }, [playbackRate, player]);
 
-    // timeUpdate / playingChange 이벤트 구독
+    // playingChange 이벤트 구독 + 250ms interval로 currentTime 폴링
     useEffect(() => {
-      const timeSub = player.addListener('timeUpdate', (e) => {
-        const current = e.currentTime ?? 0;
-        onTimeUpdateRef.current?.(current);
-        setProgress(duration > 0 ? current / duration : 0);
-      });
-
       const playingSub = player.addListener('playingChange', (e) => {
         setIsPlaying(e.isPlaying);
         onPlayingChangeRef.current?.(e.isPlaying);
       });
 
+      const interval = setInterval(() => {
+        const current = player.currentTime ?? 0;
+        onTimeUpdateRef.current?.(current);
+        setProgress(duration > 0 ? current / duration : 0);
+      }, 250);
+
       return () => {
-        timeSub.remove();
         playingSub.remove();
+        clearInterval(interval);
       };
     }, [player, duration]);
 

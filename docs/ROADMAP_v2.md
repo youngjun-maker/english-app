@@ -407,6 +407,21 @@ CREATE INDEX idx_shadowing_sessions_user   ON shadowing_sessions(user_id, create
 | Task 035 | 녹음 → 비교 재생 | rn-expo-frontend | ⬜ 대기 |
 | Task 036 | 완료 처리 + 세션 저장 + 폴리싱 | rn-expo-frontend + contexttalk-code-auditor | ⬜ 대기 |
 
+### 버그 수정 이력 (Task 033 후속)
+
+#### 🐛 ScriptArea 자동 스크롤 미동작 (2026-03-29 수정)
+
+**문제 1 — `timeUpdate` 이벤트 미발화 (Android)**
+- `VideoPlayer.tsx`: expo-video `player.addListener('timeUpdate', ...)` 이벤트가 Android 실기기에서 발화되지 않음
+- **수정**: 이벤트 구독 제거 → `setInterval` 250ms 폴링으로 교체 (`player.currentTime` 직접 읽기)
+
+**문제 2 — `setCurrentSentenceIndex` 미호출 (gap 구간)**
+- `app/shadowing/[id].tsx`: `handleTimeUpdate`에서 정확한 구간 문장(`current`)이 없을 때 (`start <= time < end`를 만족하는 문장 없음) `setCurrentSentenceIndex`가 호출되지 않아 이전 인덱스에 고정
+- **수정**: fallback 로직 추가 — `current`가 없으면 현재 시간 이후로 `start`가 가장 가까운 이전 문장 인덱스로 업데이트
+
+#### 🔧 홈화면 Shadowing 버튼 활성화 (2026-03-29)
+- `app/(tabs)/index.tsx`: `View` (비활성) → `Pressable` 로 교체, `opacity-50` 제거, `"Soon"` → `"Practice"`, `/(tabs)/shadowing` 탭 이동 연결
+
 ---
 
 ## AI 프리토킹 — 출시 전 개선 작업 계획
