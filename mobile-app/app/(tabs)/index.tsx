@@ -173,32 +173,32 @@ export default function HomeScreen() {
         <View className="flex-row gap-3 mb-5">
           {/* Free Talking */}
           <Pressable
-            className="flex-1 bg-white rounded-2xl p-4 border border-gray-100 items-center active:opacity-70"
+            className="flex-1 bg-white rounded-2xl p-5 border border-gray-100 items-center active:opacity-70"
             onPress={handleFABPress}
           >
-            <Text className="text-2xl mb-2">💬</Text>
-            <Text className="text-xs font-bold text-gray-800 text-center">Free Talking</Text>
-            <Text className="text-[10px] text-gray-400 text-center mt-0.5">Open chat</Text>
+            <Text className="text-3xl mb-2.5">💬</Text>
+            <Text className="text-sm font-bold text-gray-800 text-center">Free Talking</Text>
+            <Text className="text-xs text-gray-400 text-center mt-0.5">Open chat</Text>
           </Pressable>
 
           {/* Shadowing */}
           <Pressable
-            className="flex-1 bg-white rounded-2xl p-4 border border-gray-100 items-center active:opacity-70"
+            className="flex-1 bg-white rounded-2xl p-5 border border-gray-100 items-center active:opacity-70"
             onPress={() => router.push('/(tabs)/shadowing')}
           >
-            <Text className="text-2xl mb-2">🎧</Text>
-            <Text className="text-xs font-bold text-gray-800 text-center">Shadowing</Text>
-            <Text className="text-[10px] text-gray-400 text-center mt-0.5">Practice</Text>
+            <Text className="text-3xl mb-2.5">🎧</Text>
+            <Text className="text-sm font-bold text-gray-800 text-center">Shadowing</Text>
+            <Text className="text-xs text-gray-400 text-center mt-0.5">Practice</Text>
           </Pressable>
 
           {/* Situation */}
           <Pressable
-            className="flex-1 bg-white rounded-2xl p-4 border border-gray-100 items-center active:opacity-70"
+            className="flex-1 bg-white rounded-2xl p-5 border border-gray-100 items-center active:opacity-70"
             onPress={handleFABPress}
           >
-            <Text className="text-2xl mb-2">✈️</Text>
-            <Text className="text-xs font-bold text-gray-800 text-center">Situation</Text>
-            <Text className="text-[10px] text-gray-400 text-center mt-0.5">Role play</Text>
+            <Text className="text-3xl mb-2.5">✈️</Text>
+            <Text className="text-sm font-bold text-gray-800 text-center">Situation</Text>
+            <Text className="text-xs text-gray-400 text-center mt-0.5">Role play</Text>
           </Pressable>
         </View>
 
@@ -207,13 +207,20 @@ export default function HomeScreen() {
           <Text className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
             Recent History
           </Text>
-          <Pressable className="active:opacity-60">
-            <Text className="text-xs font-medium text-indigo-500">See all</Text>
-          </Pressable>
+          {conversations.length > 5 && (
+            <Pressable
+              className="active:opacity-60"
+              onPress={() => router.push('/chat/history')}
+            >
+              <Text className="text-xs font-medium text-indigo-500">See all</Text>
+            </Pressable>
+          )}
         </View>
       </View>
     </>
   );
+
+  const recentConversations = conversations.slice(0, 5);
 
   return (
     <View className="flex-1 bg-[#FAF9F7]">
@@ -224,7 +231,7 @@ export default function HomeScreen() {
         </>
       ) : (
         <FlatList
-          data={conversations}
+          data={recentConversations}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <ConversationItem item={item} onPress={handleConversationPress} />
