@@ -2,7 +2,7 @@ import { FlatList, Pressable, Text, View } from 'react-native';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useAppStore } from '@/store/useAppStore';
-import { fetchConversations } from '@/api/conversations';
+import { fetchConversations, createConversation } from '@/api/conversations';
 import BearMascot from '@/components/common/BearMascot';
 import type { Conversation } from '@/types';
 
@@ -99,8 +99,13 @@ export default function HomeScreen() {
     router.push(`/chat/${id}`);
   }
 
-  function handleFABPress() {
-    router.push('/chat/topic-select');
+  async function handleFABPress() {
+    try {
+      const conversation = await createConversation('free_talk', 'Free Talking');
+      router.push({ pathname: '/chat/[id]', params: { id: conversation.id, topicLabel: 'Free Talking' } });
+    } catch {
+      showToast('대화를 시작하지 못했어요. 다시 시도해주세요.');
+    }
   }
 
   // FlatList ListHeaderComponent
