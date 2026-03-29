@@ -70,6 +70,8 @@ export default function RootLayout() {
         <Stack.Screen name="chat/[id]" />
         <Stack.Screen name="chat/topic-select" />
         <Stack.Screen name="study/[expressionId]" />
+        <Stack.Screen name="quiz/[sessionId]" />
+        <Stack.Screen name="quiz/result/[sessionId]" />
       </Stack>
       {appState === 'unauthenticated' && <Redirect href="/(auth)/onboarding" />}
       {appState === 'home' && <Redirect href="/(tabs)/" />}

@@ -18,6 +18,7 @@ app.use('/api/conversations', require('./routes/conversations'));
 app.use('/api/expressions', require('./routes/expressions'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/shadowing', require('./routes/shadowing'));
+app.use('/api/quiz', require('./routes/quiz'));
 
 // Health check
 app.get('/health', (req, res) => {
