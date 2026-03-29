@@ -33,6 +33,7 @@ export default function ShadowingPlayerScreen() {
   const videoRef = useRef<VideoPlayerHandle>(null);
   // auto-pause 중복 실행 방지 플래그
   const isPausedRef = useRef(false);
+  const lastSentenceIndexRef = useRef(-1);
   // 최신 scripts/mode/loop을 콜백에서 참조하기 위한 ref
   const scriptsRef = useRef(scripts);
   const shadowingModeRef = useRef(shadowingMode);
@@ -67,61 +68,61 @@ export default function ShadowingPlayerScreen() {
     const currentScripts = scriptsRef.current;
     if (currentScripts.length === 0) return;
 
-    // 현재 문장 찾기 (정확한 구간)
+    // 현재 문장 인덱스 결정 (gap 구간은 가장 가까운 이전 문장으로 fallback)
     const current = currentScripts.find(
       (s) => currentTime >= s.start && currentTime < s.end,
     );
-
-    // current 없으면 가장 가까운 이전 문장으로 fallback (gap 구간 / 마지막 문장 이후 자동 스크롤 유지)
     const indexToSet =
       current?.index ??
       [...currentScripts].reverse().find((s) => currentTime >= s.start)?.index;
-    if (indexToSet !== undefined) setCurrentSentenceIndex(indexToSet);
 
-    // auto-pause / 루프용 currentScript (기존 로직 유지)
-    const currentScript =
-      current ??
-      [...currentScripts].reverse().find((s) => currentTime >= s.start) ??
-      currentScripts[currentScripts.length - 1];
+    if (indexToSet === undefined) return;
 
-    // 루프 — 최우선 처리
+    const prevIndex = lastSentenceIndexRef.current;
+    const indexChanged = indexToSet !== prevIndex;
+
+    if (indexChanged) {
+      lastSentenceIndexRef.current = indexToSet;
+      setCurrentSentenceIndex(indexToSet);
+    }
+
+    // 루프 모드: 다음 문장으로 넘어가는 순간 현재 문장 시작점으로 되돌리기
     if (isLoopingRef.current) {
-      if (currentTime >= currentScript.end) {
-        videoRef.current?.seek(currentScript.start);
-        videoRef.current?.play();
-        isPausedRef.current = false;
+      if (indexChanged && prevIndex >= 0) {
+        const prevScript = currentScripts[prevIndex];
+        if (prevScript) {
+          lastSentenceIndexRef.current = prevIndex;
+          setCurrentSentenceIndex(prevIndex);
+          videoRef.current?.seek(prevScript.start);
+          videoRef.current?.play();
+          isPausedRef.current = false;
+        }
       }
       return;
     }
 
-    // Auto-pause (1문장 / 3문장 모드)
+    // Auto-pause: 문장 전환 감지 방식 (폴링 오차 무관하게 정확히 동작)
+    // 최초 진입(prevIndex=-1)이거나 이미 pause 중이면 skip
+    if (!indexChanged || prevIndex < 0 || isPausedRef.current) return;
+
     const mode = shadowingModeRef.current;
 
     if (mode === '1') {
-      if (currentTime >= currentScript.end && !isPausedRef.current) {
-        isPausedRef.current = true;
-        videoRef.current?.pause();
-        // gap 구간에서 pause 루프 방지: 다음 문장 시작점으로 seek
-        const nextScript = currentScripts[currentScript.index + 1];
-        if (nextScript) {
-          videoRef.current?.seek(nextScript.start);
-        }
-      }
+      // 매 문장 전환마다 pause → 새 문장 시작점에서 대기
+      isPausedRef.current = true;
+      videoRef.current?.pause();
+      videoRef.current?.seek(currentScripts[indexToSet].start);
     } else if (mode === '3') {
-      const blockIndex = Math.floor(currentScript.index / 3);
-      const blockLastIndex = Math.min(blockIndex * 3 + 2, currentScripts.length - 1);
-      const blockLastScript = currentScripts[blockLastIndex];
-      if (currentTime >= blockLastScript.end && !isPausedRef.current) {
+      // 3문장 블록 경계 전환 시에만 pause
+      const prevBlock = Math.floor(prevIndex / 3);
+      const newBlock = Math.floor(indexToSet / 3);
+      if (newBlock > prevBlock) {
         isPausedRef.current = true;
         videoRef.current?.pause();
-        // gap 구간에서 pause 루프 방지: 다음 블록 시작점으로 seek
-        const nextScript = currentScripts[blockLastIndex + 1];
-        if (nextScript) {
-          videoRef.current?.seek(nextScript.start);
-        }
+        videoRef.current?.seek(currentScripts[indexToSet].start);
       }
     }
-    // 전체 모드: pause 없음, ScriptArea가 currentIndex로 자동 스크롤
+    // 전체 모드: pause 없음
   }
 
   // 사용자가 직접 재생 누를 때 auto-pause 플래그 리셋
