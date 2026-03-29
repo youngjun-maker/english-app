@@ -101,6 +101,11 @@ export default function ShadowingPlayerScreen() {
       if (currentTime >= currentScript.end && !isPausedRef.current) {
         isPausedRef.current = true;
         videoRef.current?.pause();
+        // gap 구간에서 pause 루프 방지: 다음 문장 시작점으로 seek
+        const nextScript = currentScripts[currentScript.index + 1];
+        if (nextScript) {
+          videoRef.current?.seek(nextScript.start);
+        }
       }
     } else if (mode === '3') {
       const blockIndex = Math.floor(currentScript.index / 3);
@@ -109,6 +114,11 @@ export default function ShadowingPlayerScreen() {
       if (currentTime >= blockLastScript.end && !isPausedRef.current) {
         isPausedRef.current = true;
         videoRef.current?.pause();
+        // gap 구간에서 pause 루프 방지: 다음 블록 시작점으로 seek
+        const nextScript = currentScripts[blockLastIndex + 1];
+        if (nextScript) {
+          videoRef.current?.seek(nextScript.start);
+        }
       }
     }
     // 전체 모드: pause 없음, ScriptArea가 currentIndex로 자동 스크롤
