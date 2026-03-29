@@ -108,11 +108,11 @@ export default function ChatScreen() {
   async function fetchAIResponse(tempId: string, text: string) {
     useAppStore.getState().setTypingIndicator(true);
     try {
-      const { message_id, content } = await sendMessage(conversationId, text);
+      const { message_id, user_message_id, content } = await sendMessage(conversationId, text);
       setTurns((prev) =>
         prev.map((t) =>
           t.id === tempId
-            ? { id: message_id, userMsgId: t.userMsgId, userText: text, aiContent: content }
+            ? { id: message_id, userMsgId: user_message_id, userText: text, aiContent: content }
             : t
         )
       );

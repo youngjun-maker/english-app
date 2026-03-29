@@ -44,7 +44,7 @@ export default function ExpressionDetailScreen() {
   }>();
   const router = useRouter();
 
-  const { isPlaying, handlePress } = useTTSButton(expressionText ?? '');
+  const { isLoading, isPlaying, handlePress } = useTTSButton(expressionText ?? '');
   const [contextTurns, setContextTurns] = useState<ContextTurn[]>([]);
   const [highlightedTurnId, setHighlightedTurnId] = useState<string | null>(null);
 
@@ -129,6 +129,7 @@ export default function ExpressionDetailScreen() {
             <View className="bg-indigo-100 rounded-full px-3 py-1.5 flex-row items-center gap-1.5">
               <TTSButton
                 text={expressionText}
+                isLoading={isLoading}
                 isPlaying={isPlaying}
                 onPress={handlePress}
               />

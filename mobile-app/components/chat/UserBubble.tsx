@@ -11,7 +11,7 @@ type UserBubbleProps = {
 };
 
 export default function UserBubble({ text, onLongPress, onSave }: UserBubbleProps) {
-  const { isPlaying, handlePress: handleTTSPress } = useTTSButton(text);
+  const { isLoading, isPlaying, handlePress: handleTTSPress } = useTTSButton(text);
   const [saveVisible, setSaveVisible] = useState(false);
 
   function handleBubblePress() {
@@ -32,6 +32,7 @@ export default function UserBubble({ text, onLongPress, onSave }: UserBubbleProp
       </Pressable>
       <TTSButton
         text={text}
+        isLoading={isLoading}
         isPlaying={isPlaying}
         onPress={handleTTSPress}
       />

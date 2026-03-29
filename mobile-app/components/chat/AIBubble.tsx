@@ -24,7 +24,7 @@ export default function AIBubble({
   onSave,
   onFeedbackSave,
 }: AIBubbleProps) {
-  const { isPlaying, handlePress } = useTTSButton(nextResponse);
+  const { isLoading, isPlaying, handlePress } = useTTSButton(nextResponse);
   const [saveVisible, setSaveVisible] = useState(false);
 
   return (
@@ -66,6 +66,7 @@ export default function AIBubble({
         {/* TTS 버튼 */}
         <TTSButton
           text={nextResponse}
+          isLoading={isLoading}
           isPlaying={isPlaying}
           onPress={handlePress}
         />

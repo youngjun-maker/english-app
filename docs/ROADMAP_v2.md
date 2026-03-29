@@ -586,11 +586,13 @@ return { isPlaying, isLoading, handlePress };
 
 ### 작업 순서 요약
 
-| 순서 | 작업 | 대상 파일 | 우선순위 |
-|------|------|-----------|----------|
-| 1 | Supabase RPC `process_turn` 생성 (마이그레이션) | Supabase SQL Editor | 🔴 |
-| 2 | Supabase RPC `get_conversations_with_turns` 생성 | Supabase SQL Editor | 🔴 |
-| 3 | `conversations.js` 리팩토링 (RPC 호출로 교체, turnLimitMiddleware 제거) | `ai-server/routes/conversations.js`, `ai-server/middleware/turnLimit.js` | 🔴 |
-| 4 | `buildPrompt.js` 프리로드 방식으로 수정 | `ai-server/utils/buildPrompt.js` | 🔴 |
-| 5 | 프론트엔드 `user_message_id` 수신 및 적용 | `mobile-app/api/chat.ts`, `mobile-app/app/chat/[id].tsx` | 🟡 |
-| 6 | TTS 로딩 UI 개선 | `mobile-app/hooks/useTTSButton.ts`, `mobile-app/components/common/TTSButton.tsx` | 🟡 |
+| 순서 | 작업 | 대상 파일 | 에이전트 | 우선순위 | 상태 |
+|------|------|-----------|----------|----------|------|
+| 1 | Supabase RPC `process_turn` 생성 (마이그레이션) | Supabase SQL Editor | `contexttalk-api-architect` | 🔴 | ✅ 완료 |
+| 2 | Supabase RPC `get_conversations_with_turns` 생성 | Supabase SQL Editor | `contexttalk-api-architect` | 🔴 | ✅ 완료 |
+| 3 | `conversations.js` 리팩토링 (RPC 호출로 교체, turnLimitMiddleware 제거) | `ai-server/routes/conversations.js`, `ai-server/middleware/turnLimit.js` | `contexttalk-api-architect` | 🔴 | ✅ 완료 |
+| 4 | `buildPrompt.js` 프리로드 방식으로 수정 | `ai-server/utils/buildPrompt.js` | `contexttalk-api-architect` | 🔴 | ✅ 완료 |
+| 5 | 프론트엔드 `user_message_id` 수신 및 적용 | `mobile-app/api/chat.ts`, `mobile-app/app/chat/[id].tsx` | `rn-expo-frontend` | 🟡 | ✅ 완료 |
+| 6 | TTS 로딩 UI 개선 + AbortController | `mobile-app/hooks/useTTSButton.ts`, `mobile-app/components/common/TTSButton.tsx` | `rn-expo-frontend` | 🟡 | ✅ 완료 |
+| 7 | TTS 캐싱 (Supabase Storage) | `ai-server/routes/tts.js`, Supabase Storage | `contexttalk-api-architect` | 🟢 | ✅ 완료 |
+| 8 | GPT-4o-Audio 통합 | `ai-server/routes/conversations.js` | `contexttalk-api-architect` | 🟢 | ⏸ 보류 — m4a 미지원(wav/mp3만 지원), UX 역체감 확인. GPT-4o-Audio GA 전환 후 재검토 |

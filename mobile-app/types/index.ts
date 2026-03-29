@@ -64,9 +64,11 @@ export type ErrorCode =
 export type TranscribeResponse = { text: string };
 export type SendMessageResponse = {
   message_id: string;
+  user_message_id: string;
   turn_number: number;
   content: AITurnContent;
 };
+export type TTSResponse = { url: string };
 export type APIError = {
   error: {
     code: ErrorCode;

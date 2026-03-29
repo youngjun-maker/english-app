@@ -1,8 +1,8 @@
-import * as FileSystem from 'expo-file-system/legacy';
 import { Audio } from 'expo-av';
 import type {
   TranscribeResponse,
   SendMessageResponse,
+  TTSResponse,
   Message,
   Expression,
   APIError,
@@ -24,18 +24,6 @@ async function handleError(res: Response): Promise<never> {
   throw data;
 }
 
-// ArrayBuffer → base64 (React Native 내장 btoa 사용, 8192 청크로 stack overflow 방지)
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
-  let binary = '';
-  for (let i = 0; i < bytes.length; i += 8192) {
-    binary += String.fromCharCode(
-      ...(bytes.subarray(i, i + 8192) as unknown as number[]),
-    );
-  }
-  return btoa(binary);
-}
-
 // ① STT: 오디오 URI → FormData → POST /api/stt → { text }
 export async function transcribeAudio(audioUri: string): Promise<TranscribeResponse> {
   const form = new FormData();
@@ -52,7 +40,7 @@ export async function transcribeAudio(audioUri: string): Promise<TranscribeRespo
   return res.json();
 }
 
-// ② LLM: POST /api/conversations/:id/messages → { message_id, turn_number, content }
+// ② LLM: POST /api/conversations/:id/messages → { message_id, user_message_id, turn_number, content }
 export async function sendMessage(
   conversationId: string,
   text: string,
@@ -103,8 +91,8 @@ export async function deleteExpression(id: string): Promise<void> {
   if (!res.ok) return handleError(res);
 }
 
-// ⑦ TTS 재생: mp3 binary → base64 → FileSystem 임시파일 → expo-av
-export async function playTTS(text: string, onEnd?: () => void): Promise<void> {
+// ⑦ TTS 재생: POST /api/tts → { url } → Audio.Sound.createAsync
+export async function playTTS(text: string, onEnd?: () => void, signal?: AbortSignal): Promise<void> {
   // 이전 버튼 아이콘 즉시 리셋 후 기존 재생 중단
   _currentOnEnd?.();
   _currentOnEnd = null;
@@ -121,18 +109,11 @@ export async function playTTS(text: string, onEnd?: () => void): Promise<void> {
   const res = await apiFetch('/api/tts', {
     method: 'POST',
     body: JSON.stringify({ text }),
+    signal,
   });
   if (!res.ok) return handleError(res);
 
-  // mp3 binary → base64 변환
-  const buffer = await res.arrayBuffer();
-  const base64 = arrayBufferToBase64(buffer);
-
-  // 임시 파일에 저장
-  const tempUri = `${FileSystem.cacheDirectory}tts_${Date.now()}.mp3`;
-  await FileSystem.writeAsStringAsync(tempUri, base64, {
-    encoding: 'base64',
-  });
+  const { url } = (await res.json()) as TTSResponse;
 
   // 오디오 재생 모드 설정
   await Audio.setAudioModeAsync({
@@ -143,9 +124,9 @@ export async function playTTS(text: string, onEnd?: () => void): Promise<void> {
   // 새 사운드 시작 직전 onEnd 등록
   _currentOnEnd = onEnd ?? null;
 
-  // expo-av로 재생
+  // expo-av로 재생 (Signed URL 또는 data URI 모두 직접 사용 가능)
   const { sound } = await Audio.Sound.createAsync(
-    { uri: tempUri },
+    { uri: url },
     { shouldPlay: true },
   );
   _currentSound = sound;
@@ -157,7 +138,6 @@ export async function playTTS(text: string, onEnd?: () => void): Promise<void> {
       _currentOnEnd = null;
       sound.unloadAsync().catch(() => {});
       if (_currentSound === sound) _currentSound = null;
-      FileSystem.deleteAsync(tempUri, { idempotent: true }).catch(() => {});
     }
   });
 }

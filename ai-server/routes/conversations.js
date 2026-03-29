@@ -8,36 +8,22 @@ const { supabase } = require('../utils/supabase');
 const { errorResponse } = require('../utils/errorResponse');
 const { buildPrompt } = require('../utils/buildPrompt');
 const { authMiddleware } = require('../middleware/auth');
-const { turnLimitMiddleware } = require('../middleware/turnLimit');
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // GET /api/conversations
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    const { data: conversations, error } = await supabase
-      .from('conversations')
-      .select('id, topic_id, topic_label, updated_at, created_at')
-      .eq('user_id', req.user.id)
-      .order('updated_at', { ascending: false });
+    const { data, error } = await supabase.rpc('get_conversations_with_turns', {
+      p_user_id: req.user.id,
+    });
 
     if (error) {
-      console.error('conversations fetch error:', error);
+      console.error('get_conversations_with_turns rpc error:', error);
       return errorResponse(res, 500, 'INTERNAL_ERROR', '서버 오류가 발생했습니다');
     }
 
-    const withTurnCount = await Promise.all(
-      (conversations || []).map(async (conv) => {
-        const { count } = await supabase
-          .from('messages')
-          .select('id', { count: 'exact', head: true })
-          .eq('conversation_id', conv.id)
-          .eq('content_type', 'user_speech');
-        return { ...conv, turn_count: count ?? 0 };
-      })
-    );
-
-    return res.status(200).json(withTurnCount);
+    return res.status(200).json(data || []);
   } catch (err) {
     console.error('GET /conversations unexpected error:', err);
     return errorResponse(res, 500, 'INTERNAL_ERROR', '서버 오류가 발생했습니다');
@@ -72,7 +58,7 @@ router.post('/', authMiddleware, async (req, res) => {
 });
 
 // POST /api/conversations/:id/messages
-router.post('/:id/messages', authMiddleware, turnLimitMiddleware, async (req, res) => {
+router.post('/:id/messages', authMiddleware, async (req, res) => {
   const conversationId = req.params.id;
   const { text } = req.body;
 
@@ -157,60 +143,29 @@ router.post('/:id/messages', authMiddleware, turnLimitMiddleware, async (req, re
 
     const { feedback, next_response } = parsedAiContent;
 
-    // 6. 현재 최대 turn_number 조회
-    const { data: maxTurnData, error: maxTurnError } = await supabase
-      .from('messages')
-      .select('turn_number')
-      .eq('conversation_id', conversationId)
-      .order('turn_number', { ascending: false })
-      .limit(1);
-
-    if (maxTurnError) {
-      console.error('max turn_number fetch error:', maxTurnError);
-      return errorResponse(res, 500, 'INTERNAL_ERROR', '서버 오류가 발생했습니다');
-    }
-
-    const maxTurnNumber = maxTurnData && maxTurnData.length > 0 ? maxTurnData[0].turn_number : 0;
-    const userTurnNumber = maxTurnNumber + 1;
-
-    // 7. 사용자 발화 INSERT
-    const { error: userInsertError } = await supabase.from('messages').insert({
-      conversation_id: conversationId,
-      turn_number: userTurnNumber,
-      role: 'user',
-      content_type: 'user_speech',
-      content: { text: text.trim() },
-      user_id: req.user.id,
+    // 6. process_turn RPC 호출 — 턴 제한 체크 + 두 메시지 INSERT 원자적 처리
+    const { data: rpcResult, error: rpcError } = await supabase.rpc('process_turn', {
+      p_conversation_id: conversationId,
+      p_user_id: req.user.id,
+      p_text: text.trim(),
+      p_feedback: feedback,
+      p_next_response: next_response,
     });
 
-    if (userInsertError) {
-      console.error('user message insert error:', userInsertError);
+    if (rpcError) {
+      console.error('process_turn rpc error:', rpcError);
       return errorResponse(res, 500, 'INTERNAL_ERROR', '서버 오류가 발생했습니다');
     }
 
-    // 8. AI 응답 INSERT
-    const { data: aiMessage, error: aiInsertError } = await supabase
-      .from('messages')
-      .insert({
-        conversation_id: conversationId,
-        turn_number: userTurnNumber + 1,
-        role: 'assistant',
-        content_type: 'ai_turn',
-        content: { feedback, next_response },
-        user_id: req.user.id,
-      })
-      .select('id, turn_number')
-      .single();
-
-    if (aiInsertError || !aiMessage) {
-      console.error('ai message insert error:', aiInsertError);
-      return errorResponse(res, 500, 'INTERNAL_ERROR', '서버 오류가 발생했습니다');
+    if (rpcResult.error === 'TURN_LIMIT_EXCEEDED') {
+      return errorResponse(res, 429, 'TURN_LIMIT_EXCEEDED', '일일 20턴 제한에 도달했습니다');
     }
 
-    // 9. 응답
+    // rpcResult: { user_message_id, ai_message_id, turn_number }
     return res.status(201).json({
-      message_id: aiMessage.id,
-      turn_number: aiMessage.turn_number,
+      message_id: rpcResult.ai_message_id,
+      user_message_id: rpcResult.user_message_id,
+      turn_number: rpcResult.turn_number,
       content: { feedback, next_response },
     });
   } catch (err) {

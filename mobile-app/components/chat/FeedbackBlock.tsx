@@ -12,7 +12,7 @@ type FeedbackBlockProps = {
 };
 
 export default function FeedbackBlock({ feedback, onLongPress, onSave }: FeedbackBlockProps) {
-  const { isPlaying, handlePress: handleTTSPress } = useTTSButton(feedback.corrected ?? '');
+  const { isLoading, isPlaying, handlePress: handleTTSPress } = useTTSButton(feedback.corrected ?? '');
   const [saveVisible, setSaveVisible] = useState(false);
 
   if (feedback.is_perfect) {
@@ -53,6 +53,7 @@ export default function FeedbackBlock({ feedback, onLongPress, onSave }: Feedbac
           </Text>
           <TTSButton
             text={feedback.corrected}
+            isLoading={isLoading}
             isPlaying={isPlaying}
             onPress={handleTTSPress}
           />

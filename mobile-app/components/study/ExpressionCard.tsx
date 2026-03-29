@@ -21,7 +21,7 @@ const SOURCE_BLOCK_CONFIG: Record<string, { label: string; bg: string; text: str
 };
 
 export default function ExpressionCard({ expression, onPress, onLongPress }: ExpressionCardProps) {
-  const { isPlaying, handlePress } = useTTSButton(expression.expression_text);
+  const { isLoading, isPlaying, handlePress } = useTTSButton(expression.expression_text);
   const sourceConfig = SOURCE_BLOCK_CONFIG[expression.source_block] ?? {
     label: expression.source_block,
     bg: 'bg-gray-100',
@@ -42,6 +42,7 @@ export default function ExpressionCard({ expression, onPress, onLongPress }: Exp
         <View className="w-7 h-7 rounded-full bg-gray-100 items-center justify-center">
           <TTSButton
             text={expression.expression_text}
+            isLoading={isLoading}
             isPlaying={isPlaying}
             onPress={handlePress}
           />
