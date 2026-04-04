@@ -395,13 +395,13 @@ CREATE INDEX idx_shadowing_sessions_user   ON shadowing_sessions(user_id, create
 - `mobile-app/components/shadowing/` (각 컴포넌트 마무리)
 
 **구현 사항:**
-- [ ] 전체 모드에서 마지막 문장 재생 완료 감지 (position >= 마지막 scripts.end_time)
-- [ ] 완료 시 Reanimated 애니메이션 — "완주했어요! 🎉" 오버레이 scale+fade-in
-- [ ] `POST /api/shadowing/sessions` 호출 — `{ content_id, completed: true }` 저장
-- [ ] 콘텐츠 목록 화면(`shadowing.tsx`)에서 완료 영상에 완료 뱃지 표시 (sessions 조회)
+- [x] 전체 모드에서 마지막 문장 재생 완료 감지 (position >= 마지막 scripts.end_time)
+- [x] 완료 시 Reanimated 애니메이션 — "완주했어요! 🎉" 오버레이 scale+fade-in
+- [x] `POST /api/shadowing/sessions` 호출 — `{ content_id, completed: true }` 저장
+- [x] 콘텐츠 목록 화면(`shadowing.tsx`)에서 완료 영상에 완료 뱃지 표시 (sessions 조회)
 - [ ] 전체 화면 NativeWind 스타일 폴리싱 (여백, 폰트 크기, 색상 일관성 검토)
 - [ ] 화면 전환 애니메이션 (목록 → 플레이어 fade/slide)
-- [ ] 엣지 케이스 처리: 네트워크 오류 시 Toast, 영상 로드 실패 시 재시도 버튼
+- [x] 엣지 케이스 처리: 네트워크 오류 시 Toast, 영상 로드 실패 시 재시도 버튼
 
 **완료 기준:** 전체 모드 완주 → 완료 애니메이션 → DB 세션 저장 → 목록 뱃지 표시 전체 플로우 동작
 
@@ -794,7 +794,7 @@ Task 037 (DB)
 | Task 033 | Auto-pause + 루프 + 자동 스크롤 | rn-expo-frontend | ✅ 완료 |
 | Task 034 | ControlBar 보조 기능 전체 | rn-expo-frontend | ✅ 완료 |
 | Task 035 | 녹음 → 비교 재생 | rn-expo-frontend | ✅ 완료 |
-| Task 036 | 완료 처리 + 세션 저장 + 폴리싱 | rn-expo-frontend + contexttalk-code-auditor | ⬜ 대기 |
+| Task 036 | 완료 처리 + 세션 저장 + 폴리싱 | rn-expo-frontend + contexttalk-code-auditor | ✅ 완료 |
 | Task 037 | DB 마이그레이션 (quiz 테이블 2개 + RLS) | Playwright MCP | ✅ 완료 |
 | Task 038 | Quiz API 4개 구현 (generate / sessions / sessions/:id / PATCH) | contexttalk-api-architect | ✅ 완료 |
 | Task 039 | Quiz API Jest 테스트 (9케이스) | api-test-writer | ✅ 완료 |

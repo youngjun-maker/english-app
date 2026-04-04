@@ -6,6 +6,7 @@ import type { ShadowingContent } from '@/types/shadowing';
 type Props = {
   content: ShadowingContent;
   onPress: () => void;
+  completed?: boolean;
 };
 
 const LEVEL_STYLE: Record<ShadowingContent['level'], { bg: string; text: string; label: string }> = {
@@ -20,7 +21,7 @@ function formatDuration(seconds: number): string {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
-export default function ContentCard({ content, onPress }: Props) {
+export default function ContentCard({ content, onPress, completed }: Props) {
   const level = LEVEL_STYLE[content.level];
 
   return (
@@ -48,6 +49,12 @@ export default function ContentCard({ content, onPress }: Props) {
             {formatDuration(content.duration)}
           </Text>
         </View>
+        {/* 완료 뱃지 */}
+        {completed && (
+          <View className="absolute top-2 left-2 bg-green-500 rounded-full px-2.5 py-0.5">
+            <Text className="text-white text-xs font-bold">완료</Text>
+          </View>
+        )}
       </View>
 
       {/* 콘텐츠 정보 */}

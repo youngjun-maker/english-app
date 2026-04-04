@@ -5,11 +5,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
-import { fetchContentDetail } from '@/api/shadowing';
+import { fetchContentDetail, saveSession } from '@/api/shadowing';
 import VideoPlayer, { type VideoPlayerHandle } from '@/components/shadowing/VideoPlayer';
 import ModeTab from '@/components/shadowing/ModeTab';
 import ScriptArea from '@/components/shadowing/ScriptArea';
 import ControlBar from '@/components/shadowing/ControlBar';
+import CompletionOverlay from '@/components/shadowing/CompletionOverlay';
 import { useAppStore } from '@/store/useAppStore';
 import type { ShadowingContent, ShadowingScript } from '@/types/shadowing';
 
@@ -31,6 +32,8 @@ export default function ShadowingPlayerScreen() {
   const [content, setContent] = useState<ShadowingContent | null>(null);
   const [scripts, setScripts] = useState<ShadowingScript[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showOverlay, setShowOverlay] = useState(false);
+  const isCompletedRef = useRef(false);
 
   const videoRef = useRef<VideoPlayerHandle>(null);
   // auto-pause 중복 실행 방지 플래그
@@ -72,6 +75,7 @@ export default function ShadowingPlayerScreen() {
       // 화면 이탈 시 진행 중인 녹음 정리
       recordingRef.current?.stopAndUnloadAsync().catch(() => {});
       recordingRef.current = null;
+      isCompletedRef.current = false;
       resetShadowingState();
     };
   }, [id]);
@@ -164,7 +168,34 @@ export default function ShadowingPlayerScreen() {
         videoRef.current?.pause();
       }
     }
-    // 전체 모드: pause 없음
+    // 전체 모드: 마지막 문장 종료 시 완료 처리
+    if (mode === 'full') {
+      const lastScript = currentScripts[currentScripts.length - 1];
+      if (lastScript && currentTime >= lastScript.end && !isCompletedRef.current) {
+        isCompletedRef.current = true;
+        handleCompletion();
+      }
+    }
+  }
+
+  async function handleCompletion() {
+    setShowOverlay(true);
+    if (!id) return;
+    try {
+      await saveSession({ content_id: id, completed: true });
+    } catch {
+      showToast('완료 기록 저장에 실패했어요.');
+    }
+  }
+
+  function handleReplay() {
+    setShowOverlay(false);
+    isCompletedRef.current = false;
+    setIsCompleted(false);
+    isPausedRef.current = false;
+    lastSentenceIndexRef.current = -1;
+    videoRef.current?.seek(0);
+    videoRef.current?.play();
   }
 
   // 사용자가 직접 재생 누를 때 auto-pause 플래그 리셋
@@ -320,6 +351,15 @@ export default function ShadowingPlayerScreen() {
           onMicPress={handleMicPress}
         />
       </View>
+
+      {/* 완료 오버레이 */}
+      {showOverlay && (
+        <CompletionOverlay
+          title={content.title}
+          onReplay={handleReplay}
+          onBack={() => router.back()}
+        />
+      )}
     </View>
   );
 }

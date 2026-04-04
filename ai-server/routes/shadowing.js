@@ -172,4 +172,26 @@ router.post('/sessions', authMiddleware, async (req, res) => {
   }
 });
 
+// GET /api/shadowing/sessions
+// 현재 유저의 완료된 섀도잉 세션 content_id 목록 반환
+router.get('/sessions', authMiddleware, async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('shadowing_sessions')
+      .select('content_id')
+      .eq('user_id', req.user.id)
+      .eq('completed', true);
+
+    if (error) {
+      console.error('[Shadowing] sessions fetch error:', error);
+      return errorResponse(res, 500, 'INTERNAL_ERROR', '서버 오류가 발생했습니다');
+    }
+
+    return res.json({ completedIds: (data || []).map((s) => s.content_id) });
+  } catch (err) {
+    console.error('[Shadowing] GET /sessions unexpected error:', err);
+    return errorResponse(res, 500, 'INTERNAL_ERROR', '서버 오류가 발생했습니다');
+  }
+});
+
 module.exports = router;

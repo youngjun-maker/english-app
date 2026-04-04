@@ -123,3 +123,10 @@ export async function saveSession(payload: {
   });
   if (!res.ok) return handleError(res);
 }
+
+export async function fetchCompletedSessionIds(): Promise<string[]> {
+  const res = await apiFetch('/api/shadowing/sessions');
+  if (!res.ok) return [];
+  const data = await res.json() as { completedIds: string[] };
+  return data.completedIds ?? [];
+}

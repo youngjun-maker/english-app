@@ -1,7 +1,7 @@
 import { View, Text, FlatList, ActivityIndicator, ListRenderItem } from 'react-native';
-import { useEffect, useState } from 'react';
-import { useRouter } from 'expo-router';
-import { fetchContents } from '@/api/shadowing';
+import { useState, useCallback } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { fetchContents, fetchCompletedSessionIds } from '@/api/shadowing';
 import ContentCard from '@/components/shadowing/ContentCard';
 import { useAppStore } from '@/store/useAppStore';
 import type { ShadowingContent } from '@/types/shadowing';
@@ -24,18 +24,26 @@ export default function ShadowingScreen() {
   const router = useRouter();
   const showToast = useAppStore((s) => s.showToast);
   const [contents, setContents] = useState<ShadowingContent[]>([]);
+  const [completedIds, setCompletedIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    fetchContents()
-      .then(setContents)
-      .catch(() => showToast('콘텐츠를 불러오지 못했어요.'))
-      .finally(() => setIsLoading(false));
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      setIsLoading(true);
+      Promise.all([fetchContents(), fetchCompletedSessionIds()])
+        .then(([c, ids]) => {
+          setContents(c);
+          setCompletedIds(ids);
+        })
+        .catch(() => showToast('콘텐츠를 불러오지 못했어요.'))
+        .finally(() => setIsLoading(false));
+    }, []),
+  );
 
   const renderItem: ListRenderItem<ShadowingContent> = ({ item }) => (
     <ContentCard
       content={item}
+      completed={completedIds.includes(item.id)}
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       onPress={() => router.push({ pathname: '/shadowing/[id]' as any, params: { id: item.id } })}
     />
