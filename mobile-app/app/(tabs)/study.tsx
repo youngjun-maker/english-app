@@ -1,6 +1,6 @@
 import { View, Text, FlatList, ListRenderItem, Pressable, ScrollView } from 'react-native';
-import { useEffect, useState } from 'react';
-import { useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
+import { useRouter, useFocusEffect } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { Expression } from '@/types';
 import ExpressionCard from '@/components/study/ExpressionCard';
@@ -38,11 +38,13 @@ export default function StudyScreen() {
   const [deleteTarget, setDeleteTarget] = useState<Expression | null>(null);
   const [filterType, setFilterType] = useState<FilterType>('all');
 
-  useEffect(() => {
-    fetchExpressions()
-      .then(setExpressions)
-      .catch(() => showToast('표현 목록을 불러오지 못했어요.'));
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchExpressions()
+        .then(setExpressions)
+        .catch(() => showToast('표현 목록을 불러오지 못했어요.'));
+    }, [])
+  );
 
   const filteredExpressions =
     filterType === 'all'

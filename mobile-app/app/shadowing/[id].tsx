@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { Audio } from 'expo-av';
+import * as FileSystem from 'expo-file-system';
 import { fetchContentDetail } from '@/api/shadowing';
 import VideoPlayer, { type VideoPlayerHandle } from '@/components/shadowing/VideoPlayer';
 import ModeTab from '@/components/shadowing/ModeTab';
@@ -21,7 +23,7 @@ export default function ShadowingPlayerScreen() {
     isLooping, setIsLooping,
     currentSentenceIndex, setCurrentSentenceIndex,
     blindMode, setBlindMode,
-    isRecording,
+    isRecording, setIsRecording,
     resetShadowingState,
     showToast,
   } = useAppStore();
@@ -34,13 +36,21 @@ export default function ShadowingPlayerScreen() {
   // auto-pause 중복 실행 방지 플래그
   const isPausedRef = useRef(false);
   const lastSentenceIndexRef = useRef(-1);
-  // 최신 scripts/mode/loop을 콜백에서 참조하기 위한 ref
+  // 최신 scripts/mode/loop/currentSentenceIndex를 콜백에서 참조하기 위한 ref
   const scriptsRef = useRef(scripts);
   const shadowingModeRef = useRef(shadowingMode);
   const isLoopingRef = useRef(isLooping);
+  const currentSentenceIndexRef = useRef(currentSentenceIndex);
   scriptsRef.current = scripts;
   shadowingModeRef.current = shadowingMode;
   isLoopingRef.current = isLooping;
+  currentSentenceIndexRef.current = currentSentenceIndex;
+
+  // 녹음/비교재생 관련 ref
+  const recordingRef = useRef<Audio.Recording | null>(null);
+  const recordingUriRef = useRef<string | null>(null);
+  // 비교 재생 대기 중 플래그 — true인 동안 auto-pause/루프 로직 스킵
+  const isPendingCompareRef = useRef(false);
 
   // 모드 변경 시 auto-pause 플래그 리셋
   useEffect(() => {
@@ -59,6 +69,9 @@ export default function ShadowingPlayerScreen() {
       .finally(() => setIsLoading(false));
 
     return () => {
+      // 화면 이탈 시 진행 중인 녹음 정리
+      recordingRef.current?.stopAndUnloadAsync().catch(() => {});
+      recordingRef.current = null;
       resetShadowingState();
     };
   }, [id]);
@@ -67,6 +80,36 @@ export default function ShadowingPlayerScreen() {
   function handleTimeUpdate(currentTime: number) {
     const currentScripts = scriptsRef.current;
     if (currentScripts.length === 0) return;
+
+    // 비교 재생 대기 중: pendingScript.end 도달 시 영상 정지 → 300ms 후 내 녹음 재생
+    if (isPendingCompareRef.current) {
+      const pendingScript = currentScripts[currentSentenceIndexRef.current];
+      if (pendingScript && currentTime >= pendingScript.end) {
+        isPendingCompareRef.current = false;
+        videoRef.current?.pause();
+        const uri = recordingUriRef.current;
+        if (uri) {
+          setTimeout(async () => {
+            try {
+              await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
+              const { sound } = await Audio.Sound.createAsync({ uri });
+              await sound.playAsync();
+              sound.setOnPlaybackStatusUpdate((status) => {
+                if (status.isLoaded && status.didJustFinish) {
+                  sound.unloadAsync().catch(() => {});
+                  FileSystem.deleteAsync(uri, { idempotent: true }).catch(() => {});
+                  recordingUriRef.current = null;
+                }
+              });
+            } catch {
+              showToast('녹음 재생에 실패했어요.');
+            }
+          }, 300);
+        }
+      }
+      // 비교 재생 대기 중에는 auto-pause/루프 로직 실행하지 않음
+      return;
+    }
 
     // 현재 정확한 문장 구간 탐색
     const current = currentScripts.find(
@@ -145,8 +188,67 @@ export default function ShadowingPlayerScreen() {
     isPausedRef.current = false;
   }
 
+  function handleSentencePress(index: number) {
+    const script = scripts[index];
+    if (!script) return;
+    isPausedRef.current = false;
+    lastSentenceIndexRef.current = index - 1;
+    videoRef.current?.seek(script.start);
+    videoRef.current?.play();
+  }
+
   function handleScriptPress() {
     showToast('전체 스크립트 보기는 준비 중이에요.');
+  }
+
+  async function handleMicPress() {
+    if (isRecording) {
+      // 녹음 중지
+      try {
+        await recordingRef.current?.stopAndUnloadAsync();
+        const uri = recordingRef.current?.getURI() ?? null;
+        recordingUriRef.current = uri;
+        recordingRef.current = null;
+        setIsRecording(false);
+
+        // 현재 선택된 문장 구간으로 seek 후 비교 재생 시작
+        const script = scriptsRef.current[currentSentenceIndexRef.current];
+        if (!script || !uri) return;
+
+        isPendingCompareRef.current = true;
+        isPausedRef.current = false;
+        lastSentenceIndexRef.current = script.index - 1;
+        videoRef.current?.seek(script.start);
+        videoRef.current?.play();
+      } catch {
+        showToast('녹음 중지에 실패했어요.');
+        setIsRecording(false);
+      }
+    } else {
+      // 녹음 시작
+      try {
+        const permission = await Audio.requestPermissionsAsync();
+        if (!permission.granted) {
+          showToast('마이크 권한이 필요해요.');
+          return;
+        }
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: true,
+          playsInSilentModeIOS: true,
+        });
+
+        const recording = new Audio.Recording();
+        // RecordingOptionsPresets.HIGH_QUALITY 사용:
+        // android: outputFormat=AndroidOutputFormat.MPEG_4(2), audioEncoder=AndroidAudioEncoder.AAC(3)
+        // Rule 4: extension, outputFormat, audioEncoder 모두 포함
+        await recording.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
+        await recording.startAsync();
+        recordingRef.current = recording;
+        setIsRecording(true);
+      } catch {
+        showToast('마이크 권한이 필요해요.');
+      }
+    }
   }
 
   if (isLoading) {
@@ -201,6 +303,7 @@ export default function ShadowingPlayerScreen() {
         scripts={scripts}
         currentIndex={currentSentenceIndex}
         blindMode={blindMode}
+        onScriptPress={handleSentencePress}
       />
 
       {/* ControlBar */}
@@ -214,7 +317,7 @@ export default function ShadowingPlayerScreen() {
           onBlindModeToggle={handleBlindModeToggle}
           onLoopToggle={handleLoopToggle}
           onScriptPress={handleScriptPress}
-          onMicPress={() => {}}
+          onMicPress={handleMicPress}
         />
       </View>
     </View>

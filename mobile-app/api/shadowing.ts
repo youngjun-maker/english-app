@@ -1,5 +1,6 @@
 import { apiFetch } from '@/utils/apiFetch';
 import type { ShadowingContent, ShadowingScript } from '@/types/shadowing';
+import { supabase } from '@/utils/supabase';
 
 type APIError = { error: { code: string; message: string } };
 
@@ -63,9 +64,15 @@ const DUMMY_SCRIPTS: ShadowingScript[] = [
 
 export async function fetchContents(): Promise<ShadowingContent[]> {
   if (PREVIEW_MODE) return Promise.resolve(DUMMY_CONTENTS);
-  const res = await apiFetch('/api/shadowing/contents');
-  if (!res.ok) return handleError(res);
-  return res.json();
+
+  const { data, error } = await supabase
+    .from('shadowing_contents')
+    .select('id, title, description, thumbnail_url, duration, level, category')
+    .eq('is_published', true)
+    .order('created_at', { ascending: false });
+
+  if (error) throw { error: { code: 'INTERNAL_ERROR', message: error.message } };
+  return data || [];
 }
 
 export async function fetchContentDetail(id: string): Promise<{
@@ -76,9 +83,34 @@ export async function fetchContentDetail(id: string): Promise<{
     const content = DUMMY_CONTENTS.find((c) => c.id === id) ?? DUMMY_CONTENTS[0];
     return Promise.resolve({ content, scripts: DUMMY_SCRIPTS });
   }
-  const res = await apiFetch(`/api/shadowing/contents/${id}`);
-  if (!res.ok) return handleError(res);
-  return res.json();
+
+  const { data: content, error: contentError } = await supabase
+    .from('shadowing_contents')
+    .select('id, title, video_url, duration')
+    .eq('id', id)
+    .eq('is_published', true)
+    .single();
+
+  if (contentError || !content) throw { error: { code: 'CONTENT_NOT_FOUND', message: '콘텐츠를 찾을 수 없습니다' } };
+
+  const { data: scripts, error: scriptsError } = await supabase
+    .from('shadowing_scripts')
+    .select('sentence_index, start_time, end_time, text, translation')
+    .eq('content_id', id)
+    .order('sentence_index', { ascending: true });
+
+  if (scriptsError) throw { error: { code: 'INTERNAL_ERROR', message: scriptsError.message } };
+
+  return {
+    content,
+    scripts: (scripts || []).map((s) => ({
+      index: s.sentence_index,
+      start: s.start_time,
+      end: s.end_time,
+      text: s.text,
+      translation: s.translation,
+    })),
+  };
 }
 
 export async function saveSession(payload: {

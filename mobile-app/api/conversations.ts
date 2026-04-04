@@ -29,7 +29,12 @@ export async function createConversation(
 }
 
 export async function fetchConversations(): Promise<Conversation[]> {
-  const res = await apiFetch('/api/conversations');
-  if (!res.ok) return handleError(res);
-  return res.json();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw { error: { code: 'UNAUTHORIZED', message: '로그인이 필요합니다' } };
+
+  const { data, error } = await supabase.rpc('get_conversations_with_turns', {
+    p_user_id: user.id,
+  });
+  if (error) throw { error: { code: 'INTERNAL_ERROR', message: error.message } };
+  return data || [];
 }

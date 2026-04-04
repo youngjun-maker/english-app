@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, useWindowDimensions } from 'react-native';
+import { View, Text, ScrollView, Pressable, useWindowDimensions } from 'react-native';
 import { useEffect, useRef } from 'react';
 import type { ShadowingScript, BlindMode } from '@/types/shadowing';
 
@@ -6,9 +6,10 @@ type Props = {
   scripts: ShadowingScript[];
   currentIndex: number;
   blindMode: BlindMode;
+  onScriptPress?: (index: number) => void;
 };
 
-export default function ScriptArea({ scripts, currentIndex, blindMode }: Props) {
+export default function ScriptArea({ scripts, currentIndex, blindMode, onScriptPress }: Props) {
   const { height: screenHeight } = useWindowDimensions();
   const scrollViewRef = useRef<ScrollView>(null);
   const yPositions = useRef<number[]>([]);
@@ -38,12 +39,13 @@ export default function ScriptArea({ scripts, currentIndex, blindMode }: Props) 
         const koreanOpacity = blindMode >= 1 ? 0 : isCurrent ? 0.6 : 0.2;
 
         return (
-          <View
+          <Pressable
             key={script.index}
-            className="mb-6"
+            className="mb-6 active:opacity-60"
             onLayout={(e) => {
               yPositions.current[script.index] = e.nativeEvent.layout.y;
             }}
+            onPress={() => onScriptPress?.(script.index)}
           >
             {/* 영어 문장 */}
             <Text
@@ -66,7 +68,7 @@ export default function ScriptArea({ scripts, currentIndex, blindMode }: Props) 
                 {script.translation}
               </Text>
             )}
-          </View>
+          </Pressable>
         );
       })}
     </ScrollView>

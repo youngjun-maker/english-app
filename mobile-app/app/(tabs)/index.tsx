@@ -199,7 +199,7 @@ export default function HomeScreen() {
           {/* Situation */}
           <Pressable
             className="flex-1 bg-white rounded-2xl p-5 border border-gray-100 items-center active:opacity-70"
-            onPress={handleFABPress}
+            onPress={() => router.push('/chat/topic-select')}
           >
             <Text className="text-3xl mb-2.5">✈️</Text>
             <Text className="text-sm font-bold text-gray-800 text-center">Situation</Text>

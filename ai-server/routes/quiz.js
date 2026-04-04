@@ -20,28 +20,39 @@ function shuffleArray(arr) {
   return result;
 }
 
+// 6단어 이하 → 짧은 표현, 7단어 이상 → 전체 문장
+function isShortExpression(text) {
+  return text.trim().split(/\s+/).length <= 6;
+}
+
 // GPT 프롬프트 빌더
 function buildQuizPrompt(expressions) {
   const expressionList = expressions
-    .map((e, i) => `${i + 1}. ${e.expression_text}`)
+    .map((e, i) => {
+      const tag = isShortExpression(e.expression_text) ? '[PHRASE]' : '[SENTENCE]';
+      return `${i + 1}. ${tag} ${e.expression_text}`;
+    })
     .join('\n');
 
   const systemPrompt = `You are an English learning assistant that creates Korean sentence quiz questions.
-For each English expression provided, generate:
-1. A natural English example sentence using that expression
-2. A Korean translation of that sentence
-3. The Korean text fragment (highlight_text) that corresponds to the English expression's meaning — this will be shown in bold to the learner
+
+For each English expression:
+- If tagged [PHRASE]: create a BRAND NEW English example sentence that naturally uses this phrase in context. example_sentence_en must be completely different from the original phrase.
+- If tagged [SENTENCE]: use the provided sentence exactly as-is for example_sentence_en.
+
+For both types, also provide:
+- A Korean translation of example_sentence_en
+- The Korean text fragment (highlight_text) that corresponds to the expression's meaning — shown in bold to the learner
 
 Rules:
 - highlight_text MUST be an exact substring of example_sentence_ko
 - Keep sentences conversational and intermediate level
-- Vary sentence contexts (work, travel, daily life, relationships)
 - Return ONLY valid JSON in this exact format:
 {
   "questions": [
     {
       "expression_text": "the original expression",
-      "example_sentence_en": "An English sentence using the expression.",
+      "example_sentence_en": "The English sentence.",
       "example_sentence_ko": "그 문장의 한국어 번역입니다.",
       "highlight_text": "한국어 번역 중 해당 표현에 대응하는 부분"
     }
@@ -103,7 +114,7 @@ router.post('/generate', authMiddleware, async (req, res) => {
     // 본인 표현 전체 조회
     const { data: expressions, error: exprError } = await supabase
       .from('expressions')
-      .select('id, expression_text')
+      .select('id, expression_text, next_review_date, review_interval')
       .eq('user_id', req.user.id);
 
     if (exprError) {
@@ -120,8 +131,18 @@ router.post('/generate', authMiddleware, async (req, res) => {
       );
     }
 
-    // 랜덤 10개 선택
-    const selected = shuffleArray(expressions).slice(0, 10);
+    // 망각 곡선 우선순위 선택: 복습 기한 도래 항목 먼저, 나머지는 랜덤
+    const today = new Date().toISOString().split('T')[0];
+
+    const due = expressions
+      .filter(e => e.next_review_date <= today)
+      .sort((a, b) => new Date(a.next_review_date) - new Date(b.next_review_date));
+
+    const rest = shuffleArray(
+      expressions.filter(e => e.next_review_date > today)
+    );
+
+    const selected = [...due, ...rest].slice(0, 10);
 
     // GPT 문제 생성
     let questions;
@@ -224,7 +245,7 @@ router.get('/sessions/:id', authMiddleware, async (req, res) => {
 // PATCH /api/quiz/sessions/:id
 router.patch('/sessions/:id', authMiddleware, async (req, res) => {
   const sessionId = req.params.id;
-  const { correct_count } = req.body;
+  const { correct_count, answers } = req.body;
 
   if (
     typeof correct_count !== 'number' ||
@@ -250,6 +271,33 @@ router.patch('/sessions/:id', authMiddleware, async (req, res) => {
 
     if (!data || data.length === 0) {
       return errorResponse(res, 404, 'NOT_FOUND', '퀴즈 세션을 찾을 수 없습니다');
+    }
+
+    // 망각 곡선 갱신: answers 배열이 있을 때만 처리 (하위 호환)
+    if (Array.isArray(answers) && answers.length > 0) {
+      for (const answer of answers) {
+        const { data: expr } = await supabase
+          .from('expressions')
+          .select('review_interval')
+          .eq('id', answer.expression_id)
+          .single();
+
+        const currentInterval = expr?.review_interval ?? 1;
+        const newInterval = answer.is_correct
+          ? Math.min(currentInterval * 2, 30)
+          : 1;
+
+        const nextDate = new Date();
+        nextDate.setDate(nextDate.getDate() + newInterval);
+
+        await supabase
+          .from('expressions')
+          .update({
+            review_interval: newInterval,
+            next_review_date: nextDate.toISOString().split('T')[0],
+          })
+          .eq('id', answer.expression_id);
+      }
     }
 
     return res.status(200).json({ success: true });
