@@ -1131,14 +1131,14 @@ export const SITUATIONS: Situation[] = [
 ```
 
 `app/chat/topic-select.tsx` 신규 생성:
-- [ ] `SITUATIONS` 배열을 FlatList로 렌더링 (카드 형태, 이모지 + 제목 + 설명)
-- [ ] 카드 탭 → `createConversation(situation.id, situation.label)` 호출 → `/chat/[id]` 이동
-- [ ] 로딩 중 선택한 카드에 `ActivityIndicator` 표시 (중복 탭 방지)
-- [ ] 상단 헤더: 뒤로가기 + "상황 선택"
+- [x] `SITUATIONS` 배열을 FlatList로 렌더링 (카드 형태, 이모지 + 제목 + 설명)
+- [x] 카드 탭 → `createConversation(situation.id, situation.label)` 호출 → `/chat/[id]` 이동
+- [x] 로딩 중 선택한 카드에 `ActivityIndicator` 표시 (중복 탭 방지)
+- [x] 상단 헤더: 뒤로가기 + "상황 선택"
 
 `app/(tabs)/index.tsx` 수정:
-- [ ] Situation 카드의 `onPress` → `router.push('/chat/topic-select')`로 변경 (기존 `handleFABPress` 제거)
-- [ ] `app/_layout.tsx`에 `<Stack.Screen name="chat/topic-select" options={{ headerShown: false }} />` 추가
+- [x] Situation 카드의 `onPress` → `router.push('/chat/topic-select')`로 변경 (기존 `handleFABPress` 제거)
+- [x] `app/_layout.tsx`에 `<Stack.Screen name="chat/topic-select" options={{ headerShown: false }} />` 추가
 
 **백엔드 변경:** 없음 (`buildPrompt.js`가 `topic_id`로 프롬프트 파일 자동 매핑)
 
@@ -1802,7 +1802,7 @@ export const SITUATIONS: Situation[] = [
 | Task | 설명 | 에이전트 | 상태 |
 |------|------|----------|------|
 | Task 035 | 섀도잉 마이크 녹음 → 비교 재생 (expo-video seek 방식) | rn-expo-frontend | ✅ 완료 |
-| Task 047 | Situation 상황 선택 분리 | rn-expo-frontend | 🔄 진행 중 |
+| Task 047 | Situation 상황 선택 분리 | rn-expo-frontend | ✅ 완료 |
 | Task 048 | 망각 곡선 퀴즈 DB 마이그레이션 | Playwright MCP | ⬜ 대기 |
 | Task 049 | 망각 곡선 퀴즈 API 업데이트 | contexttalk-api-architect | 🔄 부분 완료 |
 | Task 050 | 망각 곡선 퀴즈 프론트엔드 업데이트 | rn-expo-frontend | ⬜ 대기 |
