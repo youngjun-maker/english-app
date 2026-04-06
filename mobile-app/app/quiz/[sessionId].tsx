@@ -1,6 +1,7 @@
 import { View, Text, Pressable, ActivityIndicator } from 'react-native';
 import { useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { fetchQuizSessionDetail, submitQuizResult } from '@/api/quiz';
@@ -33,6 +34,9 @@ export default function QuizPlayerScreen() {
   }, [sessionId]);
 
   async function handleAnswer(isCorrect: boolean) {
+    Haptics.impactAsync(
+      isCorrect ? Haptics.ImpactFeedbackStyle.Light : Haptics.ImpactFeedbackStyle.Heavy
+    );
     const currentQ = questions[currentIndex];
     const newAnswers = [
       ...answers,
@@ -56,6 +60,7 @@ export default function QuizPlayerScreen() {
       } finally {
         setIsSubmitting(false);
       }
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setPhase('result');
     } else {
       setCurrentIndex((i) => i + 1);

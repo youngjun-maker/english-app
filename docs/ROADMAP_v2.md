@@ -1907,3 +1907,141 @@ Task 054 (리포트 DB)
   - 섹션: 홈화면 / 실전대화 / 복습&퀴즈 / 섀도잉 / 설정
 - `mobile-app/app/_layout.tsx` — `guide` 라우트 등록
 - `mobile-app/app/(tabs)/settings.tsx` — [💡 도움말 & FAQ] 메뉴 항목 추가
+
+---
+
+## Phase 6: UX 고도화 & 킬러 기능
+
+> Gemini 피드백 기반 경쟁력 강화 작업 (2026-04-06 기획 확정)
+> 우선순위 근거: 이탈률 방어 → 완성도 체감 → 차별화 기능 순
+
+---
+
+### Task 060: 햅틱 피드백 전체 적용 `[rn-expo-frontend]`
+
+**대상 파일:**
+- `mobile-app/app/chat/[id].tsx`
+- `mobile-app/app/shadowing/[id].tsx`
+- `mobile-app/app/quiz/[sessionId].tsx`
+
+**구현 사항:**
+- [ ] `expo-haptics` import (Expo SDK 내장 — 별도 설치 불필요)
+- [ ] 마이크 버튼 누를 때 → `Haptics.impactAsync(ImpactFeedbackStyle.Medium)`
+- [ ] 마이크 뗄 때 → `Haptics.impactAsync(ImpactFeedbackStyle.Light)`
+- [ ] 미션 클리어 폭죽 시 → `Haptics.notificationAsync(NotificationFeedbackType.Success)`
+- [ ] 퀴즈 👍 알았어 → `Light`, 👎 몰랐어 → `Heavy`
+- [ ] 표현 저장 완료 → `notificationAsync(NotificationFeedbackType.Success)`
+
+**완료 기준:** 각 인터랙션 시 진동 피드백 실기기 확인
+
+---
+
+### Task 061: 콜드 스타트 추천 프롬프트 `[rn-expo-frontend]`
+
+**대상 파일:** `mobile-app/app/chat/[id].tsx`
+
+**구현 사항:**
+- [ ] 대화 기록이 0개일 때만 마이크 버튼 위에 추천 프롬프트 버블 3개 표시
+- [ ] topic_id별 프롬프트 세트 상수 정의
+  ```typescript
+  const STARTER_PROMPTS: Record<string, string[]> = {
+    free_talk:            ['오늘 점심 뭐 먹었어?', '요즘 푹 빠진 게 있어?', '주말에 뭐 할 계획이야?'],
+    cafe_order:           ['아이스 아메리카노 주문해볼게', '오늘 추천 메뉴가 뭐야?', '카페인 없는 음료 있어?'],
+    airport_immigration:  ['관광 목적으로 왔어', '일주일 정도 있을 예정이야', '호텔에 묵을 거야'],
+    hotel_checkin:        ['예약 확인 부탁해', '더 좋은 방 있어?', '조식 포함이야?'],
+    small_talk:           ['날씨 진짜 좋다', '요즘 어떻게 지내?', '주말에 뭐 했어?'],
+    opinion:              ['나는 이렇게 생각해', '동의하지 않아', '좋은 의견이네'],
+  };
+  ```
+- [ ] 버블 탭 → 해당 텍스트로 `handleTextSend()` 즉시 호출
+- [ ] 첫 번째 발화 이후 버블 자동 사라짐
+
+**완료 기준:** 빈 대화방 진입 시 버블 표시, 탭 시 즉시 전송, 이후 미표시 확인
+
+---
+
+### Task 062: 미션 힌트 시스템 `[contexttalk-api-architect]` + `[rn-expo-frontend]`
+
+**대상 파일:**
+- `ai-server/routes/conversations.js`
+- `mobile-app/app/chat/[id].tsx`
+- `mobile-app/types/index.ts`
+
+**백엔드 구현:**
+- [ ] 미션 모드 시스템 프롬프트에 힌트 조건 추가
+  ```
+  If the user has attempted 3+ turns without making progress toward the goal,
+  include a "hint" field with a short English sentence starter (max 15 words).
+  Otherwise set "hint": null.
+  ```
+- [ ] GPT 응답 파싱 시 `hint` 필드 추출 (없으면 `null`)
+- [ ] API 응답 `content`에 `hint` 포함하여 전달
+
+**프론트엔드 구현:**
+- [ ] `AITurnContent` 타입에 `hint?: string | null` 추가
+- [ ] `hint` 존재 시 채팅 화면 상단 고정 힌트 배너 표시
+  ```
+  ┌──────────────────────────────────┐
+  │ 💡 Try: "I'd like a refund       │
+  │         because..."              │
+  └──────────────────────────────────┘
+  ```
+- [ ] 배너 탭 → 힌트 텍스트가 텍스트 입력창에 자동 채워짐
+- [ ] 다음 AI 응답 수신 시 배너 초기화
+
+**완료 기준:** 미션 3턴 미달성 시 힌트 배너 표시, 탭 시 입력창 자동 채워짐 확인
+
+---
+
+### Task 063: 커스텀 상황극 `[contexttalk-api-architect]` + `[rn-expo-frontend]`
+
+**대상 파일:**
+- `ai-server/routes/conversations.js`
+- `mobile-app/app/chat/topic-select.tsx`
+- `mobile-app/api/conversations.ts`
+
+**DB 마이그레이션:**
+```sql
+ALTER TABLE conversations ADD COLUMN custom_prompt text;
+```
+
+**백엔드 구현:**
+- [ ] `POST /api/conversations` — `custom_prompt` 선택적 필드 수신 및 저장
+- [ ] `POST /api/conversations/:id/messages` — `topic_id === 'custom'`이면 커스텀 프롬프트 사용
+  ```javascript
+  function buildCustomPrompt(userInput) {
+    return `You are an AI English conversation partner.
+  The user has set up this situation: "${userInput}"
+  Play the appropriate role naturally and correct the user's English as usual.
+  Always respond in JSON: { "feedback": [...], "next_response": "..." }`;
+  }
+  ```
+
+**프론트엔드 구현:**
+- [ ] `topic-select.tsx` 하단에 [✏️ 내 상황 직접 입력하기] 버튼 추가
+- [ ] 탭 시 텍스트 입력 모달 팝업 (placeholder: `"예: 내일 구글 면접 있어, 면접관 해줘"`)
+- [ ] 글자 수 제한 150자 표시
+- [ ] 전송 → `createConversation('custom', '나만의 상황', customPrompt)` 호출 → 채팅방 이동
+- [ ] `api/conversations.ts` — `createConversation`에 `customPrompt?` 파라미터 추가
+
+**완료 기준:** 커스텀 상황 입력 → 채팅 진입 → AI가 해당 상황 역할로 응답 확인
+
+---
+
+## Phase 6 진행 현황
+
+| Task | 설명 | 에이전트 | 상태 |
+|------|------|----------|------|
+| Task 060 | 햅틱 피드백 전체 적용 | rn-expo-frontend | ⬜ 대기 |
+| Task 061 | 콜드 스타트 추천 프롬프트 | rn-expo-frontend | ⬜ 대기 |
+| Task 062 | 미션 힌트 시스템 | contexttalk-api-architect + rn-expo-frontend | ⬜ 대기 |
+| Task 063 | 커스텀 상황극 | contexttalk-api-architect + rn-expo-frontend | ⬜ 대기 |
+
+## Phase 6 Task 의존성
+
+```
+Task 060 (햅틱)       ← 독립, 즉시 가능
+Task 061 (콜드스타트)  ← 독립, 즉시 가능
+Task 062 (미션힌트)    ← 독립 (백엔드 + 프론트)
+Task 063 (커스텀상황극) ← 독립 (백엔드 + 프론트)
+```

@@ -12,6 +12,10 @@ const { MISSIONS } = require('../constants/missions');
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+function buildCustomPrompt(userInput) {
+  return `You are an AI English conversation partner.\nThe user has set up this situation: "${userInput}"\nPlay the appropriate role naturally and correct the user's English as usual.\nAlways respond in JSON: { "feedback": [...], "next_response": "..." }`;
+}
+
 // GET /api/conversations
 router.get('/', authMiddleware, async (req, res) => {
   try {
@@ -33,15 +37,20 @@ router.get('/', authMiddleware, async (req, res) => {
 
 // POST /api/conversations
 router.post('/', authMiddleware, async (req, res) => {
-  const { topic_id, topic_label, mission_id } = req.body;
+  const { topic_id, topic_label, mission_id, custom_prompt } = req.body;
 
   if (!topic_id || !topic_label) {
     return errorResponse(res, 400, 'INVALID_REQUEST', 'topic_id와 topic_label이 필요합니다');
   }
 
+  if (custom_prompt && custom_prompt.length > 500) {
+    return errorResponse(res, 400, 'INVALID_REQUEST', 'custom_prompt는 500자 이하여야 합니다');
+  }
+
   try {
     const insertData = { user_id: req.user.id, topic_id, topic_label };
     if (mission_id) insertData.mission_id = mission_id;
+    if (custom_prompt) insertData.custom_prompt = custom_prompt;
 
     const { data, error } = await supabase
       .from('conversations')
@@ -75,7 +84,7 @@ router.post('/:id/messages', authMiddleware, async (req, res) => {
     // 2. Conversation 조회 (본인 소유 확인)
     const { data: conversation, error: convError } = await supabase
       .from('conversations')
-      .select('id, topic_id, mission_id')
+      .select('id, topic_id, mission_id, custom_prompt')
       .eq('id', conversationId)
       .eq('user_id', req.user.id)
       .single();
@@ -85,7 +94,9 @@ router.post('/:id/messages', authMiddleware, async (req, res) => {
     }
 
     // 3. 시스템 프롬프트 빌드
-    let systemPrompt = buildPrompt(conversation.topic_id);
+    let systemPrompt = (conversation.topic_id === 'custom' && conversation.custom_prompt)
+      ? buildCustomPrompt(conversation.custom_prompt)
+      : buildPrompt(conversation.topic_id);
 
     const { data: recentExpressions } = await supabase
       .from('expressions')
@@ -105,14 +116,6 @@ router.post('/:id/messages', authMiddleware, async (req, res) => {
         `to use these expressions in context. ` +
         `Never explicitly mention that you are practicing them. ` +
         `Do not break character. Just guide the context naturally.`;
-    }
-
-    // 미션 모드: goal_achieved 조건 주입
-    const mission = MISSIONS.find(m => m.id === conversation.mission_id);
-    if (mission) {
-      systemPrompt +=
-        `\n\nMISSION MODE — Additional instructions:\n${mission.successPrompt}` +
-        `\n\nYour JSON response MUST include a "goal_achieved" boolean field alongside feedback and next_response.`;
     }
 
     // 4. 슬라이딩 윈도우: 최근 6턴 메시지 조회
@@ -138,6 +141,19 @@ router.post('/:id/messages', authMiddleware, async (req, res) => {
         }
         return { role: 'assistant', content: JSON.stringify(msg.content) };
       });
+
+    // 미션 모드: goal_achieved + hint 조건 주입 (historyMessages 구성 후에 위치)
+    const mission = MISSIONS.find(m => m.id === conversation.mission_id);
+    if (mission) {
+      const userTurnCount = historyMessages.filter(m => m.role === 'user').length;
+      systemPrompt +=
+        `\n\nMISSION MODE — Additional instructions:\n${mission.successPrompt}` +
+        `\n\nYour JSON response MUST include:` +
+        `\n- "goal_achieved": boolean` +
+        `\n- "hint": string | null — ${userTurnCount >= 3
+          ? 'The user has attempted 3+ turns without achieving the goal. Provide a short English sentence starter (max 15 words) to help them. Be specific and actionable.'
+          : 'The user has made fewer than 3 attempts. Set this to null.'}`;
+    }
 
     // 5. GPT-4o-mini 호출 (JSON 파싱 실패 시 최대 2회 재시도)
     const openaiMessages = [
@@ -173,7 +189,7 @@ router.post('/:id/messages', authMiddleware, async (req, res) => {
       return errorResponse(res, 502, 'LLM_JSON_PARSE_FAILED', 'AI 응답 파싱에 실패했습니다');
     }
 
-    const { feedback, next_response, goal_achieved = false } = parsedAiContent;
+    const { feedback, next_response, goal_achieved = false, hint = null } = parsedAiContent;
 
     // 6. process_turn RPC 호출 — 턴 제한 체크 + 두 메시지 INSERT 원자적 처리
     const { data: rpcResult, error: rpcError } = await supabase.rpc('process_turn', {
@@ -195,7 +211,11 @@ router.post('/:id/messages', authMiddleware, async (req, res) => {
 
     // rpcResult: { user_message_id, ai_message_id, turn_number }
     const content = { feedback, next_response };
-    if (mission) content.goal_achieved = goal_achieved;
+    if (mission) {
+      content.goal_achieved = goal_achieved;
+      const userTurnCount = historyMessages.filter(m => m.role === 'user').length;
+      content.hint = userTurnCount >= 3 ? (hint ?? null) : null;
+    }
 
     return res.status(201).json({
       message_id: rpcResult.ai_message_id,

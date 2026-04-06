@@ -67,6 +67,7 @@ export default function RecordButton({ onRecordStop, disabled }: RecordButtonPro
     const recording = recordingRef.current;
     if (!recording) return;
     setIsRecording(false);
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
       await recording.stopAndUnloadAsync();
       const uri = recording.getURI();

@@ -18,9 +18,11 @@ import AIBubble from '@/components/chat/AIBubble';
 import RecordButton from '@/components/chat/RecordButton';
 import TypingIndicator from '@/components/chat/TypingIndicator';
 import BearMascot from '@/components/common/BearMascot';
+import * as Haptics from 'expo-haptics';
 import { useAppStore } from '@/store';
 import { transcribeAudio, sendMessage, fetchMessages, saveExpression } from '@/api/chat';
 import type { AITurnContent, Message } from '@/types';
+import { cancelTodayStreakReminder } from '@/utils/notifications';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -33,13 +35,26 @@ type ChatTurn = {
 };
 
 // ---------------------------------------------------------------------------
+// Starter Prompts (cold-start suggestion bubbles)
+// ---------------------------------------------------------------------------
+const STARTER_PROMPTS: Record<string, string[]> = {
+  free_talk:           ['오늘 점심 뭐 먹었어?', '요즘 푹 빠진 게 있어?', '주말에 뭐 할 계획이야?'],
+  cafe_order:          ['아이스 아메리카노 주문해볼게', '오늘 추천 메뉴가 뭐야?', '카페인 없는 음료 있어?'],
+  airport_immigration: ['관광 목적으로 왔어', '일주일 정도 있을 예정이야', '호텔에 묵을 거야'],
+  hotel_checkin:       ['예약 확인 부탁해', '더 좋은 방 있어?', '조식 포함이야?'],
+  small_talk:          ['날씨 진짜 좋다', '요즘 어떻게 지내?', '주말에 뭐 했어?'],
+  opinion:             ['나는 이렇게 생각해', '동의하지 않아', '좋은 의견이네'],
+};
+
+// ---------------------------------------------------------------------------
 // ChatScreen
 // ---------------------------------------------------------------------------
 export default function ChatScreen() {
-  const { id, topicLabel, missionBar } = useLocalSearchParams<{
+  const { id, topicLabel, missionBar, topicId } = useLocalSearchParams<{
     id: string;
     topicLabel?: string;
     missionBar?: string;
+    topicId?: string;
   }>();
   const router = useRouter();
 
@@ -54,6 +69,7 @@ export default function ChatScreen() {
   const [textInput, setTextInput] = useState('');
   const [sttFailed, setSttFailed] = useState(false);
   const [missionCleared, setMissionCleared] = useState(false);
+  const [currentHint, setCurrentHint] = useState<string | null>(null);
 
   const flatListRef = useRef<FlatList<ChatTurn>>(null);
 
@@ -102,6 +118,7 @@ export default function ChatScreen() {
         source_block: params.sourceBlock,
         user_memo: params.memo,
       });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       showToast('표현이 저장되었습니다!');
     } catch {
       showToast('표현 저장에 실패했어요.');
@@ -123,7 +140,11 @@ export default function ChatScreen() {
         )
       );
       if (content.goal_achieved) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setMissionCleared(true);
+        setCurrentHint(null);
+      } else {
+        setCurrentHint(content.hint ?? null);
       }
     } catch (err: unknown) {
       setTurns((prev) => prev.filter((t) => t.id !== tempId));
@@ -173,15 +194,15 @@ export default function ChatScreen() {
   // -------------------------------------------------------------------------
   // 텍스트 전송 핸들러
   // -------------------------------------------------------------------------
-  async function handleTextSend() {
-    const text = textInput.trim();
+  async function handleTextSend(overrideText?: string) {
+    const text = (overrideText !== undefined ? overrideText : textInput).trim();
     if (!text || isProcessing) return;
 
     if (turns.length === 0) {
       cancelTodayStreakReminder().catch(() => {});
     }
 
-    setTextInput('');
+    if (overrideText === undefined) setTextInput('');
     setIsProcessing(true);
     const tempId = `temp-${Date.now()}`;
     setTurns((prev) => [...prev, { id: tempId, userMsgId: null, userText: text, aiContent: null }]);
@@ -292,6 +313,24 @@ export default function ChatScreen() {
         </View>
       )}
 
+      {/* 미션 힌트 배너 */}
+      {currentHint && missionBar && (
+        <Pressable
+          className="bg-indigo-50 border-b border-indigo-100 px-4 py-2.5 flex-row items-center gap-2 active:opacity-70"
+          onPress={() => {
+            setTextInput(currentHint);
+            setIsTextMode(true);
+            setCurrentHint(null);
+          }}
+        >
+          <Text className="text-base">💡</Text>
+          <Text className="text-xs text-indigo-700 flex-1" numberOfLines={1}>
+            Try: "{currentHint}"
+          </Text>
+          <Text className="text-xs text-indigo-400">탭하면 입력돼요</Text>
+        </Pressable>
+      )}
+
       {/* 미션 클리어 모달 */}
       <Modal visible={missionCleared} animationType="fade" transparent>
         <View className="flex-1 justify-center items-center bg-black/50 px-8">
@@ -332,6 +371,23 @@ export default function ChatScreen() {
           </>
         }
       />
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Cold-start starter prompt bubbles                                   */}
+      {/* ------------------------------------------------------------------ */}
+      {turns.length === 0 && !isProcessing && !isTextMode && topicId && (STARTER_PROMPTS[topicId] ?? []).length > 0 && (
+        <View className="px-4 pb-2 gap-2 items-end">
+          {(STARTER_PROMPTS[topicId] ?? STARTER_PROMPTS['free_talk']).map((prompt) => (
+            <Pressable
+              key={prompt}
+              onPress={() => handleTextSend(prompt)}
+              className="bg-indigo-50 border border-indigo-100 rounded-2xl px-4 py-2.5 active:opacity-70"
+            >
+              <Text className="text-sm text-indigo-700">{prompt}</Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
 
       {/* ------------------------------------------------------------------ */}
       {/* Input bar                                                           */}

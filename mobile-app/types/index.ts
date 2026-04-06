@@ -13,6 +13,7 @@ export type AITurnContent = {
   feedback: FeedbackItem[];
   next_response: string;
   goal_achieved?: boolean; // 미션 모드에서만 등장, undefined = 일반 대화
+  hint?: string | null;   // 미션 모드에서 3턴 미달성 시 제공
 };
 export type MessageContent = AITurnContent | UserSpeechContent;
 

@@ -1,6 +1,7 @@
 import { View, Text, ActivityIndicator, Pressable } from 'react-native';
 import { useEffect, useRef, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Audio } from 'expo-av';
@@ -241,6 +242,7 @@ export default function ShadowingPlayerScreen() {
         recordingUriRef.current = uri;
         recordingRef.current = null;
         setIsRecording(false);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
         // 현재 선택된 문장 구간으로 seek 후 비교 재생 시작
         const script = scriptsRef.current[currentSentenceIndexRef.current];
@@ -276,6 +278,7 @@ export default function ShadowingPlayerScreen() {
         await recording.startAsync();
         recordingRef.current = recording;
         setIsRecording(true);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       } catch {
         showToast('마이크 권한이 필요해요.');
       }

@@ -138,7 +138,7 @@ export default function HomeScreen() {
   async function handleFABPress() {
     try {
       const conversation = await createConversation('free_talk', 'Free Talking');
-      router.push({ pathname: '/chat/[id]', params: { id: conversation.id, topicLabel: 'Free Talking' } });
+      router.push({ pathname: '/chat/[id]', params: { id: conversation.id, topicLabel: 'Free Talking', topicId: 'free_talk' } });
     } catch {
       showToast('대화를 시작하지 못했어요. 다시 시도해주세요.');
     }

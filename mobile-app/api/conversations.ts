@@ -20,9 +20,11 @@ export async function createConversation(
   topicId: string,
   topicLabel: string,
   missionId?: string,
+  customPrompt?: string,
 ): Promise<Conversation> {
   const body: Record<string, string> = { topic_id: topicId, topic_label: topicLabel };
   if (missionId) body.mission_id = missionId;
+  if (customPrompt) body.custom_prompt = customPrompt;
 
   const res = await apiFetch('/api/conversations', {
     method: 'POST',
