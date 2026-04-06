@@ -19,7 +19,7 @@ export default function QuizPlayerScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnswerRevealed, setIsAnswerRevealed] = useState(false);
-  const [answers, setAnswers] = useState<boolean[]>([]);
+  const [answers, setAnswers] = useState<Array<{ expression_id: string; is_correct: boolean }>>([]);
   const [phase, setPhase] = useState<'playing' | 'result'>('playing');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [finalScore, setFinalScore] = useState(0);
@@ -33,17 +33,23 @@ export default function QuizPlayerScreen() {
   }, [sessionId]);
 
   async function handleAnswer(isCorrect: boolean) {
-    const newAnswers = [...answers, isCorrect];
+    const currentQ = questions[currentIndex];
+    const newAnswers = [
+      ...answers,
+      ...(currentQ.expression_id
+        ? [{ expression_id: currentQ.expression_id, is_correct: isCorrect }]
+        : []),
+    ];
     setAnswers(newAnswers);
 
     const isLast = currentIndex === questions.length - 1;
 
     if (isLast) {
-      const correctCount = newAnswers.filter(Boolean).length;
+      const correctCount = newAnswers.filter((a) => a.is_correct).length;
       setFinalScore(correctCount);
       setIsSubmitting(true);
       try {
-        await submitQuizResult(sessionId!, correctCount);
+        await submitQuizResult(sessionId!, correctCount, newAnswers);
       } catch {
         // 제출 실패해도 결과 화면은 보여줌
         showToast('결과 저장에 실패했어요.');

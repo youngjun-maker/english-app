@@ -12,6 +12,7 @@ export type UserSpeechContent = { text: string };
 export type AITurnContent = {
   feedback: FeedbackItem[];
   next_response: string;
+  goal_achieved?: boolean; // 미션 모드에서만 등장, undefined = 일반 대화
 };
 export type MessageContent = AITurnContent | UserSpeechContent;
 

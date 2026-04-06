@@ -3,6 +3,7 @@ import {
   FlatList,
   KeyboardAvoidingView,
   ListRenderItem,
+  Modal,
   Platform,
   Pressable,
   Text,
@@ -35,7 +36,11 @@ type ChatTurn = {
 // ChatScreen
 // ---------------------------------------------------------------------------
 export default function ChatScreen() {
-  const { id, topicLabel } = useLocalSearchParams<{ id: string; topicLabel?: string }>();
+  const { id, topicLabel, missionBar } = useLocalSearchParams<{
+    id: string;
+    topicLabel?: string;
+    missionBar?: string;
+  }>();
   const router = useRouter();
 
   const showToast = useAppStore((s) => s.showToast);
@@ -48,6 +53,7 @@ export default function ChatScreen() {
   const [isTextMode, setIsTextMode] = useState(false);
   const [textInput, setTextInput] = useState('');
   const [sttFailed, setSttFailed] = useState(false);
+  const [missionCleared, setMissionCleared] = useState(false);
 
   const flatListRef = useRef<FlatList<ChatTurn>>(null);
 
@@ -116,6 +122,9 @@ export default function ChatScreen() {
             : t
         )
       );
+      if (content.goal_achieved) {
+        setMissionCleared(true);
+      }
     } catch (err: unknown) {
       setTurns((prev) => prev.filter((t) => t.id !== tempId));
       const apiErr = err as { error?: { code?: string } };
@@ -137,6 +146,9 @@ export default function ChatScreen() {
       const tempId = `temp-${Date.now()}`;
       try {
         const { text } = await transcribeAudio(uri);
+
+        if (turns.length === 0) {
+        }
 
         // 사용자 말풍선 즉시 표시 (optimistic — userMsgId는 아직 모름)
         setTurns((prev) => [...prev, { id: tempId, userMsgId: null, userText: text, aiContent: null }]);
@@ -164,6 +176,11 @@ export default function ChatScreen() {
   async function handleTextSend() {
     const text = textInput.trim();
     if (!text || isProcessing) return;
+
+    if (turns.length === 0) {
+      cancelTodayStreakReminder().catch(() => {});
+    }
+
     setTextInput('');
     setIsProcessing(true);
     const tempId = `temp-${Date.now()}`;
@@ -265,6 +282,34 @@ export default function ChatScreen() {
           <Text className="text-sm font-medium text-gray-700">End</Text>
         </Pressable>
       </View>
+
+      {/* 미션 바 */}
+      {missionBar && (
+        <View className="bg-amber-50 border-b border-amber-100 px-4 py-2">
+          <Text className="text-amber-700 text-xs font-semibold text-center">
+            {missionBar}
+          </Text>
+        </View>
+      )}
+
+      {/* 미션 클리어 모달 */}
+      <Modal visible={missionCleared} animationType="fade" transparent>
+        <View className="flex-1 justify-center items-center bg-black/50 px-8">
+          <View className="bg-white rounded-3xl px-6 py-8 items-center w-full">
+            <Text className="text-5xl mb-4">🎯</Text>
+            <Text className="text-2xl font-black text-gray-900 mb-2">미션 클리어!</Text>
+            <Text className="text-sm text-gray-500 text-center leading-5 mb-6">
+              완벽하게 해냈어요!{'\n'}실전에서도 충분히 통할 실력이에요.
+            </Text>
+            <Pressable
+              className="bg-indigo-500 rounded-2xl py-3.5 px-8 active:opacity-80"
+              onPress={() => router.replace('/(tabs)')}
+            >
+              <Text className="text-white font-bold text-base">홈으로 돌아가기</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
 
       {/* ------------------------------------------------------------------ */}
       {/* Message list                                                        */}

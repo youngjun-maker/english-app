@@ -8,6 +8,7 @@ const { supabase } = require('../utils/supabase');
 const { errorResponse } = require('../utils/errorResponse');
 const { buildPrompt } = require('../utils/buildPrompt');
 const { authMiddleware } = require('../middleware/auth');
+const { MISSIONS } = require('../constants/missions');
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -32,16 +33,19 @@ router.get('/', authMiddleware, async (req, res) => {
 
 // POST /api/conversations
 router.post('/', authMiddleware, async (req, res) => {
-  const { topic_id, topic_label } = req.body;
+  const { topic_id, topic_label, mission_id } = req.body;
 
   if (!topic_id || !topic_label) {
     return errorResponse(res, 400, 'INVALID_REQUEST', 'topic_id와 topic_label이 필요합니다');
   }
 
   try {
+    const insertData = { user_id: req.user.id, topic_id, topic_label };
+    if (mission_id) insertData.mission_id = mission_id;
+
     const { data, error } = await supabase
       .from('conversations')
-      .insert({ user_id: req.user.id, topic_id, topic_label })
+      .insert(insertData)
       .select('id, topic_id, topic_label, created_at')
       .single();
 
@@ -71,7 +75,7 @@ router.post('/:id/messages', authMiddleware, async (req, res) => {
     // 2. Conversation 조회 (본인 소유 확인)
     const { data: conversation, error: convError } = await supabase
       .from('conversations')
-      .select('id, topic_id')
+      .select('id, topic_id, mission_id')
       .eq('id', conversationId)
       .eq('user_id', req.user.id)
       .single();
@@ -81,7 +85,35 @@ router.post('/:id/messages', authMiddleware, async (req, res) => {
     }
 
     // 3. 시스템 프롬프트 빌드
-    const systemPrompt = buildPrompt(conversation.topic_id);
+    let systemPrompt = buildPrompt(conversation.topic_id);
+
+    const { data: recentExpressions } = await supabase
+      .from('expressions')
+      .select('expression_text')
+      .eq('user_id', req.user.id)
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    if (recentExpressions?.length > 0) {
+      const list = recentExpressions
+        .map(e => `- "${e.expression_text}"`)
+        .join('\n');
+
+      systemPrompt +=
+        `\n\nThe learner recently saved these expressions:\n${list}\n\n` +
+        `Naturally steer the conversation so the learner has an opportunity ` +
+        `to use these expressions in context. ` +
+        `Never explicitly mention that you are practicing them. ` +
+        `Do not break character. Just guide the context naturally.`;
+    }
+
+    // 미션 모드: goal_achieved 조건 주입
+    const mission = MISSIONS.find(m => m.id === conversation.mission_id);
+    if (mission) {
+      systemPrompt +=
+        `\n\nMISSION MODE — Additional instructions:\n${mission.successPrompt}` +
+        `\n\nYour JSON response MUST include a "goal_achieved" boolean field alongside feedback and next_response.`;
+    }
 
     // 4. 슬라이딩 윈도우: 최근 6턴 메시지 조회
     const { data: recentMessages, error: msgError } = await supabase
@@ -141,7 +173,7 @@ router.post('/:id/messages', authMiddleware, async (req, res) => {
       return errorResponse(res, 502, 'LLM_JSON_PARSE_FAILED', 'AI 응답 파싱에 실패했습니다');
     }
 
-    const { feedback, next_response } = parsedAiContent;
+    const { feedback, next_response, goal_achieved = false } = parsedAiContent;
 
     // 6. process_turn RPC 호출 — 턴 제한 체크 + 두 메시지 INSERT 원자적 처리
     const { data: rpcResult, error: rpcError } = await supabase.rpc('process_turn', {
@@ -162,11 +194,14 @@ router.post('/:id/messages', authMiddleware, async (req, res) => {
     }
 
     // rpcResult: { user_message_id, ai_message_id, turn_number }
+    const content = { feedback, next_response };
+    if (mission) content.goal_achieved = goal_achieved;
+
     return res.status(201).json({
       message_id: rpcResult.ai_message_id,
       user_message_id: rpcResult.user_message_id,
       turn_number: rpcResult.turn_number,
-      content: { feedback, next_response },
+      content,
     });
   } catch (err) {
     console.error('POST /:id/messages unexpected error:', err);

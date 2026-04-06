@@ -19,10 +19,14 @@ async function handleError(res: Response): Promise<never> {
 export async function createConversation(
   topicId: string,
   topicLabel: string,
+  missionId?: string,
 ): Promise<Conversation> {
+  const body: Record<string, string> = { topic_id: topicId, topic_label: topicLabel };
+  if (missionId) body.mission_id = missionId;
+
   const res = await apiFetch('/api/conversations', {
     method: 'POST',
-    body: JSON.stringify({ topic_id: topicId, topic_label: topicLabel }),
+    body: JSON.stringify(body),
   });
   if (!res.ok) return handleError(res);
   return res.json();

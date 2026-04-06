@@ -1,10 +1,12 @@
-import { FlatList, Pressable, Text, View } from 'react-native';
-import { useEffect, useState } from 'react';
+import { FlatList, Modal, Pressable, ScrollView, Text, View, ActivityIndicator } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useAppStore } from '@/store/useAppStore';
 import { fetchConversations, createConversation } from '@/api/conversations';
 import BearMascot from '@/components/common/BearMascot';
+import { fetchWeeklyReport } from '@/api/reports';
 import type { Conversation } from '@/types';
+import type { WeeklyReport } from '@/api/reports';
 
 // ─── 상수 ────────────────────────────────────────────────────────────────────
 const TOPIC_EMOJI: Record<string, string> = {
@@ -16,6 +18,12 @@ const TOPIC_EMOJI: Record<string, string> = {
 };
 
 const WEEKDAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+
+const LOADING_MSGS = [
+  '일주일치 대화를 열심히 분석하고 있어요... 🤖',
+  '틀린 패턴을 찾고 있어요... 🔍',
+  '선생님이 꼼꼼히 살펴보는 중이에요... 📝',
+];
 
 // ─── 유틸 ────────────────────────────────────────────────────────────────────
 function formatRelativeTime(isoString: string): string {
@@ -82,12 +90,40 @@ export default function HomeScreen() {
   const user = useAppStore((s) => s.user);
   const showToast = useAppStore((s) => s.showToast);
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [reportLoading, setReportLoading] = useState(false);
+  const [report, setReport] = useState<WeeklyReport | null>(null);
+  const [loadingMsgIndex, setLoadingMsgIndex] = useState(0);
+  const loadingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     fetchConversations()
       .then(setConversations)
       .catch(() => showToast('대화 목록을 불러오지 못했어요.'));
   }, []);
+
+
+  async function handleReportPress() {
+    setReportModalVisible(true);
+    setReportLoading(true);
+    setLoadingMsgIndex(0);
+    loadingIntervalRef.current = setInterval(() => {
+      setLoadingMsgIndex((i) => (i + 1) % LOADING_MSGS.length);
+    }, 500);
+    try {
+      const { report: data } = await fetchWeeklyReport();
+      setReport(data);
+    } catch {
+      showToast('리포트를 불러오지 못했어요.');
+      setReportModalVisible(false);
+    } finally {
+      setReportLoading(false);
+      if (loadingIntervalRef.current) {
+        clearInterval(loadingIntervalRef.current);
+        loadingIntervalRef.current = null;
+      }
+    }
+  }
 
   const displayName = user?.display_name ?? 'there';
   const progressPercent = Math.min((todayTurnCount / 20) * 100, 100);
@@ -171,6 +207,16 @@ export default function HomeScreen() {
           )}
         </View>
 
+        {/* ── 주간 리포트 버튼 ── */}
+        <Pressable
+          className="bg-white rounded-2xl px-4 py-3.5 mb-4 border border-gray-100 flex-row items-center active:opacity-70"
+          onPress={handleReportPress}
+        >
+          <Text className="text-lg mr-2">📊</Text>
+          <Text className="flex-1 text-sm font-semibold text-gray-800">이번 주 리포트 보기</Text>
+          <Text className="text-xs text-indigo-500 font-medium">분석 →</Text>
+        </Pressable>
+
         {/* ── Practice 섹션 ── */}
         <Text className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
           Practice
@@ -246,6 +292,82 @@ export default function HomeScreen() {
           showsVerticalScrollIndicator={false}
         />
       )}
+
+      {/* 주간 리포트 모달 */}
+      <Modal
+        visible={reportModalVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setReportModalVisible(false)}
+      >
+        <View className="flex-1 justify-end bg-black/40">
+          <View className="bg-white rounded-t-3xl px-5 pt-5 pb-10 max-h-[80%]">
+            <Text className="text-lg font-black text-gray-900 mb-4 text-center">
+              📊 이번 주 학습 리포트
+            </Text>
+
+            {reportLoading ? (
+              <View className="items-center py-10">
+                <ActivityIndicator size="large" color="#6366F1" />
+                <Text className="text-sm text-gray-400 mt-4 text-center">
+                  {LOADING_MSGS[loadingMsgIndex]}
+                </Text>
+              </View>
+            ) : report ? (
+              <ScrollView showsVerticalScrollIndicator={false}>
+                {/* 총평 */}
+                <View className="bg-indigo-50 rounded-2xl px-4 py-3 mb-4">
+                  <Text className="text-sm text-indigo-700 leading-5">{report.summary}</Text>
+                </View>
+
+                {/* 약점 TOP 3 */}
+                {report.weak_points?.length > 0 && (
+                  <View className="mb-4">
+                    <Text className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                      약점 TOP {report.weak_points.length}
+                    </Text>
+                    {report.weak_points.map((wp, i) => (
+                      <View key={i} className="bg-red-50 rounded-xl px-4 py-3 mb-2">
+                        <Text className="text-sm font-bold text-red-600 mb-1">
+                          {wp.category} ({wp.count}번)
+                        </Text>
+                        {wp.examples.map((ex, j) => (
+                          <View key={j} className="mt-1">
+                            <Text className="text-xs text-gray-500">원: "{ex.original}"</Text>
+                            <Text className="text-xs text-emerald-600">교: "{ex.corrected}"</Text>
+                          </View>
+                        ))}
+                      </View>
+                    ))}
+                  </View>
+                )}
+
+                {/* 칭찬 + 목표 */}
+                <View className="bg-emerald-50 rounded-xl px-4 py-3 mb-2">
+                  <Text className="text-xs font-semibold text-emerald-600 mb-1">👍 잘한 점</Text>
+                  <Text className="text-sm text-gray-700">{report.praise}</Text>
+                </View>
+                <View className="bg-amber-50 rounded-xl px-4 py-3 mb-4">
+                  <Text className="text-xs font-semibold text-amber-600 mb-1">🎯 다음 주 목표</Text>
+                  <Text className="text-sm text-gray-700">{report.next_goal}</Text>
+                </View>
+              </ScrollView>
+            ) : (
+              <View className="items-center py-10">
+                <Text className="text-4xl mb-3">📭</Text>
+                <Text className="text-sm text-gray-400 text-center">이번 주 교정 내역이 없어요!</Text>
+              </View>
+            )}
+
+            <Pressable
+              className="mt-4 bg-gray-100 rounded-2xl py-3.5 items-center active:opacity-70"
+              onPress={() => setReportModalVisible(false)}
+            >
+              <Text className="text-sm font-semibold text-gray-600">닫기</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
 
       {/* FAB — BearMascot + 마이크 배지 */}
       <Pressable

@@ -1803,18 +1803,18 @@ export const SITUATIONS: Situation[] = [
 |------|------|----------|------|
 | Task 035 | 섀도잉 마이크 녹음 → 비교 재생 (expo-video seek 방식) | rn-expo-frontend | ✅ 완료 |
 | Task 047 | Situation 상황 선택 분리 | rn-expo-frontend | ✅ 완료 |
-| Task 048 | 망각 곡선 퀴즈 DB 마이그레이션 | Playwright MCP | ⬜ 대기 |
-| Task 049 | 망각 곡선 퀴즈 API 업데이트 | contexttalk-api-architect | 🔄 부분 완료 |
-| Task 050 | 망각 곡선 퀴즈 프론트엔드 업데이트 | rn-expo-frontend | ⬜ 대기 |
-| Task 051 | 저장 표현으로 대화 유도 (백엔드 프롬프트 개인화) | contexttalk-api-architect | ⬜ 대기 |
-| Task 052 | 푸시 알림 유틸리티 + Settings 탭 활성화 | rn-expo-frontend | ⬜ 대기 |
-| Task 053 | 푸시 알림 취소 로직 연동 | rn-expo-frontend | ⬜ 대기 |
-| Task 054 | 주간 리포트 DB 마이그레이션 | Playwright MCP | ⬜ 대기 |
-| Task 055 | 주간 리포트 API 구현 | contexttalk-api-architect | ⬜ 대기 |
-| Task 056 | 주간 리포트 프론트엔드 | rn-expo-frontend | ⬜ 대기 |
-| Task 057 | 미션 상황극 상수 정의 + 타입 확장 | rn-expo-frontend | ⬜ 대기 |
-| Task 058 | 미션 상황극 백엔드 프롬프트 주입 | contexttalk-api-architect | ⬜ 대기 |
-| Task 059 | 미션 상황극 프론트엔드 UI | rn-expo-frontend | ⬜ 대기 |
+| Task 048 | 망각 곡선 퀴즈 DB 마이그레이션 | Playwright MCP | ✅ 완료 |
+| Task 049 | 망각 곡선 퀴즈 API 업데이트 | contexttalk-api-architect | ✅ 완료 |
+| Task 050 | 망각 곡선 퀴즈 프론트엔드 업데이트 | rn-expo-frontend | ✅ 완료 |
+| Task 051 | 저장 표현으로 대화 유도 (백엔드 프롬프트 개인화) | contexttalk-api-architect | ✅ 완료 |
+| Task 052 | 푸시 알림 유틸리티 + Settings 탭 활성화 | rn-expo-frontend | ❌ 제거 — expo-notifications 네이티브 모듈 크래시, MVP 불필요 판단으로 전체 롤백 |
+| Task 053 | 푸시 알림 취소 로직 연동 | rn-expo-frontend | ❌ 제거 (Task 052 롤백에 따름) |
+| Task 054 | 주간 리포트 DB 마이그레이션 | Playwright MCP | ✅ 완료 |
+| Task 055 | 주간 리포트 API 구현 | contexttalk-api-architect | ✅ 완료 |
+| Task 056 | 주간 리포트 프론트엔드 | rn-expo-frontend | ✅ 완료 |
+| Task 057 | 미션 상황극 상수 정의 + 타입 확장 | rn-expo-frontend | ✅ 완료 |
+| Task 058 | 미션 상황극 백엔드 프롬프트 주입 | contexttalk-api-architect | ✅ 완료 |
+| Task 059 | 미션 상황극 프론트엔드 UI | rn-expo-frontend | ✅ 완료 |
 
 ## Phase 5 Task 의존성
 
@@ -1861,7 +1861,13 @@ Task 054 (리포트 DB)
 - `mobile-app/app/(tabs)/index.tsx` — Situation 카드 → `/chat/topic-select` 직접 라우팅
 - `mobile-app/app/(tabs)/study.tsx` — `useEffect` → `useFocusEffect` (포커스 시 자동 갱신)
 
-### 🔄 Task 049 — 망각 곡선 퀴즈 API (부분 완료)
+### ✅ Task 048 — 망각 곡선 퀴즈 DB 마이그레이션 (완료)
+
+- `expressions` 테이블에 `next_review_date date DEFAULT CURRENT_DATE` 컬럼 추가
+- `expressions` 테이블에 `review_interval integer DEFAULT 1` 컬럼 추가
+- `idx_expressions_review (user_id, next_review_date)` 인덱스 생성
+
+### ✅ Task 049 — 망각 곡선 퀴즈 API (완료)
 
 - `ai-server/routes/quiz.js`
   - `isShortExpression()` — 6단어 이하 PHRASE / 이상 SENTENCE 분류
@@ -1878,3 +1884,26 @@ Task 054 (리포트 DB)
 
 - Android development 빌드 완료
 - Build ID: `120d186e-1627-4154-a833-862304dd920b`
+
+---
+
+## 작업 이력 (2026-04-06)
+
+### ❌ 푸시 알림 기능 전체 제거 (Task 052, 053 롤백)
+
+- `expo-notifications` 네이티브 모듈(`ExpoPushTokenManager`)이 현재 빌드에 포함되지 않아 앱 크래시 발생
+- MVP 단계에서 불필요한 기능으로 판단, 전체 제거
+- 제거 파일/코드:
+  - `mobile-app/utils/notifications.ts` — 파일 유지하되 더 이상 import 없음
+  - `mobile-app/app/(tabs)/settings.tsx` — 알림 토글 UI 제거
+  - `mobile-app/app/(tabs)/index.tsx` — `cancelTodayStreakReminder` 호출 제거
+  - `mobile-app/app/chat/[id].tsx` — `cancelTodayStreakReminder` 호출 제거
+  - `mobile-app/app.json` — `expo-notifications` 플러그인 미등록 유지
+
+### 💡 도움말 & FAQ 화면 신설
+
+- `mobile-app/app/guide.tsx` 신규 생성
+  - 5개 섹션, 15개 FAQ 아코디언 UI (LayoutAnimation 스르륵 열기/닫기)
+  - 섹션: 홈화면 / 실전대화 / 복습&퀴즈 / 섀도잉 / 설정
+- `mobile-app/app/_layout.tsx` — `guide` 라우트 등록
+- `mobile-app/app/(tabs)/settings.tsx` — [💡 도움말 & FAQ] 메뉴 항목 추가

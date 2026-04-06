@@ -1,9 +1,10 @@
-import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Modal, Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { createConversation } from '@/api/conversations';
 import { useAppStore } from '@/store/useAppStore';
 import { SITUATIONS, type Situation } from '@/constants/situations';
+import { MISSIONS, type Mission } from '@/constants/missions';
 
 type SituationCardProps = {
   situation: Situation;
@@ -35,21 +36,50 @@ function SituationCard({ situation, onPress, isLoading, disabled }: SituationCar
 export default function TopicSelectScreen() {
   const router = useRouter();
   const showToast = useAppStore((s) => s.showToast);
-  const [loadingId, setLoadingId] = useState<string | null>(null);
 
-  async function handleSituationPress(situation: Situation) {
+  const [loadingId, setLoadingId] = useState<string | null>(null);
+  // 선택된 상황 (미션 분기 모달용)
+  const [selectedSituation, setSelectedSituation] = useState<Situation | null>(null);
+  const [missionModalVisible, setMissionModalVisible] = useState(false);
+
+  const situationMissions = selectedSituation
+    ? MISSIONS.filter((m) => m.situationId === selectedSituation.id)
+    : [];
+
+  async function startConversation(situation: Situation, mission?: Mission) {
     if (loadingId) return;
-    setLoadingId(situation.id);
+    setLoadingId(mission?.id ?? situation.id);
+    setMissionModalVisible(false);
     try {
-      const conversation = await createConversation(situation.id, situation.label);
+      const conversation = await createConversation(
+        situation.id,
+        situation.label,
+        mission?.id,
+      );
       router.push({
         pathname: '/chat/[id]',
-        params: { id: conversation.id, topicLabel: situation.label },
+        params: {
+          id: conversation.id,
+          topicLabel: situation.label,
+          ...(mission ? { missionBar: mission.missionBar } : {}),
+        },
       });
     } catch {
       showToast('대화를 시작하지 못했어요. 다시 시도해주세요.');
     } finally {
       setLoadingId(null);
+    }
+  }
+
+  function handleSituationPress(situation: Situation) {
+    const missions = MISSIONS.filter((m) => m.situationId === situation.id);
+    if (missions.length === 0) {
+      // 미션 없는 상황 → 바로 대화 시작
+      startConversation(situation);
+    } else {
+      // 미션 있는 상황 → 분기 모달 표시
+      setSelectedSituation(situation);
+      setMissionModalVisible(true);
     }
   }
 
@@ -81,6 +111,54 @@ export default function TopicSelectScreen() {
         columnWrapperClassName="justify-between"
         showsVerticalScrollIndicator={false}
       />
+
+      {/* 미션 분기 모달 */}
+      <Modal
+        visible={missionModalVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setMissionModalVisible(false)}
+      >
+        <View className="flex-1 justify-end bg-black/40">
+          <View className="bg-white rounded-t-3xl px-5 pt-5 pb-10">
+            <Text className="text-lg font-black text-gray-900 mb-1">
+              {selectedSituation?.emoji} {selectedSituation?.label}
+            </Text>
+            <Text className="text-sm text-gray-400 mb-5">어떻게 연습할까요?</Text>
+
+            {/* 그냥 대화하기 */}
+            <Pressable
+              className="bg-indigo-500 rounded-2xl py-4 items-center mb-3 active:opacity-80"
+              onPress={() => selectedSituation && startConversation(selectedSituation)}
+            >
+              <Text className="text-white font-bold text-base">💬 그냥 대화하기</Text>
+              <Text className="text-indigo-200 text-xs mt-0.5">자유롭게 대화해요</Text>
+            </Pressable>
+
+            {/* 미션 목록 */}
+            <Text className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+              🎯 미션 도전
+            </Text>
+            {situationMissions.map((mission) => (
+              <Pressable
+                key={mission.id}
+                className="bg-amber-50 border border-amber-100 rounded-2xl px-4 py-3.5 mb-2 active:opacity-70"
+                onPress={() => selectedSituation && startConversation(selectedSituation, mission)}
+              >
+                <Text className="text-sm font-bold text-amber-800">{mission.label}</Text>
+                <Text className="text-xs text-amber-600 mt-0.5">{mission.desc}</Text>
+              </Pressable>
+            ))}
+
+            <Pressable
+              className="mt-2 py-3 items-center active:opacity-60"
+              onPress={() => setMissionModalVisible(false)}
+            >
+              <Text className="text-sm text-gray-400">취소</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
