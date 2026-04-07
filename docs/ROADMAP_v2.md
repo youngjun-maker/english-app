@@ -2032,10 +2032,10 @@ ALTER TABLE conversations ADD COLUMN custom_prompt text;
 
 | Task | 설명 | 에이전트 | 상태 |
 |------|------|----------|------|
-| Task 060 | 햅틱 피드백 전체 적용 | rn-expo-frontend | ⬜ 대기 |
-| Task 061 | 콜드 스타트 추천 프롬프트 | rn-expo-frontend | ⬜ 대기 |
-| Task 062 | 미션 힌트 시스템 | contexttalk-api-architect + rn-expo-frontend | ⬜ 대기 |
-| Task 063 | 커스텀 상황극 | contexttalk-api-architect + rn-expo-frontend | ⬜ 대기 |
+| Task 060 | 햅틱 피드백 전체 적용 | rn-expo-frontend | ✅ 완료 |
+| Task 061 | 콜드 스타트 추천 프롬프트 | rn-expo-frontend | ✅ 완료 |
+| Task 062 | 미션 힌트 시스템 | contexttalk-api-architect + rn-expo-frontend | ✅ 완료 |
+| Task 063 | 커스텀 상황극 | contexttalk-api-architect + rn-expo-frontend | ✅ 완료 |
 
 ## Phase 6 Task 의존성
 
