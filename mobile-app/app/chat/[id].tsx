@@ -40,12 +40,15 @@ type ChatTurn = {
 // ChatScreen
 // ---------------------------------------------------------------------------
 export default function ChatScreen() {
-  const { id, topicLabel, missionBar, topicId } = useLocalSearchParams<{
+  const { id, topicLabel, missionBar, topicId, level: levelParam } = useLocalSearchParams<{
     id: string;
     topicLabel?: string;
     missionBar?: string;
     topicId?: string;
+    level?: string;
   }>();
+
+  const difficultyLevel = ([1, 2, 3].includes(Number(levelParam)) ? Number(levelParam) : 2) as 1 | 2 | 3;
   const router = useRouter();
 
   const showToast = useAppStore((s) => s.showToast);
@@ -123,7 +126,7 @@ export default function ChatScreen() {
   async function fetchAIResponse(tempId: string, text: string) {
     useAppStore.getState().setTypingIndicator(true);
     try {
-      const { message_id, user_message_id, content } = await sendMessage(conversationId, text);
+      const { message_id, user_message_id, content } = await sendMessage(conversationId, text, difficultyLevel);
       setTurns((prev) =>
         prev.map((t) =>
           t.id === tempId
@@ -280,7 +283,20 @@ export default function ChatScreen() {
 
         {/* 타이틀 */}
         <View className="flex-1">
-          <Text className="text-xs text-gray-400">Situation Talking · Barista</Text>
+          <View className="flex-row items-center gap-1.5">
+            <Text className="text-xs text-gray-400">Situation Talking</Text>
+            <View className={`px-1.5 py-0.5 rounded-full ${
+              difficultyLevel === 1 ? 'bg-green-100' :
+              difficultyLevel === 3 ? 'bg-red-100' : 'bg-amber-100'
+            }`}>
+              <Text className={`text-[9px] font-bold ${
+                difficultyLevel === 1 ? 'text-green-700' :
+                difficultyLevel === 3 ? 'text-red-700' : 'text-amber-700'
+              }`}>
+                {difficultyLevel === 1 ? 'Lv.1 초급' : difficultyLevel === 3 ? 'Lv.3 고급' : 'Lv.2 중급'}
+              </Text>
+            </View>
+          </View>
           <Text className="text-base font-bold text-gray-900" numberOfLines={1}>
             {topicLabel ?? 'Conversation'}
           </Text>
@@ -316,7 +332,7 @@ export default function ChatScreen() {
         >
           <Text className="text-base">💡</Text>
           <Text className="text-xs text-indigo-700 flex-1" numberOfLines={1}>
-            Try: "{currentHint}"
+            {'Try: "' + currentHint + '"'}
           </Text>
           <Text className="text-xs text-indigo-400">탭하면 입력돼요</Text>
         </Pressable>

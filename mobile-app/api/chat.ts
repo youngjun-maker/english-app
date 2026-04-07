@@ -44,10 +44,11 @@ export async function transcribeAudio(audioUri: string): Promise<TranscribeRespo
 export async function sendMessage(
   conversationId: string,
   text: string,
+  level?: 1 | 2 | 3,
 ): Promise<SendMessageResponse> {
   const res = await apiFetch(`/api/conversations/${conversationId}/messages`, {
     method: 'POST',
-    body: JSON.stringify({ text }),
+    body: JSON.stringify({ text, ...(level !== undefined ? { level } : {}) }),
   });
   if (!res.ok) return handleError(res);
   const data: SendMessageResponse = await res.json();

@@ -73,12 +73,14 @@ router.post('/', authMiddleware, async (req, res) => {
 // POST /api/conversations/:id/messages
 router.post('/:id/messages', authMiddleware, async (req, res) => {
   const conversationId = req.params.id;
-  const { text } = req.body;
+  const { text, level } = req.body;
 
   // 1. Request body 검증
   if (!text || typeof text !== 'string' || text.trim() === '') {
     return errorResponse(res, 400, 'INVALID_REQUEST', 'text 필드가 필요합니다');
   }
+
+  const difficultyLevel = [1, 2, 3].includes(Number(level)) ? Number(level) : 2;
 
   try {
     // 2. Conversation 조회 (본인 소유 확인)
@@ -96,7 +98,7 @@ router.post('/:id/messages', authMiddleware, async (req, res) => {
     // 3. 시스템 프롬프트 빌드
     let systemPrompt = (conversation.topic_id === 'custom' && conversation.custom_prompt)
       ? buildCustomPrompt(conversation.custom_prompt)
-      : buildPrompt(conversation.topic_id);
+      : buildPrompt(conversation.topic_id, difficultyLevel);
 
     const { data: recentExpressions } = await supabase
       .from('expressions')
@@ -189,7 +191,7 @@ router.post('/:id/messages', authMiddleware, async (req, res) => {
       return errorResponse(res, 502, 'LLM_JSON_PARSE_FAILED', 'AI 응답 파싱에 실패했습니다');
     }
 
-    const { feedback, next_response, goal_achieved = false, hint = null } = parsedAiContent;
+    const { feedback, next_response, goal_achieved = false, hint = null, is_surprise = false } = parsedAiContent;
 
     // 6. process_turn RPC 호출 — 턴 제한 체크 + 두 메시지 INSERT 원자적 처리
     const { data: rpcResult, error: rpcError } = await supabase.rpc('process_turn', {
@@ -211,9 +213,12 @@ router.post('/:id/messages', authMiddleware, async (req, res) => {
 
     // rpcResult: { user_message_id, ai_message_id, turn_number }
     const content = { feedback, next_response };
+    // 돌발 상황 플래그: 3턴 이후에만 유효
+    const userTurnCount = historyMessages.filter(m => m.role === 'user').length;
+    content.is_surprise = userTurnCount >= 3 ? (is_surprise === true) : false;
+
     if (mission) {
       content.goal_achieved = goal_achieved;
-      const userTurnCount = historyMessages.filter(m => m.role === 'user').length;
       content.hint = userTurnCount >= 3 ? (hint ?? null) : null;
     }
 
