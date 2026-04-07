@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  Animated,
+  Dimensions,
   FlatList,
   KeyboardAvoidingView,
   ListRenderItem,
@@ -26,6 +28,99 @@ import { cancelTodayStreakReminder } from '@/utils/notifications';
 import { SITUATIONS } from '@/constants/situations';
 
 // ---------------------------------------------------------------------------
+// Confetti 컴포넌트
+// ---------------------------------------------------------------------------
+const CONFETTI_COLORS = ['#F59E0B', '#6366F1', '#10B981', '#EF4444', '#EC4899', '#3B82F6'];
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+type ConfettiParticle = {
+  id: number;
+  x: Animated.Value;
+  y: Animated.Value;
+  rotate: Animated.Value;
+  opacity: Animated.Value;
+  color: string;
+  size: number;
+};
+
+function Confetti({ visible }: { visible: boolean }) {
+  const particles = useRef<ConfettiParticle[]>(
+    Array.from({ length: 20 }, (_, i) => ({
+      id: i,
+      x: new Animated.Value(Math.random() * SCREEN_WIDTH),
+      y: new Animated.Value(-20),
+      rotate: new Animated.Value(0),
+      opacity: new Animated.Value(1),
+      color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+      size: 6 + Math.random() * 6,
+    }))
+  ).current;
+
+  useEffect(() => {
+    if (!visible) return;
+    const animations = particles.map((p) => {
+      p.y.setValue(-20);
+      p.x.setValue(Math.random() * SCREEN_WIDTH);
+      p.rotate.setValue(0);
+      p.opacity.setValue(1);
+
+      return Animated.parallel([
+        Animated.timing(p.y, {
+          toValue: 600 + Math.random() * 200,
+          duration: 1500 + Math.random() * 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(p.rotate, {
+          toValue: 720 + Math.random() * 360,
+          duration: 1500 + Math.random() * 1000,
+          useNativeDriver: true,
+        }),
+        Animated.sequence([
+          Animated.delay(800),
+          Animated.timing(p.opacity, {
+            toValue: 0,
+            duration: 700,
+            useNativeDriver: true,
+          }),
+        ]),
+      ]);
+    });
+    Animated.stagger(50, animations).start();
+  }, [visible, particles]);
+
+  if (!visible) return null;
+
+  return (
+    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none' }}>
+      {particles.map((p) => {
+        const rotateStr = p.rotate.interpolate({
+          inputRange: [0, 360],
+          outputRange: ['0deg', '360deg'],
+        });
+        return (
+          <Animated.View
+            key={p.id}
+            style={{
+              position: 'absolute',
+              width: p.size,
+              height: p.size,
+              backgroundColor: p.color,
+              borderRadius: 2,
+              transform: [
+                { translateX: p.x },
+                { translateY: p.y },
+                { rotate: rotateStr },
+              ],
+              opacity: p.opacity,
+            }}
+          />
+        );
+      })}
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 type ChatTurn = {
@@ -40,12 +135,15 @@ type ChatTurn = {
 // ChatScreen
 // ---------------------------------------------------------------------------
 export default function ChatScreen() {
-  const { id, topicLabel, missionBar, topicId } = useLocalSearchParams<{
+  const { id, topicLabel, missionBar, topicId, level: levelParam } = useLocalSearchParams<{
     id: string;
     topicLabel?: string;
     missionBar?: string;
     topicId?: string;
+    level?: string;
   }>();
+
+  const difficultyLevel = ([1, 2, 3].includes(Number(levelParam)) ? Number(levelParam) : 2) as 1 | 2 | 3;
   const router = useRouter();
 
   const showToast = useAppStore((s) => s.showToast);
@@ -60,10 +158,25 @@ export default function ChatScreen() {
   const [sttFailed, setSttFailed] = useState(false);
   const [missionCleared, setMissionCleared] = useState(false);
   const [currentHint, setCurrentHint] = useState<string | null>(null);
+  /** 미션 클리어 시 하이라이트할 네이티브 표현 (최대 3개) */
+  const [highlightExpressions, setHighlightExpressions] = useState<{ text: string; messageId: string }[]>([]);
 
   const flatListRef = useRef<FlatList<ChatTurn>>(null);
+  const flashOpacity = useRef(new Animated.Value(0)).current;
 
   const currentSituation = SITUATIONS.find((s) => s.id === topicId);
+
+  /** 돌발 상황 수신 시 붉은 flash + 햅틱 2회 */
+  const triggerSurpriseEffect = useCallback(() => {
+    // 햅틱 2회
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy), 200);
+    // 빨간 테두리 fade in → fade out
+    Animated.sequence([
+      Animated.timing(flashOpacity, { toValue: 1, duration: 150, useNativeDriver: true }),
+      Animated.timing(flashOpacity, { toValue: 0, duration: 300, useNativeDriver: true }),
+    ]).start();
+  }, [flashOpacity]);
 
   // -------------------------------------------------------------------------
   // 마운트 시 기존 메시지 로드
@@ -123,7 +236,7 @@ export default function ChatScreen() {
   async function fetchAIResponse(tempId: string, text: string) {
     useAppStore.getState().setTypingIndicator(true);
     try {
-      const { message_id, user_message_id, content } = await sendMessage(conversationId, text);
+      const { message_id, user_message_id, content } = await sendMessage(conversationId, text, difficultyLevel);
       setTurns((prev) =>
         prev.map((t) =>
           t.id === tempId
@@ -131,8 +244,19 @@ export default function ChatScreen() {
             : t
         )
       );
+      // 돌발 상황 플래그 처리
+      if (content.is_surprise) {
+        triggerSurpriseEffect();
+      }
       if (content.goal_achieved) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        // 최근 AI 응답에서 네이티브 표현 최대 3개 추출 (현재 턴 포함)
+        const currentExpr = { text: content.next_response, messageId: message_id };
+        const recentAITurns = [...turns]
+          .filter((t) => t.aiContent?.next_response && t.id !== tempId)
+          .slice(-2)
+          .map((t) => ({ text: t.aiContent!.next_response, messageId: t.id }));
+        setHighlightExpressions([...recentAITurns, currentExpr].slice(-3));
         setMissionCleared(true);
         setCurrentHint(null);
       } else {
@@ -280,7 +404,20 @@ export default function ChatScreen() {
 
         {/* 타이틀 */}
         <View className="flex-1">
-          <Text className="text-xs text-gray-400">Situation Talking · Barista</Text>
+          <View className="flex-row items-center gap-1.5">
+            <Text className="text-xs text-gray-400">Situation Talking</Text>
+            <View className={`px-1.5 py-0.5 rounded-full ${
+              difficultyLevel === 1 ? 'bg-green-100' :
+              difficultyLevel === 3 ? 'bg-red-100' : 'bg-amber-100'
+            }`}>
+              <Text className={`text-[9px] font-bold ${
+                difficultyLevel === 1 ? 'text-green-700' :
+                difficultyLevel === 3 ? 'text-red-700' : 'text-amber-700'
+              }`}>
+                {difficultyLevel === 1 ? 'Lv.1 초급' : difficultyLevel === 3 ? 'Lv.3 고급' : 'Lv.2 중급'}
+              </Text>
+            </View>
+          </View>
           <Text className="text-base font-bold text-gray-900" numberOfLines={1}>
             {topicLabel ?? 'Conversation'}
           </Text>
@@ -316,7 +453,7 @@ export default function ChatScreen() {
         >
           <Text className="text-base">💡</Text>
           <Text className="text-xs text-indigo-700 flex-1" numberOfLines={1}>
-            Try: "{currentHint}"
+            {'Try: "' + currentHint + '"'}
           </Text>
           <Text className="text-xs text-indigo-400">탭하면 입력돼요</Text>
         </Pressable>
@@ -324,19 +461,63 @@ export default function ChatScreen() {
 
       {/* 미션 클리어 모달 */}
       <Modal visible={missionCleared} animationType="fade" transparent>
-        <View className="flex-1 justify-center items-center bg-black/50 px-8">
-          <View className="bg-white rounded-3xl px-6 py-8 items-center w-full">
-            <Text className="text-5xl mb-4">🎯</Text>
-            <Text className="text-2xl font-black text-gray-900 mb-2">미션 클리어!</Text>
-            <Text className="text-sm text-gray-500 text-center leading-5 mb-6">
-              완벽하게 해냈어요!{'\n'}실전에서도 충분히 통할 실력이에요.
-            </Text>
-            <Pressable
-              className="bg-indigo-500 rounded-2xl py-3.5 px-8 active:opacity-80"
-              onPress={() => router.replace('/(tabs)')}
-            >
-              <Text className="text-white font-bold text-base">홈으로 돌아가기</Text>
-            </Pressable>
+        <View className="flex-1 justify-center items-center bg-black/60 px-6">
+          {/* Confetti */}
+          <Confetti visible={missionCleared} />
+
+          <View className="bg-white rounded-3xl w-full overflow-hidden">
+            {/* 상단 헤더 (amber 그라데이션 효과) */}
+            <View className="bg-amber-500 px-6 py-6 items-center">
+              <Text className="text-6xl mb-2">🎯</Text>
+              <Text className="text-2xl font-black text-white">미션 클리어!</Text>
+              <Text className="text-amber-100 text-sm mt-1 text-center">
+                완벽하게 해냈어요!{'\n'}실전에서도 충분히 통할 실력이에요.
+              </Text>
+            </View>
+
+            {/* 네이티브 표현 하이라이트 */}
+            {highlightExpressions.length > 0 && (
+              <View className="px-5 pt-4 pb-2">
+                <Text className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">
+                  이번 대화에서 배운 표현
+                </Text>
+                {highlightExpressions.map((expr, idx) => (
+                  <View
+                    key={idx}
+                    className="flex-row items-center bg-indigo-50 rounded-2xl px-4 py-3 mb-2 border border-indigo-100"
+                  >
+                    <View className="flex-1">
+                      <Text className="text-sm text-indigo-800 font-medium leading-5" numberOfLines={2}>
+                        {expr.text}
+                      </Text>
+                    </View>
+                    <Pressable
+                      className="ml-3 bg-indigo-500 rounded-xl px-3 py-1.5 active:opacity-70 flex-shrink-0"
+                      onPress={() =>
+                        handleSaveExpression({
+                          messageId: expr.messageId,
+                          expressionText: expr.text,
+                          sourceBlock: 'response',
+                          memo: '',
+                        })
+                      }
+                    >
+                      <Text className="text-white text-[10px] font-bold">단어장 담기</Text>
+                    </Pressable>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {/* 홈으로 버튼 */}
+            <View className="px-5 pb-6 pt-2">
+              <Pressable
+                className="bg-indigo-500 rounded-2xl py-3.5 items-center active:opacity-80"
+                onPress={() => router.replace('/(tabs)')}
+              >
+                <Text className="text-white font-bold text-base">홈으로 돌아가기</Text>
+              </Pressable>
+            </View>
           </View>
         </View>
       </Modal>
@@ -370,7 +551,7 @@ export default function ChatScreen() {
         }
         ListFooterComponent={
           <>
-            <TypingIndicator />
+            <TypingIndicator contextText={currentSituation?.typingText} />
             <View className="h-6" />
           </>
         }
@@ -461,6 +642,24 @@ export default function ChatScreen() {
           )}
         </View>
       </View>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* 돌발 상황 Flash 오버레이                                             */}
+      {/* ------------------------------------------------------------------ */}
+      <Animated.View
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          borderWidth: 4,
+          borderColor: '#EF4444',
+          borderRadius: 0,
+          opacity: flashOpacity,
+        }}
+      />
     </KeyboardAvoidingView>
   );
 }

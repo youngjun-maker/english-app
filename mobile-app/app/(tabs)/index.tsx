@@ -333,8 +333,8 @@ export default function HomeScreen() {
                         </Text>
                         {wp.examples.map((ex, j) => (
                           <View key={j} className="mt-1">
-                            <Text className="text-xs text-gray-500">원: "{ex.original}"</Text>
-                            <Text className="text-xs text-emerald-600">교: "{ex.corrected}"</Text>
+                            <Text className="text-xs text-gray-500">{'원: "' + ex.original + '"'}</Text>
+                            <Text className="text-xs text-emerald-600">{'교: "' + ex.corrected + '"'}</Text>
                           </View>
                         ))}
                       </View>

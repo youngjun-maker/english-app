@@ -14,6 +14,7 @@ export type AITurnContent = {
   next_response: string;
   goal_achieved?: boolean; // 미션 모드에서만 등장, undefined = 일반 대화
   hint?: string | null;   // 미션 모드에서 3턴 미달성 시 제공
+  is_surprise?: boolean;  // 3턴 이후 AI 돌발 상황 플래그
 };
 export type MessageContent = AITurnContent | UserSpeechContent;
 

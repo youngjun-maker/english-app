@@ -1,10 +1,17 @@
-import { ActivityIndicator, FlatList, Modal, Pressable, Text, TextInput, View } from 'react-native';
+import { useRef, useEffect, useState } from 'react';
+import { ActivityIndicator, Animated, FlatList, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
 import { createConversation } from '@/api/conversations';
 import { useAppStore } from '@/store/useAppStore';
-import { SITUATIONS, type Situation } from '@/constants/situations';
+import { SITUATIONS, type Situation, type SituationCategory } from '@/constants/situations';
 import { MISSIONS, type Mission } from '@/constants/missions';
+
+const CATEGORIES: { key: SituationCategory | 'All'; label: string }[] = [
+  { key: 'All', label: '전체' },
+  { key: 'Travel', label: '여행 ✈️' },
+  { key: 'Daily', label: '일상 💬' },
+  { key: 'Business', label: '비즈니스 💼' },
+];
 
 type SituationCardProps = {
   situation: Situation;
@@ -33,17 +40,60 @@ function SituationCard({ situation, onPress, isLoading, disabled }: SituationCar
   );
 }
 
+/** 미션 브리핑 시작 버튼 — pulse 애니메이션 */
+function PulseStartButton({ onPress, loading }: { onPress: () => void; loading: boolean }) {
+  const scale = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(scale, { toValue: 1.04, duration: 700, useNativeDriver: true }),
+        Animated.timing(scale, { toValue: 1, duration: 700, useNativeDriver: true }),
+      ])
+    );
+    pulse.start();
+    return () => pulse.stop();
+  }, [scale]);
+
+  return (
+    <Animated.View style={{ transform: [{ scale }] }}>
+      <Pressable
+        className="bg-amber-500 rounded-2xl py-4 items-center active:opacity-80"
+        onPress={onPress}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator size="small" color="white" />
+        ) : (
+          <>
+            <Text className="text-white font-black text-base">🎯 미션 시작하기</Text>
+            <Text className="text-amber-100 text-xs mt-0.5">도전해볼 준비가 됐나요?</Text>
+          </>
+        )}
+      </Pressable>
+    </Animated.View>
+  );
+}
+
 export default function TopicSelectScreen() {
   const router = useRouter();
   const showToast = useAppStore((s) => s.showToast);
 
   const [loadingId, setLoadingId] = useState<string | null>(null);
-  // 선택된 상황 (미션 분기 모달용)
+  const [selectedCategory, setSelectedCategory] = useState<SituationCategory | 'All'>('All');
+  const [selectedLevel, setSelectedLevel] = useState<1 | 2 | 3>(2);
   const [selectedSituation, setSelectedSituation] = useState<Situation | null>(null);
   const [missionModalVisible, setMissionModalVisible] = useState(false);
   const [customModalVisible, setCustomModalVisible] = useState(false);
   const [customText, setCustomText] = useState('');
   const [customLoading, setCustomLoading] = useState(false);
+  /** 미션 브리핑 카드 표시용 */
+  const [briefingMission, setBriefingMission] = useState<Mission | null>(null);
+  const [briefingModalVisible, setBriefingModalVisible] = useState(false);
+
+  const filteredSituations = selectedCategory === 'All'
+    ? SITUATIONS
+    : SITUATIONS.filter((s) => s.category === selectedCategory);
 
   const situationMissions = selectedSituation
     ? MISSIONS.filter((m) => m.situationId === selectedSituation.id)
@@ -53,6 +103,7 @@ export default function TopicSelectScreen() {
     if (loadingId) return;
     setLoadingId(mission?.id ?? situation.id);
     setMissionModalVisible(false);
+    setBriefingModalVisible(false);
     try {
       const conversation = await createConversation(
         situation.id,
@@ -65,6 +116,7 @@ export default function TopicSelectScreen() {
           id: conversation.id,
           topicLabel: situation.label,
           topicId: situation.id,
+          level: String(selectedLevel),
           ...(mission ? { missionBar: mission.missionBar } : {}),
         },
       });
@@ -94,15 +146,14 @@ export default function TopicSelectScreen() {
   }
 
   function handleSituationPress(situation: Situation) {
-    const missions = MISSIONS.filter((m) => m.situationId === situation.id);
-    if (missions.length === 0) {
-      // 미션 없는 상황 → 바로 대화 시작
-      startConversation(situation);
-    } else {
-      // 미션 있는 상황 → 분기 모달 표시
-      setSelectedSituation(situation);
-      setMissionModalVisible(true);
-    }
+    setSelectedSituation(situation);
+    setMissionModalVisible(true);
+  }
+
+  function handleMissionPress(mission: Mission) {
+    setBriefingMission(mission);
+    setMissionModalVisible(false);
+    setBriefingModalVisible(true);
   }
 
   return (
@@ -116,9 +167,41 @@ export default function TopicSelectScreen() {
         <Text className="text-sm text-gray-400 mt-1">연습할 상황을 골라보세요</Text>
       </View>
 
+      {/* Category filter tabs */}
+      <View className="bg-white border-b border-gray-100">
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerClassName="px-4 py-3 gap-2"
+        >
+          {CATEGORIES.map((cat) => {
+            const isActive = selectedCategory === cat.key;
+            return (
+              <Pressable
+                key={cat.key}
+                onPress={() => setSelectedCategory(cat.key)}
+                className={`px-4 py-2 rounded-full border active:opacity-70 ${
+                  isActive
+                    ? 'bg-indigo-500 border-indigo-500'
+                    : 'bg-white border-gray-200'
+                }`}
+              >
+                <Text
+                  className={`text-sm font-semibold ${
+                    isActive ? 'text-white' : 'text-gray-500'
+                  }`}
+                >
+                  {cat.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </View>
+
       {/* Situation grid */}
       <FlatList
-        data={SITUATIONS}
+        data={filteredSituations}
         keyExtractor={(item) => item.id}
         numColumns={2}
         renderItem={({ item }) => (
@@ -202,7 +285,31 @@ export default function TopicSelectScreen() {
             <Text className="text-lg font-black text-gray-900 mb-1">
               {selectedSituation?.emoji} {selectedSituation?.label}
             </Text>
-            <Text className="text-sm text-gray-400 mb-5">어떻게 연습할까요?</Text>
+            <Text className="text-sm text-gray-400 mb-4">어떻게 연습할까요?</Text>
+
+            {/* 난이도 선택 */}
+            <Text className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+              난이도 선택
+            </Text>
+            <View className="flex-row gap-2 mb-4">
+              {([1, 2, 3] as const).map((lv) => {
+                const isActive = selectedLevel === lv;
+                const label = lv === 1 ? 'Lv.1 초급' : lv === 2 ? 'Lv.2 중급' : 'Lv.3 고급';
+                const desc = lv === 1 ? '느리고 쉬운 영어' : lv === 2 ? '자연스러운 대화' : '네이티브 속도';
+                const activeColor = lv === 1 ? 'bg-green-500 border-green-500' : lv === 2 ? 'bg-amber-500 border-amber-500' : 'bg-red-500 border-red-500';
+                const inactiveColor = 'bg-white border-gray-200';
+                return (
+                  <Pressable
+                    key={lv}
+                    onPress={() => setSelectedLevel(lv)}
+                    className={`flex-1 rounded-xl border py-2.5 items-center active:opacity-70 ${isActive ? activeColor : inactiveColor}`}
+                  >
+                    <Text className={`text-xs font-bold ${isActive ? 'text-white' : 'text-gray-600'}`}>{label}</Text>
+                    <Text className={`text-[10px] mt-0.5 ${isActive ? 'text-white/80' : 'text-gray-400'}`}>{desc}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
 
             {/* 그냥 대화하기 */}
             <Pressable
@@ -214,19 +321,24 @@ export default function TopicSelectScreen() {
             </Pressable>
 
             {/* 미션 목록 */}
-            <Text className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
-              🎯 미션 도전
-            </Text>
-            {situationMissions.map((mission) => (
-              <Pressable
-                key={mission.id}
-                className="bg-amber-50 border border-amber-100 rounded-2xl px-4 py-3.5 mb-2 active:opacity-70"
-                onPress={() => selectedSituation && startConversation(selectedSituation, mission)}
-              >
-                <Text className="text-sm font-bold text-amber-800">{mission.label}</Text>
-                <Text className="text-xs text-amber-600 mt-0.5">{mission.desc}</Text>
-              </Pressable>
-            ))}
+            {situationMissions.length > 0 && (
+              <>
+                <Text className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                  🎯 미션 도전
+                </Text>
+                {situationMissions.map((mission) => (
+                  <Pressable
+                    key={mission.id}
+                    className="bg-amber-50 border border-amber-100 rounded-2xl px-4 py-3.5 mb-2 active:opacity-70"
+                    onPress={() => handleMissionPress(mission)}
+                  >
+                    <Text className="text-sm font-bold text-amber-800">{mission.label}</Text>
+                    <Text className="text-xs text-amber-600 mt-0.5">{mission.desc}</Text>
+                    <Text className="text-[10px] text-amber-400 mt-1">탭하면 미션 브리핑을 볼 수 있어요 →</Text>
+                  </Pressable>
+                ))}
+              </>
+            )}
 
             <Pressable
               className="mt-2 py-3 items-center active:opacity-60"
@@ -234,6 +346,81 @@ export default function TopicSelectScreen() {
             >
               <Text className="text-sm text-gray-400">취소</Text>
             </Pressable>
+          </View>
+        </View>
+      </Modal>
+
+      {/* 미션 브리핑 카드 모달 */}
+      <Modal
+        visible={briefingModalVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => {
+          setBriefingModalVisible(false);
+          setMissionModalVisible(true);
+        }}
+      >
+        <View className="flex-1 justify-end bg-black/50">
+          {/* 그라데이션 효과: 상단 amber → 하단 white */}
+          <View className="rounded-t-3xl overflow-hidden">
+            {/* 상단 헤더 (amber 배경) */}
+            <View className="bg-amber-500 px-5 pt-6 pb-5">
+              <View className="flex-row items-center justify-between mb-3">
+                <View className="bg-amber-400 rounded-full px-3 py-1">
+                  <Text className="text-amber-900 text-xs font-bold">🎯 미션 브리핑</Text>
+                </View>
+                <Pressable
+                  onPress={() => {
+                    setBriefingModalVisible(false);
+                    setMissionModalVisible(true);
+                  }}
+                  className="w-7 h-7 bg-amber-400/60 rounded-full items-center justify-center active:opacity-60"
+                >
+                  <Text className="text-amber-900 text-sm font-bold">✕</Text>
+                </Pressable>
+              </View>
+              <Text className="text-white text-xl font-black leading-6">
+                {briefingMission?.label}
+              </Text>
+            </View>
+
+            {/* 본문 (white 배경) */}
+            <View className="bg-white px-5 pt-5 pb-10">
+              {/* 미션 목표 */}
+              <View className="bg-amber-50 rounded-2xl p-4 mb-4 border border-amber-100">
+                <Text className="text-xs font-bold text-amber-600 uppercase tracking-wide mb-1.5">미션 목표</Text>
+                <Text className="text-sm text-gray-800 leading-5">{briefingMission?.mission}</Text>
+              </View>
+
+              {/* 성공 조건 체크리스트 */}
+              <View className="mb-5">
+                <Text className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">성공 조건</Text>
+                {(briefingMission?.successConditions ?? []).map((condition, idx) => (
+                  <View key={idx} className="flex-row items-start gap-2.5 mb-2.5">
+                    <View className="w-5 h-5 rounded-full bg-amber-100 border border-amber-300 items-center justify-center flex-shrink-0 mt-0.5">
+                      <Text className="text-amber-600 text-[10px] font-bold">{idx + 1}</Text>
+                    </View>
+                    <Text className="text-sm text-gray-700 flex-1 leading-5">{condition}</Text>
+                  </View>
+                ))}
+              </View>
+
+              {/* 시작 버튼 (pulse 애니메이션) */}
+              <PulseStartButton
+                onPress={() => selectedSituation && startConversation(selectedSituation, briefingMission ?? undefined)}
+                loading={loadingId === briefingMission?.id}
+              />
+
+              <Pressable
+                className="mt-3 py-3 items-center active:opacity-60"
+                onPress={() => {
+                  setBriefingModalVisible(false);
+                  setMissionModalVisible(true);
+                }}
+              >
+                <Text className="text-sm text-gray-400">← 상황 선택으로 돌아가기</Text>
+              </Pressable>
+            </View>
           </View>
         </View>
       </Modal>
