@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  Animated,
   FlatList,
   KeyboardAvoidingView,
   ListRenderItem,
@@ -65,8 +66,21 @@ export default function ChatScreen() {
   const [currentHint, setCurrentHint] = useState<string | null>(null);
 
   const flatListRef = useRef<FlatList<ChatTurn>>(null);
+  const flashOpacity = useRef(new Animated.Value(0)).current;
 
   const currentSituation = SITUATIONS.find((s) => s.id === topicId);
+
+  /** 돌발 상황 수신 시 붉은 flash + 햅틱 2회 */
+  const triggerSurpriseEffect = useCallback(() => {
+    // 햅틱 2회
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy), 200);
+    // 빨간 테두리 fade in → fade out
+    Animated.sequence([
+      Animated.timing(flashOpacity, { toValue: 1, duration: 150, useNativeDriver: true }),
+      Animated.timing(flashOpacity, { toValue: 0, duration: 300, useNativeDriver: true }),
+    ]).start();
+  }, [flashOpacity]);
 
   // -------------------------------------------------------------------------
   // 마운트 시 기존 메시지 로드
@@ -134,6 +148,10 @@ export default function ChatScreen() {
             : t
         )
       );
+      // 돌발 상황 플래그 처리
+      if (content.is_surprise) {
+        triggerSurpriseEffect();
+      }
       if (content.goal_achieved) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setMissionCleared(true);
@@ -477,6 +495,24 @@ export default function ChatScreen() {
           )}
         </View>
       </View>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* 돌발 상황 Flash 오버레이                                             */}
+      {/* ------------------------------------------------------------------ */}
+      <Animated.View
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          borderWidth: 4,
+          borderColor: '#EF4444',
+          borderRadius: 0,
+          opacity: flashOpacity,
+        }}
+      />
     </KeyboardAvoidingView>
   );
 }
