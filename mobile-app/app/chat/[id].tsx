@@ -386,7 +386,7 @@ export default function ChatScreen() {
         }
         ListFooterComponent={
           <>
-            <TypingIndicator />
+            <TypingIndicator contextText={currentSituation?.typingText} />
             <View className="h-6" />
           </>
         }
