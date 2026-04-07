@@ -23,6 +23,7 @@ import { useAppStore } from '@/store';
 import { transcribeAudio, sendMessage, fetchMessages, saveExpression } from '@/api/chat';
 import type { AITurnContent, Message } from '@/types';
 import { cancelTodayStreakReminder } from '@/utils/notifications';
+import { SITUATIONS } from '@/constants/situations';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -34,17 +35,6 @@ type ChatTurn = {
   aiContent: AITurnContent | null;
 };
 
-// ---------------------------------------------------------------------------
-// Starter Prompts (cold-start suggestion bubbles)
-// ---------------------------------------------------------------------------
-const STARTER_PROMPTS: Record<string, string[]> = {
-  free_talk:           ['오늘 점심 뭐 먹었어?', '요즘 푹 빠진 게 있어?', '주말에 뭐 할 계획이야?'],
-  cafe_order:          ['아이스 아메리카노 주문해볼게', '오늘 추천 메뉴가 뭐야?', '카페인 없는 음료 있어?'],
-  airport_immigration: ['관광 목적으로 왔어', '일주일 정도 있을 예정이야', '호텔에 묵을 거야'],
-  hotel_checkin:       ['예약 확인 부탁해', '더 좋은 방 있어?', '조식 포함이야?'],
-  small_talk:          ['날씨 진짜 좋다', '요즘 어떻게 지내?', '주말에 뭐 했어?'],
-  opinion:             ['나는 이렇게 생각해', '동의하지 않아', '좋은 의견이네'],
-};
 
 // ---------------------------------------------------------------------------
 // ChatScreen
@@ -72,6 +62,8 @@ export default function ChatScreen() {
   const [currentHint, setCurrentHint] = useState<string | null>(null);
 
   const flatListRef = useRef<FlatList<ChatTurn>>(null);
+
+  const currentSituation = SITUATIONS.find((s) => s.id === topicId);
 
   // -------------------------------------------------------------------------
   // 마운트 시 기존 메시지 로드
@@ -264,8 +256,7 @@ export default function ChatScreen() {
     </View>
   ), [handleSaveExpression]);
 
-  // 기본 토픽 이모지 (향후 topicId prop 추가 시 매핑 확장)
-  const topicEmoji = '✈️';
+  const topicEmoji = currentSituation?.emoji ?? '💬';
 
   return (
     <KeyboardAvoidingView
@@ -364,6 +355,19 @@ export default function ChatScreen() {
         }
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
+        ListHeaderComponent={
+          /* AI-first 상황: AI 오프닝 버블 상단 고정 */
+          currentSituation?.aiFirst && currentSituation.aiOpeningLine ? (
+            <View className="flex-row gap-2.5 items-start mb-4 max-w-[90%]">
+              <View className="w-7 h-7 mt-0.5 rounded-full bg-red-50 items-center justify-center flex-shrink-0">
+                <BearMascot size="small" />
+              </View>
+              <View className="bg-white rounded-2xl rounded-tl-sm px-4 py-3 flex-1 border border-gray-100 shadow-sm">
+                <Text className="text-sm text-gray-800 leading-5">{currentSituation.aiOpeningLine}</Text>
+              </View>
+            </View>
+          ) : null
+        }
         ListFooterComponent={
           <>
             <TypingIndicator />
@@ -373,11 +377,13 @@ export default function ChatScreen() {
       />
 
       {/* ------------------------------------------------------------------ */}
-      {/* Cold-start starter prompt bubbles                                   */}
+      {/* Cold-start starter prompt bubbles (user-first 상황, 영어 프롬프트)  */}
       {/* ------------------------------------------------------------------ */}
-      {turns.length === 0 && !isProcessing && !isTextMode && topicId && (STARTER_PROMPTS[topicId] ?? []).length > 0 && (
+      {turns.length === 0 && !isProcessing && !isTextMode &&
+        !currentSituation?.aiFirst &&
+        (currentSituation?.starterPrompts ?? []).length > 0 && (
         <View className="px-4 pb-2 gap-2 items-end">
-          {(STARTER_PROMPTS[topicId] ?? STARTER_PROMPTS['free_talk']).map((prompt) => (
+          {(currentSituation?.starterPrompts ?? []).map((prompt) => (
             <Pressable
               key={prompt}
               onPress={() => handleTextSend(prompt)}
