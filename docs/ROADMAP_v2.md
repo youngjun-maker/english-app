@@ -2045,3 +2045,224 @@ Task 061 (콜드스타트)  ← 독립, 즉시 가능
 Task 062 (미션힌트)    ← 독립 (백엔드 + 프론트)
 Task 063 (커스텀상황극) ← 독립 (백엔드 + 프론트)
 ```
+
+---
+
+## Phase 7: Situation Role Play 전면 개편
+
+> **기획 배경:**
+> Phase 6까지 구현된 Situation Role Play는 기능은 동작하지만 "개발자가 만든 기능 명세서" 느낌이 강함.
+> 상황 5개로 콘텐츠가 부족하고, AI 행동이 단조로우며, 대화 화면의 몰입감이 낮음.
+> Speak/Duolingo처럼 영어 공부가 아닌 "도파민이 터지는 게임"처럼 느껴지도록 전면 개편.
+>
+> **제외 항목 (검토 후 기각):**
+> - 배경 블러 이미지: 상황별 에셋 관리 부담 + 성능 이슈 + 학습 집중 방해
+> - 설득 게이지(Tension Bar): 매 턴마다 수치 반환 → 백엔드 대공사. 숫자가 오히려 몰입 깨뜨림
+> - 잠금 시스템(🔒): 유저 진행도 DB 필요. MVP 단계에서 오히려 접근성 저해
+> - 마이크 파동 애니메이션: expo-av 실시간 레벨 읽기 복잡. 불필요
+
+---
+
+### Task 064: 타이핑 인디케이터 상황별 텍스트 `[rn-expo-frontend]`
+
+**왜 개선하는가:**
+현재 `TypingIndicator` 컴포넌트는 상황 무관하게 동일한 점 3개(...)만 표시함.
+AI가 답을 고민하는 2~5초 동안 화면이 멈춘 것처럼 보여 몰입이 끊김.
+
+**작업 후 어떻게 변하는가:**
+상황별로 AI 역할에 맞는 텍스트가 표시됨.
+- `cafe_order` → "바리스타가 음료 만들고 있어요... ☕"
+- `airport_immigration` → "심사관이 서류 확인 중이에요... ✈️"
+- `hotel_checkin` → "프런트 직원이 확인하고 있어요... 🏨"
+- `small_talk` → "친구가 생각 중이에요... 💬"
+- `opinion` → "토론 상대가 반론을 준비 중이에요... 💭"
+- 기본(free_talk 등) → 기존 점 3개 유지
+
+**구현 범위:**
+- `components/chat/TypingIndicator.tsx`: `topicId` prop 추가, 상황별 텍스트 매핑
+- `app/chat/[id].tsx`: TypingIndicator에 `topicId` 전달
+
+**공수:** 10~20분
+**에이전트:** `rn-expo-frontend`
+**상태:** ⬜ 대기
+
+---
+
+### Task 065: AI 돌발 상황 (Twist) `[contexttalk-api-architect]` + `[rn-expo-frontend]`
+
+**왜 개선하는가:**
+현재 AI는 대본대로만 진행함. 유저가 너무 쉽게 예측 가능한 흐름으로 대화가 흘러
+실전 영어 긴장감이 전혀 없음. 공항 입국심사에서 "관광 목적으로 왔어요"라고 말하면
+AI가 그냥 "좋아요, 통과"식으로 끝나버리는 문제.
+
+**작업 후 어떻게 변하는가:**
+3턴 이후, AI가 예상치 못한 반박이나 돌발 질문을 1회 도입함.
+- 카페: "근데 손님, 처음에 분명 아이스라고 안 하셨는데요?"
+- 입국심사: "잠깐요, 비자 유효기간이 7일인데 2주 있겠다고요?"
+- 호텔: "죄송한데 예약 성함으로는 아무것도 안 나오는데요."
+
+유저가 이 기습 질문에 영어로 대응해야 하는 순간이 앱 경험의 핵심 차별점이 됨.
+"내가 오늘 심사관 이겨먹었다!"는 성취감 → 재방문 동기 생성.
+
+아울러 돌발 상황 발생 시 프론트에서 화면 테두리 붉은 flash + 햅틱 진동 2회로 긴장감 시각화.
+
+**구현 범위:**
+- **백엔드** `ai-server/prompts/*.txt`: 미션 모드 프롬프트에 Twist 룰 추가
+  ```
+  At turn 3, introduce one unexpected complication or counter-argument
+  that the user must respond to. Mark this turn with "is_twist": true in the JSON.
+  ```
+- **백엔드** `ai-server/routes/conversations.js`: `is_twist` 필드 응답에 포함
+- **타입** `mobile-app/types/index.ts`: `AITurnContent`에 `is_twist?: boolean` 추가
+- **프론트** `app/chat/[id].tsx`: `is_twist: true` 수신 시 화면 테두리 flash 애니메이션 + `Haptics.notificationAsync(Warning)` 2회
+
+**공수:** 2~3시간
+**에이전트:** `contexttalk-api-architect` + `rn-expo-frontend`
+**상태:** ⬜ 대기
+
+---
+
+### Task 066: 상황 콘텐츠 확장 + 카테고리 UI `[rn-expo-frontend]`
+
+**왜 개선하는가:**
+현재 상황이 5개뿐이라 "골라보는 맛"이 없음. 첫날 전부 써보고 더 이상 새로운 경험이
+없어 재방문 동기 소실. 또한 상황이 늘어날수록 카테고리 없는 단순 그리드는 한눈에 파악이 어려움.
+
+**작업 후 어떻게 변하는가:**
+3개 카테고리로 분류된 10~12개 상황을 넷플릭스처럼 섹션별로 탐색 가능.
+상황 선택 화면이 "콘텐츠 라이브러리" 느낌으로 전환됨.
+
+**추가 상황 목록 (확정):**
+```
+✈️ Travel
+  - 공항 입국심사    (기존)
+  - 호텔 체크인      (기존)
+  - 해외 택시/우버   (신규) — Lv1: 목적지 설명 / Lv2: 잘못 내린 곳에서 항의
+  - 공항 수하물 분실 (신규) — Lv2: 항공사 직원에게 클레임
+
+☕ Daily Life
+  - 카페 주문        (기존)
+  - 스몰토크         (기존)
+  - 옷 가게          (신규) — Lv1: 사이즈 교환 / Lv2: 영수증 없이 환불 요청
+  - 이웃 주민        (신규) — Lv1: 가벼운 대화 / Lv3: 층간소음 정중하게 항의
+
+💼 Business
+  - 의견 말하기      (기존)
+  - 외국계 면접      (신규) — Lv1: 자기소개 / Lv3: 압박 질문 방어
+  - 연봉 협상        (신규) — Lv3: 성과 어필하며 인상 요구
+```
+
+**구현 범위:**
+- `mobile-app/constants/situations.ts`: 신규 상황 추가 + `category` 필드 추가
+- `ai-server/prompts/`: 신규 상황별 프롬프트 파일 추가 (각 1~2줄)
+- `app/chat/topic-select.tsx`: FlatList → SectionList로 변경, 카테고리 헤더 UI
+
+**공수:** 반나절
+**에이전트:** `rn-expo-frontend`
+**상태:** ⬜ 대기
+
+---
+
+### Task 067: 난이도(Lv) 시스템 `[contexttalk-api-architect]` + `[rn-expo-frontend]`
+
+**왜 개선하는가:**
+현재 모든 상황이 단일 난이도임. 초보자와 중급자가 같은 경험을 하게 되어 진입 장벽이
+생기거나 반대로 너무 쉬워서 도전감이 없음. "다음 단계를 깨고 싶다"는 동기 부여가 없음.
+
+**작업 후 어떻게 변하는가:**
+각 상황에 Lv1~3 선택지가 생김. 같은 "카페 주문" 상황이라도:
+- **Lv1**: AI가 천천히, 친절하게. 유저가 버벅거리면 힌트를 먼저 줌.
+- **Lv2**: 보통 속도, 중립적 반응. 힌트 없음.
+- **Lv3**: 빠른 페이스, 까다롭고 비협조적. 돌발 상황 빈도 높아짐.
+
+별도 DB 구조 변경 없이 프롬프트 지시어(1줄) + `situations.ts` 레벨 필드로 구현.
+
+**구현 범위:**
+- `mobile-app/constants/situations.ts`: `levels: LevelConfig[]` 필드 추가
+  ```typescript
+  levels: [
+    { level: 1, label: 'Lv.1 입문', promptSuffix: 'Be patient and speak slowly. Offer hints if the user struggles.' },
+    { level: 2, label: 'Lv.2 도전', promptSuffix: 'Be neutral. Do not offer hints.' },
+    { level: 3, label: 'Lv.3 매운맛', promptSuffix: 'Be strict and fast-paced. Introduce complications more aggressively.' },
+  ]
+  ```
+- `app/chat/topic-select.tsx`: 바텀 시트에 레벨 선택 UI 추가
+- `mobile-app/api/conversations.ts`: `createConversation`에 `level` 파라미터 추가
+- `ai-server/routes/conversations.js`: `level`에 따른 `promptSuffix` 주입
+
+**공수:** 반나절
+**에이전트:** `contexttalk-api-architect` + `rn-expo-frontend`
+**상태:** ⬜ 대기
+
+---
+
+### Task 068: 미션 브리핑 바텀시트 리디자인 `[rn-expo-frontend]`
+
+**왜 개선하는가:**
+현재 바텀시트는 "그냥 대화하기" 버튼 + 미션 목록 나열이 전부임.
+유저가 미션을 선택할 때 "이게 뭔데?"라는 감흥이 없고, 시작 버튼도 평범해서
+도전하고 싶은 욕구를 전혀 자극하지 못함.
+
+**작업 후 어떻게 변하는가:**
+미션 선택 시 스파이 브리핑 스타일의 바텀시트로 교체.
+- 미션 목표 굵은 텍스트로 강조
+- "성공 조건" 항목 리스트 (체크리스트 형태)
+- [🚀 미션 시작하기] 버튼에 인디고 그라데이션 + 은은한 펄스(Pulse) 애니메이션 적용
+- 바텀시트 열릴 때 `Haptics.impactAsync(Medium)` 진동
+
+**구현 범위:**
+- `app/chat/topic-select.tsx`: 미션 모달 UI 전면 교체
+- react-native-reanimated `useAnimatedStyle` 으로 버튼 펄스 구현
+
+**공수:** 1~2시간
+**에이전트:** `rn-expo-frontend`
+**상태:** ⬜ 대기
+
+---
+
+### Task 069: 미션 클리어 화면 개선 `[contexttalk-api-architect]` + `[rn-expo-frontend]`
+
+**왜 개선하는가:**
+현재 클리어 모달이 🎯 이모지 + "미션 클리어!" 텍스트 + "홈으로" 버튼 끝.
+이 정도로는 "내가 해냈다!"는 성취감이 전달되지 않음. 보상이 없으면 재도전 동기도 없음.
+
+**작업 후 어떻게 변하는가:**
+1. **Confetti 폭죽**: 클리어 순간 화면 전체에 색종이 폭죽 터짐 (`react-native-confetti-cannon`)
+2. **네이티브 표현 제안**: AI가 클리어 시 해당 상황에서 원어민이 쓰는 표현 2~3개를 별도 필드(`best_phrases`)로 반환.
+   모달에서 "이렇게 말했으면 더 자연스러웠어요" 섹션으로 표시.
+3. **단어장 바로 담기**: 제안된 표현 옆에 [+ 저장] 버튼 → 탭하면 학습장(expressions)에 즉시 저장.
+
+**구현 범위:**
+- **백엔드** `ai-server/routes/conversations.js`: `goal_achieved: true` 시 `best_phrases: string[]` 필드 추가 반환
+- **백엔드** `ai-server/prompts/_base.txt`: `best_phrases` 필드 JSON 규격에 추가 (미션 모드 한정)
+- **타입** `mobile-app/types/index.ts`: `AITurnContent`에 `best_phrases?: string[]` 추가
+- **프론트** `app/chat/[id].tsx`: 클리어 모달에 Confetti + 표현 목록 + 저장 버튼 UI 추가
+- 패키지: `react-native-confetti-cannon` 설치
+
+**공수:** 2~3시간
+**에이전트:** `contexttalk-api-architect` + `rn-expo-frontend`
+**상태:** ⬜ 대기
+
+---
+
+## Phase 7 진행 현황
+
+| Task | 설명 | 에이전트 | 공수 | 상태 |
+|------|------|----------|------|------|
+| Task 064 | 타이핑 인디케이터 상황별 텍스트 | rn-expo-frontend | 20분 | ⬜ 대기 |
+| Task 065 | AI 돌발 상황(Twist) + 화면 flash | contexttalk-api-architect + rn-expo-frontend | 2~3시간 | ⬜ 대기 |
+| Task 066 | 상황 콘텐츠 확장 + 카테고리 UI | rn-expo-frontend | 반나절 | ⬜ 대기 |
+| Task 067 | 난이도(Lv1~3) 시스템 | contexttalk-api-architect + rn-expo-frontend | 반나절 | ⬜ 대기 |
+| Task 068 | 미션 브리핑 바텀시트 리디자인 | rn-expo-frontend | 1~2시간 | ⬜ 대기 |
+| Task 069 | 미션 클리어 화면 개선 (Confetti + 네이티브 표현) | contexttalk-api-architect + rn-expo-frontend | 2~3시간 | ⬜ 대기 |
+
+## Phase 7 Task 의존성
+
+```
+Task 064 (타이핑 인디케이터) ← 독립, 즉시 가능
+Task 065 (AI 돌발 상황)      ← 독립, 즉시 가능
+Task 066 (상황 확장)          ← 독립, 즉시 가능
+Task 067 (난이도 시스템)      ← Task 066 완료 후 권장 (새 상황에 레벨 함께 붙이기)
+Task 068 (바텀시트 리디자인)  ← Task 067 완료 후 권장 (레벨 선택 UI 포함)
+Task 069 (클리어 화면)        ← Task 065 완료 후 권장 (best_phrases 필드 연동)
+```
