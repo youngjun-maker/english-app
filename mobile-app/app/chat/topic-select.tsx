@@ -1,10 +1,17 @@
-import { ActivityIndicator, FlatList, Modal, Pressable, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, FlatList, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { createConversation } from '@/api/conversations';
 import { useAppStore } from '@/store/useAppStore';
-import { SITUATIONS, type Situation } from '@/constants/situations';
+import { SITUATIONS, type Situation, type SituationCategory } from '@/constants/situations';
 import { MISSIONS, type Mission } from '@/constants/missions';
+
+const CATEGORIES: { key: SituationCategory | 'All'; label: string }[] = [
+  { key: 'All', label: '전체' },
+  { key: 'Travel', label: '여행 ✈️' },
+  { key: 'Daily', label: '일상 💬' },
+  { key: 'Business', label: '비즈니스 💼' },
+];
 
 type SituationCardProps = {
   situation: Situation;
@@ -38,12 +45,17 @@ export default function TopicSelectScreen() {
   const showToast = useAppStore((s) => s.showToast);
 
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<SituationCategory | 'All'>('All');
   // 선택된 상황 (미션 분기 모달용)
   const [selectedSituation, setSelectedSituation] = useState<Situation | null>(null);
   const [missionModalVisible, setMissionModalVisible] = useState(false);
   const [customModalVisible, setCustomModalVisible] = useState(false);
   const [customText, setCustomText] = useState('');
   const [customLoading, setCustomLoading] = useState(false);
+
+  const filteredSituations = selectedCategory === 'All'
+    ? SITUATIONS
+    : SITUATIONS.filter((s) => s.category === selectedCategory);
 
   const situationMissions = selectedSituation
     ? MISSIONS.filter((m) => m.situationId === selectedSituation.id)
@@ -116,9 +128,41 @@ export default function TopicSelectScreen() {
         <Text className="text-sm text-gray-400 mt-1">연습할 상황을 골라보세요</Text>
       </View>
 
+      {/* Category filter tabs */}
+      <View className="bg-white border-b border-gray-100">
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerClassName="px-4 py-3 gap-2"
+        >
+          {CATEGORIES.map((cat) => {
+            const isActive = selectedCategory === cat.key;
+            return (
+              <Pressable
+                key={cat.key}
+                onPress={() => setSelectedCategory(cat.key)}
+                className={`px-4 py-2 rounded-full border active:opacity-70 ${
+                  isActive
+                    ? 'bg-indigo-500 border-indigo-500'
+                    : 'bg-white border-gray-200'
+                }`}
+              >
+                <Text
+                  className={`text-sm font-semibold ${
+                    isActive ? 'text-white' : 'text-gray-500'
+                  }`}
+                >
+                  {cat.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </View>
+
       {/* Situation grid */}
       <FlatList
-        data={SITUATIONS}
+        data={filteredSituations}
         keyExtractor={(item) => item.id}
         numColumns={2}
         renderItem={({ item }) => (
