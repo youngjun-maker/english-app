@@ -56,6 +56,7 @@ router.post('/', authMiddleware, upload.single('audio'), async (req, res) => {
     const transcript = await openai.audio.transcriptions.create({
       file: fs.createReadStream(filePath),
       model: 'whisper-1',
+      language: 'en',
     });
     fs.unlink(filePath, () => {});
     return res.json({ text: transcript.text });
