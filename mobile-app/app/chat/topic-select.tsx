@@ -1,7 +1,6 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { ActivityIndicator, Animated, FlatList, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
 import { createConversation } from '@/api/conversations';
 import { useAppStore } from '@/store/useAppStore';
 import { SITUATIONS, type Situation, type SituationCategory } from '@/constants/situations';
