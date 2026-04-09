@@ -8,9 +8,10 @@ type UserBubbleProps = {
   text: string;
   onLongPress?: () => void;
   onSave?: (text: string, memo: string) => void;
+  sourceLabel?: string;
 };
 
-export default function UserBubble({ text, onLongPress, onSave }: UserBubbleProps) {
+export default function UserBubble({ text, onLongPress, onSave, sourceLabel }: UserBubbleProps) {
   const { isLoading, isPlaying, handlePress: handleTTSPress } = useTTSButton(text);
   const [saveVisible, setSaveVisible] = useState(false);
 
@@ -40,10 +41,9 @@ export default function UserBubble({ text, onLongPress, onSave }: UserBubbleProp
         <SavePopup
           visible={saveVisible}
           initialText={text}
-          onSave={(t, memo) => {
-            onSave(t, memo);
-            setSaveVisible(false);
-          }}
+          sourceLabel={sourceLabel}
+          sourceBlock="내 발화"
+          onSave={(t, memo) => onSave(t, memo)}
           onClose={() => setSaveVisible(false)}
         />
       )}

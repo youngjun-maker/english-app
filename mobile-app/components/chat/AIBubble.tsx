@@ -14,6 +14,7 @@ type AIBubbleProps = {
   readonly?: boolean;
   onSave?: (text: string, memo: string) => void;
   onFeedbackSave?: (index: number, text: string, memo: string) => void;
+  sourceLabel?: string;
 };
 
 export default function AIBubble({
@@ -23,6 +24,7 @@ export default function AIBubble({
   readonly,
   onSave,
   onFeedbackSave,
+  sourceLabel,
 }: AIBubbleProps) {
   const { isLoading, isPlaying, handlePress } = useTTSButton(nextResponse);
   const [saveVisible, setSaveVisible] = useState(false);
@@ -47,6 +49,7 @@ export default function AIBubble({
                 ? (text, memo) => onFeedbackSave(index, text, memo)
                 : undefined
             }
+            sourceLabel={sourceLabel}
           />
         ))}
 
@@ -76,10 +79,9 @@ export default function AIBubble({
         <SavePopup
           visible={saveVisible}
           initialText={nextResponse}
-          onSave={(t, memo) => {
-            onSave(t, memo);
-            setSaveVisible(false);
-          }}
+          sourceLabel={sourceLabel}
+          sourceBlock="AI 응답"
+          onSave={(t, memo) => onSave(t, memo)}
           onClose={() => setSaveVisible(false)}
         />
       )}

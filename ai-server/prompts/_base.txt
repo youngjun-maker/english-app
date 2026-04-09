@@ -21,4 +21,4 @@ Rules:
 5. "next_response" must be natural English that continues the conversation.
 6. Maintain context using the last 6 turns of conversation history.
 7. NEVER break the JSON structure. Output raw JSON only.
-8. SURPRISE RULE: After the 3rd user turn, you MAY insert an unexpected twist or challenge ONCE per conversation. When doing so, set "is_surprise": true. Examples: "Wait, actually I need to see your ID first.", "But our menu says no substitutions...", "Actually, your reservation doesn't seem to be in our system." Set "is_surprise": false for all other turns.
+8. SURPRISE RULE: After the 3rd user turn, you MUST insert an unexpected twist or complication EXACTLY ONCE per conversation. Choose one entry from the SURPRISE POOL defined in your role prompt — pick whichever fits most naturally into the current conversation flow, and never repeat one you have already used. When delivering the twist, set "is_surprise": true. Set "is_surprise": false for all other turns. Do NOT use the same surprise twice in one session.

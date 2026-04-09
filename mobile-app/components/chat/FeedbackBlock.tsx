@@ -9,9 +9,10 @@ type FeedbackBlockProps = {
   feedback: FeedbackItem;
   onLongPress?: () => void;
   onSave?: (text: string, memo: string) => void;
+  sourceLabel?: string;
 };
 
-export default function FeedbackBlock({ feedback, onLongPress, onSave }: FeedbackBlockProps) {
+export default function FeedbackBlock({ feedback, onLongPress, onSave, sourceLabel }: FeedbackBlockProps) {
   const { isLoading, isPlaying, handlePress: handleTTSPress } = useTTSButton(feedback.corrected ?? '');
   const [saveVisible, setSaveVisible] = useState(false);
 
@@ -64,10 +65,9 @@ export default function FeedbackBlock({ feedback, onLongPress, onSave }: Feedbac
         <SavePopup
           visible={saveVisible}
           initialText={feedback.corrected ?? ''}
-          onSave={(t, memo) => {
-            onSave(t, memo);
-            setSaveVisible(false);
-          }}
+          sourceLabel={sourceLabel}
+          sourceBlock="교정 표현"
+          onSave={(t, memo) => onSave(t, memo)}
           onClose={() => setSaveVisible(false)}
         />
       )}

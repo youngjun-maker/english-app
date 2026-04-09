@@ -1,4 +1,4 @@
-import { View, Pressable, useWindowDimensions, Platform } from 'react-native';
+import { View, Text, Pressable, useWindowDimensions, Platform } from 'react-native';
 import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
@@ -34,6 +34,12 @@ type Props = {
   onPlayingChange?: (isPlaying: boolean) => void;
 };
 
+function formatTime(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
 const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
   ({ videoUrl, duration, playbackRate, onTimeUpdate, onPlayingChange }, ref) => {
     const { width: windowWidth } = useWindowDimensions();
@@ -41,6 +47,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
     const width = Platform.OS === 'web' ? Math.min(windowWidth, 393) : windowWidth;
     const videoHeight = width * (9 / 16);
     const [progress, setProgress] = useState(0);
+    const [currentTimeSec, setCurrentTimeSec] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
     const onTimeUpdateRef = useRef(onTimeUpdate);
     const onPlayingChangeRef = useRef(onPlayingChange);
@@ -68,7 +75,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
 
     // playingChange 이벤트 구독 + 250ms interval로 currentTime 폴링
     useEffect(() => {
-      const playingSub = player.addListener('playingChange', (e) => {
+      const playingSub = player.addListener('playingChange', (e: { isPlaying: boolean }) => {
         setIsPlaying(e.isPlaying);
         onPlayingChangeRef.current?.(e.isPlaying);
       });
@@ -76,6 +83,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
       const interval = setInterval(() => {
         const current = player.currentTime ?? 0;
         onTimeUpdateRef.current?.(current);
+        setCurrentTimeSec(current);
         setProgress(duration > 0 ? current / duration : 0);
       }, 250);
 
@@ -129,12 +137,24 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
           )}
         </Pressable>
 
-        {/* Progress bar */}
-        <View className="absolute bottom-0 left-0 right-0 h-0.5 bg-white/20">
-          <View
-            className="h-full bg-blue-500"
-            style={{ width: `${Math.min(progress * 100, 100)}%` }}
-          />
+        {/* 프로그레스 바 + 시간 표시 */}
+        <View className="absolute bottom-0 left-0 right-0">
+          {/* 시간 텍스트 — 좌: 현재, 우: 총 시간 */}
+          <View className="flex-row justify-between px-2 pb-1">
+            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10 }}>
+              {formatTime(currentTimeSec)}
+            </Text>
+            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10 }}>
+              {formatTime(duration)}
+            </Text>
+          </View>
+          {/* 4px 높이 프로그레스 바 */}
+          <View className="h-1 bg-white/20">
+            <View
+              className="h-full bg-blue-500"
+              style={{ width: `${Math.min(progress * 100, 100)}%` }}
+            />
+          </View>
         </View>
       </View>
     );

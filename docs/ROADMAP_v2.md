@@ -2084,7 +2084,7 @@ AI가 답을 고민하는 2~5초 동안 화면이 멈춘 것처럼 보여 몰입
 
 **공수:** 10~20분
 **에이전트:** `rn-expo-frontend`
-**상태:** ⬜ 대기
+**상태:** ✅ 완료
 
 ---
 
@@ -2118,7 +2118,7 @@ AI가 그냥 "좋아요, 통과"식으로 끝나버리는 문제.
 
 **공수:** 2~3시간
 **에이전트:** `contexttalk-api-architect` + `rn-expo-frontend`
-**상태:** ⬜ 대기
+**상태:** ✅ 완료
 
 ---
 
@@ -2159,7 +2159,7 @@ AI가 그냥 "좋아요, 통과"식으로 끝나버리는 문제.
 
 **공수:** 반나절
 **에이전트:** `rn-expo-frontend`
-**상태:** ⬜ 대기
+**상태:** ✅ 완료
 
 ---
 
@@ -2192,7 +2192,7 @@ AI가 그냥 "좋아요, 통과"식으로 끝나버리는 문제.
 
 **공수:** 반나절
 **에이전트:** `contexttalk-api-architect` + `rn-expo-frontend`
-**상태:** ⬜ 대기
+**상태:** ✅ 완료
 
 ---
 
@@ -2216,7 +2216,7 @@ AI가 그냥 "좋아요, 통과"식으로 끝나버리는 문제.
 
 **공수:** 1~2시간
 **에이전트:** `rn-expo-frontend`
-**상태:** ⬜ 대기
+**상태:** ✅ 완료
 
 ---
 
@@ -2241,7 +2241,7 @@ AI가 그냥 "좋아요, 통과"식으로 끝나버리는 문제.
 
 **공수:** 2~3시간
 **에이전트:** `contexttalk-api-architect` + `rn-expo-frontend`
-**상태:** ⬜ 대기
+**상태:** ✅ 완료
 
 ---
 
@@ -2249,12 +2249,12 @@ AI가 그냥 "좋아요, 통과"식으로 끝나버리는 문제.
 
 | Task | 설명 | 에이전트 | 공수 | 상태 |
 |------|------|----------|------|------|
-| Task 064 | 타이핑 인디케이터 상황별 텍스트 | rn-expo-frontend | 20분 | ⬜ 대기 |
-| Task 065 | AI 돌발 상황(Twist) + 화면 flash | contexttalk-api-architect + rn-expo-frontend | 2~3시간 | ⬜ 대기 |
-| Task 066 | 상황 콘텐츠 확장 + 카테고리 UI | rn-expo-frontend | 반나절 | ⬜ 대기 |
-| Task 067 | 난이도(Lv1~3) 시스템 | contexttalk-api-architect + rn-expo-frontend | 반나절 | ⬜ 대기 |
-| Task 068 | 미션 브리핑 바텀시트 리디자인 | rn-expo-frontend | 1~2시간 | ⬜ 대기 |
-| Task 069 | 미션 클리어 화면 개선 (Confetti + 네이티브 표현) | contexttalk-api-architect + rn-expo-frontend | 2~3시간 | ⬜ 대기 |
+| Task 064 | 타이핑 인디케이터 상황별 텍스트 | rn-expo-frontend | 20분 | ✅ 완료 |
+| Task 065 | AI 돌발 상황(Twist) + 화면 flash | contexttalk-api-architect + rn-expo-frontend | 2~3시간 | ✅ 완료 |
+| Task 066 | 상황 콘텐츠 확장 + 카테고리 UI | rn-expo-frontend | 반나절 | ✅ 완료 |
+| Task 067 | 난이도(Lv1~3) 시스템 | contexttalk-api-architect + rn-expo-frontend | 반나절 | ✅ 완료 |
+| Task 068 | 미션 브리핑 바텀시트 리디자인 | rn-expo-frontend | 1~2시간 | ✅ 완료 |
+| Task 069 | 미션 클리어 화면 개선 (Confetti + 네이티브 표현) | contexttalk-api-architect + rn-expo-frontend | 2~3시간 | ✅ 완료 |
 
 ## Phase 7 Task 의존성
 
@@ -2266,3 +2266,50 @@ Task 067 (난이도 시스템)      ← Task 066 완료 후 권장 (새 상황�
 Task 068 (바텀시트 리디자인)  ← Task 067 완료 후 권장 (레벨 선택 UI 포함)
 Task 069 (클리어 화면)        ← Task 065 완료 후 권장 (best_phrases 필드 연동)
 ```
+
+---
+
+## Phase 8: UI/UX 폴리싱
+
+### Task 070: 표현 저장 팝업(SavePopup) 리디자인 `[rn-expo-frontend]`
+
+**작업 배경:**
+Phase 7 완료 후 표현 저장 팝업 UI가 낡고 폼 느낌이라 개선 요청.
+
+**변경된 파일:**
+- `mobile-app/components/common/SavePopup.tsx` — 전면 리디자인
+- `mobile-app/components/chat/UserBubble.tsx` — `sourceLabel` prop 추가
+- `mobile-app/components/chat/AIBubble.tsx` — `sourceLabel` prop 추가
+- `mobile-app/components/chat/FeedbackBlock.tsx` — `sourceLabel` prop 추가
+- `mobile-app/app/chat/[id].tsx` — `sourceLabel` 계산 및 bubbles에 전달
+
+**개선 내용:**
+
+| 항목 | 변경 전 | 변경 후 |
+|------|---------|---------|
+| 아이콘 | 💾 플로피 디스크 | 🔖 북마크 |
+| 타이틀 | "표현 저장" | "단어장에 추가" |
+| 모달 위치 | 화면 중앙 | 바텀시트 (slide-up) |
+| 드래그 핸들 | 없음 | 상단 회색 바 추가 |
+| 표현 박스 | 흰 textarea | amber 플래시카드 (보기/편집 토글) |
+| 출처 태그 | 없음 | 상황 이름 + 블록 유형 (내 발화/AI 응답/교정 표현) |
+| 메모 필드 | 큰 박스 2줄 | 한 줄 + ✏️ 아이콘 |
+| 저장 버튼 | 취소/저장 나란히 | amber 풀너비 "단어장에 저장하기" |
+| 취소 | 회색 버튼 | 텍스트 링크 |
+| 저장 완료 피드백 | 없음 | 버튼 초록 "저장됐어요!" → 0.6초 후 자동 닫힘 |
+
+**sourceLabel 로직:**
+- `[id].tsx`에서 `topicEmoji + topicLabel`로 조합 (예: "💬 Free Talking", "✈️ 공항 입국심사")
+- sourceBlock은 각 컴포넌트에서 하드코딩: UserBubble="내 발화", AIBubble="AI 응답", FeedbackBlock="교정 표현"
+
+**프리뷰:** `preview/freetalk.html` — "표현 저장" 데모 버튼으로 확인 가능
+
+**상태:** ✅ 완료
+
+---
+
+## Phase 8 진행 현황
+
+| Task | 설명 | 에이전트 | 공수 | 상태 |
+|------|------|----------|------|------|
+| Task 070 | 표현 저장 팝업(SavePopup) 리디자인 | rn-expo-frontend | 1시간 | ✅ 완료 |

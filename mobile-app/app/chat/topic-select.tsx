@@ -295,7 +295,7 @@ export default function TopicSelectScreen() {
               {([1, 2, 3] as const).map((lv) => {
                 const isActive = selectedLevel === lv;
                 const label = lv === 1 ? 'Lv.1 초급' : lv === 2 ? 'Lv.2 중급' : 'Lv.3 고급';
-                const desc = lv === 1 ? '느리고 쉬운 영어' : lv === 2 ? '자연스러운 대화' : '네이티브 속도';
+                const desc = lv === 1 ? '꼼꼼한 교정' : lv === 2 ? '주요 실수만 교정' : '교정 최소화';
                 const activeColor = lv === 1 ? 'bg-green-500 border-green-500' : lv === 2 ? 'bg-amber-500 border-amber-500' : 'bg-red-500 border-red-500';
                 const inactiveColor = 'bg-white border-gray-200';
                 return (

@@ -165,6 +165,8 @@ export default function ChatScreen() {
   const flashOpacity = useRef(new Animated.Value(0)).current;
 
   const currentSituation = SITUATIONS.find((s) => s.id === topicId);
+  const topicEmoji = currentSituation?.emoji ?? '💬';
+  const sourceLabel = `${topicEmoji} ${topicLabel ?? 'Free Talking'}`;
 
   /** 돌발 상황 수신 시 붉은 flash + 햅틱 2회 */
   const triggerSurpriseEffect = useCallback(() => {
@@ -342,6 +344,7 @@ export default function ChatScreen() {
     <View>
       <UserBubble
         text={turn.userText}
+        sourceLabel={sourceLabel}
         onSave={
           turn.userMsgId
             ? (text, memo) =>
@@ -359,6 +362,7 @@ export default function ChatScreen() {
           feedback={turn.aiContent.feedback}
           nextResponse={turn.aiContent.next_response}
           messageId={turn.id}
+          sourceLabel={sourceLabel}
           onSave={(text, memo) =>
             handleSaveExpression({
               messageId: turn.id,
@@ -378,9 +382,7 @@ export default function ChatScreen() {
         />
       )}
     </View>
-  ), [handleSaveExpression]);
-
-  const topicEmoji = currentSituation?.emoji ?? '💬';
+  ), [handleSaveExpression, sourceLabel]);
 
   return (
     <KeyboardAvoidingView

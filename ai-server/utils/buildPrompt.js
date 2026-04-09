@@ -18,19 +18,19 @@ for (const file of fs.readdirSync(promptDir)) {
 /** 레벨별 추가 지시어 */
 const LEVEL_INSTRUCTIONS = {
   1: `\n\nDIFFICULTY: Beginner (Level 1)
-- Speak slowly and use simple, everyday vocabulary.
-- Avoid idioms, slang, or complex grammar.
-- Provide generous feedback and corrections — correct every grammar or vocabulary mistake.
-- Keep your responses short (1–2 sentences) so the learner isn't overwhelmed.`,
+- Use simple, everyday vocabulary and basic sentence structures. Avoid idioms, slang, and complex grammar.
+- Correct every grammar and vocabulary mistake in the feedback array — be thorough.
+- Keep your responses short (1–2 sentences) so the learner is not overwhelmed.
+- If the learner seems stuck, gently guide them with a hint in your next_response.`,
   2: `\n\nDIFFICULTY: Intermediate (Level 2)
-- Speak at a natural conversational pace.
-- Use moderately complex vocabulary and occasional idioms.
-- Provide balanced feedback — correct major errors but let minor ones slide.
+- Use natural conversational vocabulary with occasional idioms and phrasal verbs.
+- Correct major errors but let minor stylistic imperfections slide.
 - Keep responses to 2–3 sentences.`,
   3: `\n\nDIFFICULTY: Advanced (Level 3)
-- Speak at native speed and use natural idioms, phrasal verbs, and colloquial expressions.
-- Minimize corrections — only flag unnatural or severely incorrect expressions.
-- Use nuanced, multi-sentence responses to challenge the learner.`,
+- Use natural idioms, phrasal verbs, and colloquial expressions freely.
+- Only flag expressions that are unnatural or seriously incorrect — do not over-correct.
+- Use nuanced, multi-sentence responses that genuinely challenge the learner.
+- Do not simplify vocabulary or sentence structure.`,
 };
 
 /**

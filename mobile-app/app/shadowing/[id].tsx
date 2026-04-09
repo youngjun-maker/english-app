@@ -34,6 +34,8 @@ export default function ShadowingPlayerScreen() {
   const [scripts, setScripts] = useState<ShadowingScript[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showOverlay, setShowOverlay] = useState(false);
+  // 완료 시 소요 시간을 기록하기 위한 state
+  const [sessionStartTime] = useState(() => Date.now());
   const isCompletedRef = useRef(false);
 
   const videoRef = useRef<VideoPlayerHandle>(null);
@@ -55,6 +57,9 @@ export default function ShadowingPlayerScreen() {
   const recordingUriRef = useRef<string | null>(null);
   // 비교 재생 대기 중 플래그 — true인 동안 auto-pause/루프 로직 스킵
   const isPendingCompareRef = useRef(false);
+
+  // 완료 시 소요 시간 (초)
+  const elapsedSecondsRef = useRef(0);
 
   // 모드 변경 시 auto-pause 플래그 리셋
   useEffect(() => {
@@ -174,6 +179,7 @@ export default function ShadowingPlayerScreen() {
       const lastScript = currentScripts[currentScripts.length - 1];
       if (lastScript && currentTime >= lastScript.end && !isCompletedRef.current) {
         isCompletedRef.current = true;
+        elapsedSecondsRef.current = Math.round((Date.now() - sessionStartTime) / 1000);
         handleCompletion();
       }
     }
@@ -192,7 +198,6 @@ export default function ShadowingPlayerScreen() {
   function handleReplay() {
     setShowOverlay(false);
     isCompletedRef.current = false;
-    setIsCompleted(false);
     isPausedRef.current = false;
     lastSentenceIndexRef.current = -1;
     videoRef.current?.seek(0);
@@ -304,22 +309,15 @@ export default function ShadowingPlayerScreen() {
     );
   }
 
-  return (
-    <View className="flex-1 bg-white" style={{ paddingTop: insets.top }}>
-      {/* 상단 백 버튼 */}
-      <View className="px-4 py-2 flex-row items-center">
-        <Pressable
-          onPress={() => router.back()}
-          className="w-9 h-9 items-center justify-center active:opacity-60"
-        >
-          <Ionicons name="chevron-back" size={24} color="#111827" />
-        </Pressable>
-        <Text className="text-base font-semibold text-gray-900 ml-1 flex-1" numberOfLines={1}>
-          {content.title}
-        </Text>
-      </View>
+  // 완료 오버레이에 전달할 통계
+  const elapsedSec = elapsedSecondsRef.current;
+  const durationLabel = elapsedSec > 0
+    ? `${Math.floor(elapsedSec / 60)}:${String(elapsedSec % 60).padStart(2, '0')}`
+    : `${Math.floor(content.duration / 60)}:${String(Math.floor(content.duration % 60)).padStart(2, '0')}`;
 
-      {/* 비디오 플레이어 */}
+  return (
+    <View className="flex-1 bg-white">
+      {/* 비디오 플레이어 (상단 safe area 없이 풀블리드) */}
       <VideoPlayer
         ref={videoRef}
         videoUrl={content.video_url}
@@ -328,6 +326,28 @@ export default function ShadowingPlayerScreen() {
         onTimeUpdate={handleTimeUpdate}
         onPlayingChange={handlePlayingChange}
       />
+
+      {/* 상단 백 버튼 — 영상 위에 absolute로 오버레이 */}
+      <View
+        className="absolute left-0 right-0 flex-row items-center px-2"
+        style={{ top: insets.top, zIndex: 10 }}
+        pointerEvents="box-none"
+      >
+        <Pressable
+          onPress={() => router.back()}
+          className="w-9 h-9 items-center justify-center rounded-full active:opacity-70"
+          style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
+        >
+          <Ionicons name="chevron-back" size={22} color="white" />
+        </Pressable>
+        <Text
+          className="text-sm font-semibold ml-2 flex-1"
+          style={{ color: 'rgba(255,255,255,0.9)' }}
+          numberOfLines={1}
+        >
+          {content.title}
+        </Text>
+      </View>
 
       {/* ModeTab */}
       <ModeTab mode={shadowingMode} onModeChange={setShadowingMode} />
@@ -361,6 +381,11 @@ export default function ShadowingPlayerScreen() {
           title={content.title}
           onReplay={handleReplay}
           onBack={() => router.back()}
+          stats={{
+            sentences: scripts.length,
+            duration: durationLabel,
+            repeats: 1,
+          }}
         />
       )}
     </View>
