@@ -121,11 +121,25 @@ export default function ContentCard({ content, onPress, completed, progressPerce
         )}
       </View>
 
-      {/* 카드 하단 제목 */}
-      <View className="px-4 pt-3 pb-2">
-        <Text className="text-base font-bold text-gray-900" numberOfLines={2}>
-          {content.title}
-        </Text>
+      {/* 카드 하단 — 설명 + 카테고리 뱃지 */}
+      <View className="px-4 pt-3 pb-2 flex-row items-start justify-between gap-2">
+        <View className="flex-1">
+          {content.description ? (
+            <Text className="text-sm text-gray-500 leading-5" numberOfLines={2}>
+              {content.description}
+            </Text>
+          ) : (
+            <Text className="text-sm text-gray-400 capitalize">{content.category}</Text>
+          )}
+        </View>
+        <View
+          className="px-2 py-0.5 rounded-full mt-0.5"
+          style={{ backgroundColor: cfg.badgeBg + '22' }}
+        >
+          <Text className="text-xs font-semibold" style={{ color: cfg.badgeBg }}>
+            {cfg.label}
+          </Text>
+        </View>
       </View>
 
       {/* 진행률 바 */}

@@ -12,6 +12,7 @@ import ModeTab from '@/components/shadowing/ModeTab';
 import ScriptArea from '@/components/shadowing/ScriptArea';
 import ControlBar from '@/components/shadowing/ControlBar';
 import CompletionOverlay from '@/components/shadowing/CompletionOverlay';
+import ScriptBottomSheet from '@/components/shadowing/ScriptBottomSheet';
 import { useAppStore } from '@/store/useAppStore';
 import type { ShadowingContent, ShadowingScript } from '@/types/shadowing';
 
@@ -34,6 +35,7 @@ export default function ShadowingPlayerScreen() {
   const [scripts, setScripts] = useState<ShadowingScript[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showOverlay, setShowOverlay] = useState(false);
+  const [showScriptSheet, setShowScriptSheet] = useState(false);
   // 완료 시 소요 시간을 기록하기 위한 state
   const [sessionStartTime] = useState(() => Date.now());
   const isCompletedRef = useRef(false);
@@ -235,7 +237,7 @@ export default function ShadowingPlayerScreen() {
   }
 
   function handleScriptPress() {
-    showToast('전체 스크립트 보기는 준비 중이에요.');
+    setShowScriptSheet(true);
   }
 
   async function handleMicPress() {
@@ -388,6 +390,15 @@ export default function ShadowingPlayerScreen() {
           }}
         />
       )}
+
+      {/* 전체 스크립트 바텀시트 */}
+      <ScriptBottomSheet
+        visible={showScriptSheet}
+        scripts={scripts}
+        currentIndex={currentSentenceIndex}
+        onSeek={handleSentencePress}
+        onClose={() => setShowScriptSheet(false)}
+      />
     </View>
   );
 }

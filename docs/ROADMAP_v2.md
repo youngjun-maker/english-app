@@ -347,7 +347,7 @@ CREATE INDEX idx_shadowing_sessions_user   ON shadowing_sessions(user_id, create
 - [x] 블라인드 모드 토글 시 `setBlindMode((prev + 1) % 3)` 순환
 - [x] 루프 토글 시 `setIsLooping(!isLooping)` + 활성 아이콘 cobalt blue 표시
 - [x] 마이크 버튼 Reanimated pulse 애니메이션 (`isRecording` 시 scale 1→1.15→1 반복, 웹 스킵)
-- [ ] 📄 전체 스크립트 BottomSheet 구현 (현재 Toast로 대체 중 — Task 036에서 완성)
+- [x] 📄 전체 스크립트 BottomSheet 구현 (`ScriptBottomSheet.tsx` — Modal slide-up, 시간 표시, 탭하면 해당 구간 seek)
 
 **완료 기준:** 각 버튼 탭 시 상태 변경 및 UI 반영 확인
 
@@ -399,8 +399,8 @@ CREATE INDEX idx_shadowing_sessions_user   ON shadowing_sessions(user_id, create
 - [x] 완료 시 Reanimated 애니메이션 — "완주했어요! 🎉" 오버레이 scale+fade-in
 - [x] `POST /api/shadowing/sessions` 호출 — `{ content_id, completed: true }` 저장
 - [x] 콘텐츠 목록 화면(`shadowing.tsx`)에서 완료 영상에 완료 뱃지 표시 (sessions 조회)
-- [ ] 전체 화면 NativeWind 스타일 폴리싱 (여백, 폰트 크기, 색상 일관성 검토)
-- [ ] 화면 전환 애니메이션 (목록 → 플레이어 fade/slide)
+- [x] 전체 화면 NativeWind 스타일 폴리싱 (ContentCard description 표시, 카테고리 뱃지 중복 제거, ControlBar 아이콘 통일)
+- [x] 화면 전환 애니메이션 (`_layout.tsx` — shadowing/[id] `slide_from_bottom`)
 - [x] 엣지 케이스 처리: 네트워크 오류 시 Toast, 영상 로드 실패 시 재시도 버튼
 
 **완료 기준:** 전체 모드 완주 → 완료 애니메이션 → DB 세션 저장 → 목록 뱃지 표시 전체 플로우 동작

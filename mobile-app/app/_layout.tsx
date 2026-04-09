@@ -73,6 +73,10 @@ export default function RootLayout() {
         <Stack.Screen name="quiz/[sessionId]" />
         <Stack.Screen name="quiz/result/[sessionId]" />
         <Stack.Screen name="guide" />
+        <Stack.Screen
+          name="shadowing/[id]"
+          options={{ animation: 'slide_from_bottom' }}
+        />
       </Stack>
       {appState === 'unauthenticated' && <Redirect href="/(auth)/onboarding" />}
       {appState === 'home' && <Redirect href="/(tabs)/" />}

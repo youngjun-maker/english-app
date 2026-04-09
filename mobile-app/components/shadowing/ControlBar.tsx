@@ -214,8 +214,8 @@ export default function ControlBar({
       </View>
 
       {/* 스크립트 */}
-      <IconButton onPress={onScriptPress} label="스크립트">
-        <Ionicons name="document-text-outline" size={24} color={GRAY} />
+      <IconButton onPress={onScriptPress} label="전체보기">
+        <Ionicons name="list-outline" size={24} color={GRAY} />
       </IconButton>
 
       {/* 루프 */}
