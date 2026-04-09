@@ -2313,3 +2313,701 @@ Phase 7 완료 후 표현 저장 팝업 UI가 낡고 폼 느낌이라 개선 요
 | Task | 설명 | 에이전트 | 공수 | 상태 |
 |------|------|----------|------|------|
 | Task 070 | 표현 저장 팝업(SavePopup) 리디자인 | rn-expo-frontend | 1시간 | ✅ 완료 |
+
+---
+
+## Phase 9: 전체 UI/UX 점검 & 버그 수정
+
+> **점검 일자:** 2026-04-09
+> **점검 방법:** 전체 화면 코드 정적 분석 + 사용자 관점 터치 인터랙션 전수조사
+> **총 발견 이슈:** 35개 (🔴 9개 / 🟡 19개 / 🟢 7개)
+
+---
+
+### 🔴 Task 071: TOPIC_EMOJI 매핑 오류 수정 `[rn-expo-frontend]`
+
+**대상 파일:**
+- `mobile-app/app/(tabs)/index.tsx`
+- `mobile-app/app/chat/history.tsx`
+
+**문제:**
+`TOPIC_EMOJI` 객체의 키가 실제 `topic_id` 값과 불일치함.
+현재 키: `cafe`, `airport`, `hotel`, `talk`, `opinion`
+실제 topic_id: `cafe_order`, `airport_immigration`, `hotel_checkin`, `small_talk`, `opinion`, `free_talk`, `custom`, `taxi_negotiation`, `job_interview`, `business_meeting`, `neighbor_complaint`, `pharmacy`, `restaurant_complaint`, `bank_account`
+→ 결과: **모든 대화 기록이 기본 이모지 '💬'로만 표시됨** (이모지 없이 동일하게 보임)
+
+**구현 사항:**
+- [ ] `index.tsx`의 `TOPIC_EMOJI` 맵을 실제 topic_id 전체로 업데이트
+  ```typescript
+  const TOPIC_EMOJI: Record<string, string> = {
+    free_talk:              '💬',
+    cafe_order:             '☕',
+    airport_immigration:    '✈️',
+    hotel_checkin:          '🏨',
+    small_talk:             '💬',
+    opinion:                '💭',
+    taxi_negotiation:       '🚕',
+    job_interview:          '💼',
+    business_meeting:       '🤝',
+    neighbor_complaint:     '🏠',
+    pharmacy:               '💊',
+    restaurant_complaint:   '🍽️',
+    bank_account:           '🏦',
+    custom:                 '✏️',
+  };
+  ```
+- [ ] `history.tsx`에도 동일하게 적용 (현재 별도 TOPIC_EMOJI 정의 또는 import 사용 여부 확인 후 통일)
+- [ ] 공통 상수 파일 `mobile-app/constants/topicEmoji.ts` 생성 후 두 파일에서 import
+
+**완료 기준:** 대화 기록 목록에서 각 topic_id에 맞는 이모지가 정확히 표시됨
+
+---
+
+### 🔴 Task 072: 채팅 화면 헤더 safe area 처리 `[rn-expo-frontend]`
+
+**대상 파일:** `mobile-app/app/chat/[id].tsx`
+
+**문제:**
+채팅 화면 헤더가 `pt-1`만 사용하고 `useSafeAreaInsets()` 미적용.
+노치/다이나믹 아일랜드 기기에서 헤더가 상태바 영역을 침범함.
+
+**구현 사항:**
+- [ ] `useSafeAreaInsets()` 훅 import 및 사용
+- [ ] 헤더 최상단 View에 `paddingTop: insets.top + 8` 적용 (기존 `pt-1` 제거)
+  ```typescript
+  const insets = useSafeAreaInsets();
+  // ...
+  <View style={{ paddingTop: insets.top + 8 }} className="...헤더 클래스...">
+  ```
+
+**완료 기준:** iPhone 14 Pro(다이나믹 아일랜드) / iPhone SE(노치 없음) 모두에서 헤더가 상태바 아래에 정상 위치함
+
+---
+
+### 🔴 Task 073: 온보딩 로그인 로딩 상태 + 에러 피드백 `[rn-expo-frontend]`
+
+**대상 파일:** `mobile-app/app/(auth)/onboarding.tsx`
+
+**문제:**
+- Google/Apple 로그인 버튼 탭 후 아무런 시각적 피드백 없음 → 사용자가 탭이 됐는지 알 수 없음
+- 로그인 실패 시 `console.error`만 호출, 사용자에게 Toast 없음
+- 처리 중 버튼 재탭 가능 → 중복 OAuth 요청 발생 가능
+
+**구현 사항:**
+- [ ] `isLoading` state 추가
+- [ ] 로그인 버튼에 로딩 중 `ActivityIndicator` 표시 + `disabled={isLoading}` + `opacity-60`
+  ```typescript
+  const [isLoading, setIsLoading] = useState(false);
+
+  async function handleGoogleLogin() {
+    if (isLoading) return;
+    setIsLoading(true);
+    try {
+      // 기존 OAuth 로직
+    } catch (e) {
+      showToast('로그인에 실패했어요. 다시 시도해주세요.');
+    } finally {
+      setIsLoading(false);
+    }
+  }
+  ```
+- [ ] Apple 로그인도 동일하게 적용
+- [ ] `showToast` 사용을 위해 `useAppStore` import 추가
+
+**완료 기준:** 로그인 탭 시 버튼에 스피너 표시, 실패 시 Toast 메시지 노출
+
+---
+
+### 🔴 Task 074: Free Talking 중복 생성 방지 `[rn-expo-frontend]`
+
+**대상 파일:** `mobile-app/app/(tabs)/index.tsx`
+
+**문제:**
+홈 화면에서 Free Talking 카드 또는 FAB 버튼을 빠르게 연속 탭하면 `createConversation()` API가 중복 호출되어 conversation이 여러 개 생성될 수 있음.
+또한 FAB과 Practice > Free Talking 카드가 완전히 동일한 동작을 하는 중복 CTA.
+
+**구현 사항:**
+- [ ] `isCreating` state 추가
+- [ ] Free Talking 카드 + FAB에 `disabled={isCreating}` 처리
+  ```typescript
+  const [isCreating, setIsCreating] = useState(false);
+
+  async function handleFreeTalking() {
+    if (isCreating) return;
+    setIsCreating(true);
+    try {
+      const id = await createConversation('free_talk', 'Free Talking');
+      router.push(`/chat/${id}`);
+    } catch {
+      showToast('대화를 시작할 수 없어요.');
+    } finally {
+      setIsCreating(false);
+    }
+  }
+  ```
+- [ ] 로딩 중 카드/FAB에 `ActivityIndicator` 또는 `opacity-50` 표시
+
+**완료 기준:** 연속 탭 시 대화가 1개만 생성됨
+
+---
+
+### 🔴 Task 075: 미구현 버튼 disabled 처리 `[rn-expo-frontend]`
+
+**대상 파일:**
+- `mobile-app/app/(tabs)/study.tsx` — 검색 버튼
+- `mobile-app/app/(tabs)/settings.tsx` — Subscription, Preferences 메뉴
+- `mobile-app/app/study/[expressionId].tsx` — 삭제 버튼(휴지통), 에러 상태 뒤로가기
+
+**문제:**
+탭 가능해 보이지만 아무 반응 없는 UI 요소들이 사용자 혼란 유발.
+
+**구현 사항:**
+
+`study.tsx` — 검색 버튼:
+- [ ] 검색 버튼 제거 (미구현) 또는 아이콘에 `opacity-30` + `disabled` 처리
+  ```typescript
+  // 방법 A: 숨기기
+  // 방법 B: 비활성화
+  <Pressable disabled className="opacity-30">
+    <Ionicons name="search-outline" size={22} color="#374151" />
+  </Pressable>
+  ```
+
+`settings.tsx` — Subscription, Preferences:
+- [ ] 각 항목에 "준비 중" 텍스트 뱃지 추가 또는 `onPress` 제거 + `opacity-40` 처리
+  ```typescript
+  <View className="px-2 py-0.5 bg-gray-100 rounded-full">
+    <Text className="text-xs text-gray-400">준비 중</Text>
+  </View>
+  ```
+
+`[expressionId].tsx` — 삭제 버튼:
+- [ ] 삭제 버튼 제거 (미구현)
+
+`[expressionId].tsx` — 에러 상태:
+- [ ] "표현을 찾을 수 없습니다" 에러 UI에 뒤로가기 버튼 추가
+  ```typescript
+  <Pressable onPress={() => router.back()} className="mt-4 px-6 py-3 bg-blue-500 rounded-2xl">
+    <Text className="text-white font-semibold">돌아가기</Text>
+  </Pressable>
+  ```
+
+**완료 기준:** 모든 탭 가능한 요소가 실제 동작하거나, 탭 불가하게 시각적으로 처리됨
+
+---
+
+### 🟡 Task 076: End 버튼 / Sign Out 확인 다이얼로그 `[rn-expo-frontend]`
+
+**대상 파일:**
+- `mobile-app/app/chat/[id].tsx` — End 버튼
+- `mobile-app/app/(tabs)/settings.tsx` — Sign Out 버튼
+
+**문제:**
+- 채팅 중 End 버튼 실수 탭 시 확인 없이 즉시 홈으로 이탈
+- Sign Out 탭 시 확인 없이 즉시 로그아웃
+
+**구현 사항:**
+
+`[id].tsx` — End 버튼:
+- [ ] `Alert.alert()` 확인 다이얼로그 추가
+  ```typescript
+  import { Alert } from 'react-native';
+
+  function handleEnd() {
+    if (turns.length === 0) {
+      router.replace('/(tabs)/');
+      return;
+    }
+    Alert.alert(
+      '대화 종료',
+      '대화를 종료하고 홈으로 돌아갈까요?',
+      [
+        { text: '계속 대화하기', style: 'cancel' },
+        { text: '종료', style: 'destructive', onPress: () => router.replace('/(tabs)/') },
+      ]
+    );
+  }
+  ```
+  > 단, 대화 내용이 0턴이면 바로 이탈 (확인 불필요)
+
+`settings.tsx` — Sign Out:
+- [ ] 동일 패턴으로 Alert 추가
+  ```typescript
+  Alert.alert(
+    '로그아웃',
+    '정말 로그아웃 하시겠어요?',
+    [
+      { text: '취소', style: 'cancel' },
+      { text: '로그아웃', style: 'destructive', onPress: () => supabase.auth.signOut() },
+    ]
+  );
+  ```
+
+**완료 기준:** End / Sign Out 탭 시 확인 다이얼로그가 나타나고 "계속"을 선택하면 취소됨
+
+---
+
+### 🟡 Task 077: 모달 배경 탭으로 닫기 지원 `[rn-expo-frontend]`
+
+**대상 파일:**
+- `mobile-app/app/(tabs)/index.tsx` — 주간 리포트 모달
+- `mobile-app/app/chat/topic-select.tsx` — 미션 분기 모달, 커스텀 상황 모달, 미션 브리핑 모달
+
+**문제:**
+iOS에서 모달 배경 탭 시 닫히지 않음. `onRequestClose`는 Android back 버튼에만 동작.
+배경을 Pressable로 감싸지 않아서 탭해도 아무 반응 없음.
+
+**구현 사항:**
+각 모달의 배경 View를 Pressable로 교체 + `onPress` 추가:
+```typescript
+// 변경 전
+<View className="flex-1 bg-black/50 justify-end">
+  {/* 모달 내용 */}
+</View>
+
+// 변경 후
+<Pressable
+  className="flex-1 bg-black/50 justify-end"
+  onPress={closeModal}
+>
+  <Pressable onPress={() => {}} className="w-full">
+    {/* 모달 내용 (내부 탭이 배경으로 전파되지 않도록 막음) */}
+  </Pressable>
+</Pressable>
+```
+
+대상 모달:
+- [ ] 홈 주간 리포트 모달
+- [ ] topic-select 미션 분기 모달 (`showMissionModal`)
+- [ ] topic-select 커스텀 상황 모달 (`showCustomModal`)
+- [ ] topic-select 미션 브리핑 모달 (`showBriefingModal`)
+
+**완료 기준:** 각 모달 열린 상태에서 배경 어두운 영역 탭 시 모달이 닫힘
+
+---
+
+### 🟡 Task 078: 퀴즈 세션 목록 useFocusEffect 갱신 `[rn-expo-frontend]`
+
+**대상 파일:** `mobile-app/app/(tabs)/quiz.tsx`
+
+**문제:**
+현재 `useEffect`로 마운트 시 1회만 세션 목록을 조회함.
+퀴즈 완료 후 Quiz 탭으로 돌아와도 새 세션이 목록에 반영되지 않음.
+
+**구현 사항:**
+- [ ] `useEffect` → `useFocusEffect`로 교체
+  ```typescript
+  import { useFocusEffect } from 'expo-router';
+  import { useCallback } from 'react';
+
+  useFocusEffect(
+    useCallback(() => {
+      setIsLoading(true);
+      fetchQuizSessions()
+        .then(setsessions)
+        .catch(() => showToast('퀴즈 목록을 불러오지 못했어요.'))
+        .finally(() => setIsLoading(false));
+    }, [])
+  );
+  ```
+- [ ] `notEnough` 배너에 닫기(✕) 버튼 추가 — 현재 닫기 수단 없음
+  ```typescript
+  {notEnough && (
+    <View className="mx-4 mb-3 bg-amber-50 border border-amber-200 rounded-2xl p-4 flex-row items-start">
+      <Text className="flex-1 text-sm text-amber-800 leading-5">
+        퀴즈를 시작하려면 표현이 10개 이상 필요해요.{'\n'}
+        대화하고 표현을 저장해보세요!
+      </Text>
+      <Pressable onPress={() => setNotEnough(false)} className="ml-2 p-1 active:opacity-60">
+        <Ionicons name="close" size={16} color="#92400e" />
+      </Pressable>
+    </View>
+  )}
+  ```
+
+**완료 기준:** 퀴즈 완료 후 Quiz 탭 복귀 시 새 세션이 목록 상단에 표시됨
+
+---
+
+### 🟡 Task 079: 섀도잉 플레이어 재생 중 일시정지 아이콘 표시 `[rn-expo-frontend]`
+
+**대상 파일:** `mobile-app/components/shadowing/VideoPlayer.tsx`
+
+**문제:**
+현재 `isPlaying === true`일 때 오버레이 아이콘이 완전히 사라짐.
+사용자가 탭해서 일시정지 가능한지 모름.
+
+**구현 사항:**
+- [ ] 재생 중 반투명 일시정지 아이콘 표시 (항상 표시 또는 3초 후 fade-out)
+  ```typescript
+  // 방법 A: 항상 반투명 표시
+  {Platform.OS !== 'web' && (
+    <View className="w-14 h-14 rounded-full items-center justify-center"
+      style={{ backgroundColor: isPlaying ? 'rgba(0,0,0,0.15)' : 'rgba(0,0,0,0.40)' }}
+    >
+      <Ionicons
+        name={isPlaying ? 'pause' : 'play'}
+        size={28}
+        color="white"
+        style={{ opacity: isPlaying ? 0.6 : 1 }}
+      />
+    </View>
+  )}
+  ```
+
+**완료 기준:** 영상 재생 중에도 반투명 일시정지 버튼이 보이고, 탭 시 일시정지됨
+
+---
+
+### 🟡 Task 080: `pt-14` 하드코딩 → useSafeAreaInsets 일괄 교체 `[rn-expo-frontend]`
+
+**대상 파일 (전체):**
+- `mobile-app/app/(tabs)/index.tsx`
+- `mobile-app/app/(tabs)/shadowing.tsx`
+- `mobile-app/app/(tabs)/study.tsx`
+- `mobile-app/app/(tabs)/quiz.tsx`
+- `mobile-app/app/(tabs)/settings.tsx`
+- `mobile-app/app/guide.tsx`
+- `mobile-app/app/chat/history.tsx`
+- `mobile-app/app/chat/topic-select.tsx`
+- `mobile-app/app/(auth)/onboarding.tsx`
+
+**문제:**
+`pt-14` (= 56px)이 하드코딩되어 기기마다 상태바 높이가 다른 경우 헤더가 너무 높거나 상태바를 침범할 수 있음.
+특히 Android는 상태바 높이가 기기마다 크게 다름.
+
+**구현 사항:**
+각 파일에서:
+```typescript
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+// 컴포넌트 내부
+const insets = useSafeAreaInsets();
+
+// pt-14 대신:
+<View style={{ paddingTop: insets.top + 8 }} className="px-5 pb-4">
+```
+> `+ 8`은 상태바 아래 여백 (기존 디자인 유지)
+
+**완료 기준:** 다양한 기기(노치, 다이나믹 아일랜드, 일반 Android)에서 헤더 상단 여백 일관성 확인
+
+---
+
+### 🟡 Task 081: 채팅 말풍선 탭 가능 힌트 추가 `[rn-expo-frontend]`
+
+**대상 파일:**
+- `mobile-app/components/chat/UserBubble.tsx`
+- `mobile-app/components/chat/AIBubble.tsx`
+- `mobile-app/components/chat/FeedbackBlock.tsx`
+
+**문제:**
+말풍선을 탭하면 표현 저장 팝업이 열리지만, 탭 가능하다는 시각적 힌트가 전혀 없음.
+가이드 화면에 설명이 있지만 사용자가 발견하기 어려움.
+
+**구현 사항:**
+- [ ] 각 말풍선에 작은 북마크/저장 아이콘 표시 (우측 상단 또는 하단)
+  ```typescript
+  // UserBubble 예시 — 말풍선 우하단에 작은 저장 아이콘
+  <View className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
+    <Ionicons name="bookmark-outline" size={11} color="#9CA3AF" />
+  </View>
+  ```
+- [ ] `is_perfect: true`인 FeedbackBlock(완벽한 문장)은 저장 불필요이므로 아이콘 미표시
+
+**완료 기준:** 대화 화면에서 말풍선마다 저장 힌트 아이콘이 보이고, 탭 시 SavePopup이 열림
+
+---
+
+### 🟡 Task 082: 홈 화면 UX 소개선 `[rn-expo-frontend]`
+
+**대상 파일:** `mobile-app/app/(tabs)/index.tsx`
+
+**구현 사항:**
+
+(A) 인사말 시간대 분기:
+- [ ] "Good morning" → 시간대별 분기
+  ```typescript
+  function getGreeting(): string {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  }
+  ```
+
+(B) 대화 목록 로딩 중 UI:
+- [ ] 대화 기록 섹션에 `isConversationsLoading` state 추가
+- [ ] 로딩 중: `ActivityIndicator` (small, gray) 표시
+- [ ] 완료: 목록 또는 EmptyState
+
+(C) 리포트 모달 닫기 개선:
+- [ ] Task 077에서 배경 탭 닫기를 처리하므로 병행 진행
+
+(D) FAB 정리:
+- [ ] FAB(`+` 버튼)이 Free Talking 카드와 100% 동일 동작 → FAB 역할 변경 검토
+  - 방법 A: FAB 제거 (Practice 카드로 충분)
+  - 방법 B: FAB → "새 대화" 의미로 topic-select 화면으로 이동하도록 변경
+  ```typescript
+  // 방법 B 선택 시
+  function handleFABPress() {
+    router.push('/chat/topic-select');
+  }
+  ```
+
+**완료 기준:** 시간대별 인사말 정상 표시, 대화 목록 로딩 spinner 표시, FAB 역할 명확화
+
+---
+
+### 🟡 Task 083: Toast 컴포넌트 색상 개선 `[rn-expo-frontend]`
+
+**대상 파일:** `mobile-app/components/common/Toast.tsx`
+
+**문제:**
+현재 모든 Toast가 `bg-gray-800/90`으로 동일하게 표시됨.
+에러 (빨강), 성공 (초록), 일반 안내 (회색)를 구분할 수 없음.
+
+**구현 사항:**
+- [ ] `useAppStore`의 `showToast` 함수에 `type?: 'success' | 'error' | 'info'` 파라미터 추가
+  ```typescript
+  // store 변경
+  showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
+  ```
+- [ ] Toast 컴포넌트에서 type별 색상 분기
+  ```typescript
+  const bgColor = {
+    success: 'rgba(34,197,94,0.92)',  // green-500
+    error:   'rgba(239,68,68,0.92)',   // red-500
+    info:    'rgba(31,41,55,0.90)',    // gray-800
+  }[toastType ?? 'info'];
+  ```
+- [ ] 기존 `showToast` 호출 모두 `type` 없이 사용 가능 (기본값 `'info'`)
+- [ ] 성공 케이스(`saveExpression` 완료, 퀴즈 저장 완료 등)에 `type: 'success'` 추가
+
+**완료 기준:** 에러 시 빨간 Toast, 성공 시 초록 Toast, 일반 안내는 기존 회색
+
+---
+
+### 🟡 Task 084: 퀴즈 플레이어 이탈 경고 + 진행률 바 애니메이션 `[rn-expo-frontend]`
+
+**대상 파일:** `mobile-app/app/quiz/[sessionId].tsx`
+
+**문제:**
+- 퀴즈 중간 뒤로가기 탭 시 진행 상황이 저장되지 않고 소실. 경고 없음
+- 진행률 바가 즉시 값 변경 (애니메이션 없음)
+
+**구현 사항:**
+
+이탈 경고:
+- [ ] `useEffect`로 `BackHandler` 이벤트 등록 (Android)
+- [ ] 뒤로가기 버튼 `onPress`에 Alert 추가
+  ```typescript
+  function handleBack() {
+    if (phase === 'result') { router.back(); return; }
+    Alert.alert(
+      '퀴즈 종료',
+      '종료하면 이번 퀴즈 진행 상황이 저장되지 않아요.',
+      [
+        { text: '계속 풀기', style: 'cancel' },
+        { text: '그래도 나가기', style: 'destructive', onPress: () => router.back() },
+      ]
+    );
+  }
+  ```
+
+진행률 바 애니메이션:
+- [ ] `Animated.Value` 사용
+  ```typescript
+  const progressAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(progressAnim, {
+      toValue: (currentIndex + 1) / questions.length,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
+  }, [currentIndex]);
+
+  // width: progressAnim.interpolate({ inputRange: [0,1], outputRange: ['0%','100%'] })
+  ```
+
+**완료 기준:** 중간 이탈 시 경고 모달 표시, 진행률 바 문제 전환 시 부드럽게 증가
+
+---
+
+### 🟡 Task 085: Settings 탭 아이콘 + 스트릭 실제 연동 `[rn-expo-frontend]`
+
+**대상 파일:**
+- `mobile-app/app/(tabs)/_layout.tsx`
+- `mobile-app/app/(tabs)/settings.tsx`
+- `mobile-app/app/(tabs)/index.tsx`
+
+**구현 사항:**
+
+탭 아이콘 수정:
+- [ ] Settings 탭 아이콘 `person-outline` → `settings-outline` 변경
+  ```typescript
+  // _layout.tsx
+  tabBarIcon: ({ color }) => <Ionicons name="settings-outline" size={24} color={color} />,
+  ```
+
+스트릭 실제 연동:
+- [ ] `settings.tsx`와 `index.tsx`의 하드코딩 `3` 제거
+- [ ] Supabase에서 사용자별 스트릭 계산 API 또는 클라이언트 계산 추가
+  - 오늘 포함 연속 며칠 대화했는지 `messages` 테이블에서 날짜 기준으로 계산
+  - 또는 단순히 `useFocusEffect`로 오늘 턴 카운트를 기반으로 "오늘 학습 완료" 여부 표시
+- [ ] 계산 복잡도를 고려해 우선 하드코딩 `3` → `todayTurnCount > 0 ? '오늘 학습 완료! 🔥' : '오늘 첫 대화를 시작해보세요'` 형태의 간단 표시로 교체 가능
+
+**완료 기준:** Settings 탭 아이콘이 설정 톱니바퀴로 표시, 스트릭 영역이 실제 데이터 반영
+
+---
+
+### 🟡 Task 086: SavePopup 저장 완료 후 취소 버튼 숨김 `[rn-expo-frontend]`
+
+**대상 파일:** `mobile-app/components/common/SavePopup.tsx`
+
+**문제:**
+`saved === true` 상태에서 "단어장에 저장됐어요!" 버튼이 표시되는 동시에 "취소" 텍스트 링크도 여전히 탭 가능함 → 저장 직후 취소 탭으로 혼동 가능
+
+**구현 사항:**
+- [ ] `saved` 상태일 때 취소 버튼 렌더링 조건 추가
+  ```typescript
+  {!saved && (
+    <Pressable onPress={onClose} className="items-center py-2 active:opacity-60">
+      <Text className="text-sm text-gray-400">취소</Text>
+    </Pressable>
+  )}
+  ```
+
+**완료 기준:** 저장 버튼이 "저장됐어요!"로 바뀐 후 취소 버튼이 사라짐
+
+---
+
+### 🟢 Task 087: 퀴즈 결과 점수 퍼센트 + 격려 메시지 `[rn-expo-frontend]`
+
+**대상 파일:** `mobile-app/app/quiz/result/[sessionId].tsx`
+
+**구현 사항:**
+- [ ] 점수 표시에 퍼센트 추가 `(7/10 → 7/10 · 70%)`
+- [ ] `QuizResultSummary` 컴포넌트와 동일한 격려 메시지 + 이모지 추가
+  - 9~10 → "🏆 완벽해요!"
+  - 7~8 → "🎉 잘했어요!"
+  - 5~6 → "💪 조금만 더!"
+  - 0~4 → "📚 더 연습해요"
+- [ ] 오답 항목에 "표현 상세 보기" 버튼 추가 (→ `study/[expressionId]` 이동)
+
+**완료 기준:** 점수 퍼센트 표시, 격려 메시지 노출, 오답 항목 탭으로 상세 이동
+
+---
+
+### 🟢 Task 088: 섀도잉 완료 반복 횟수 실제 카운팅 `[rn-expo-frontend]`
+
+**대상 파일:** `mobile-app/app/shadowing/[id].tsx`
+
+**문제:**
+CompletionOverlay에 `stats.repeats: 1`이 하드코딩됨.
+
+**구현 사항:**
+- [ ] `loopCountRef = useRef(0)` 추가
+- [ ] 루프 모드 활성 시 `seek(start)` 호출마다 `loopCountRef.current++`
+- [ ] 완료 시 `stats.repeats: loopCountRef.current + 1` 전달
+
+**완료 기준:** 완료 오버레이에 실제 반복 횟수 표시
+
+---
+
+### 🟢 Task 089: Root Layout 로딩 중 스플래시 처리 `[rn-expo-frontend]`
+
+**대상 파일:** `mobile-app/app/_layout.tsx`
+
+**문제:**
+`appState === 'loading'`일 때 `return null` → 완전히 빈 흰 화면 또는 검은 화면이 0.5~2초 노출됨.
+
+**구현 사항:**
+- [ ] 로딩 중 간단한 스플래시 컴포넌트 표시
+  ```typescript
+  if (appState === 'loading') {
+    return (
+      <View className="flex-1 bg-white items-center justify-center">
+        <Text className="text-4xl mb-4">🐻</Text>
+        <ActivityIndicator size="small" color="#3B82F6" />
+      </View>
+    );
+  }
+  ```
+
+**완료 기준:** 앱 시작 시 흰 화면 대신 곰 마스코트 + 스피너 표시
+
+---
+
+### 🟢 Task 090: 섀도잉 목록 완료/미완료 정렬 `[rn-expo-frontend]`
+
+**대상 파일:** `mobile-app/app/(tabs)/shadowing.tsx`
+
+**구현 사항:**
+- [ ] 완료 콘텐츠를 목록 하단으로 정렬 (미완료 우선)
+  ```typescript
+  const sortedContents = useMemo(() =>
+    [...contents].sort((a, b) => {
+      const aCompleted = completedIds.includes(a.id) ? 1 : 0;
+      const bCompleted = completedIds.includes(b.id) ? 1 : 0;
+      return aCompleted - bCompleted;
+    }),
+    [contents, completedIds]
+  );
+  ```
+
+**완료 기준:** 미완료 콘텐츠가 목록 상단에, 완료 콘텐츠가 하단에 표시됨
+
+---
+
+## Phase 9 진행 현황
+
+| Task | 설명 | 우선순위 | 대상 파일 | 상태 |
+|------|------|---------|---------|------|
+| Task 071 | TOPIC_EMOJI 매핑 오류 수정 + 공통 상수 파일 생성 | 🔴 즉시 | index.tsx, history.tsx | ⬜ 미시작 |
+| Task 072 | 채팅 헤더 safe area 처리 (pt-1 → insets.top) | 🔴 즉시 | chat/[id].tsx | ⬜ 미시작 |
+| Task 073 | 온보딩 로그인 로딩 상태 + 에러 Toast | 🔴 즉시 | onboarding.tsx | ⬜ 미시작 |
+| Task 074 | Free Talking 중복 생성 방지 (isCreating flag) | 🔴 즉시 | index.tsx | ⬜ 미시작 |
+| Task 075 | 미구현 버튼 disabled 처리 (검색/삭제/Subscription) | 🔴 즉시 | study.tsx, settings.tsx, [expressionId].tsx | ⬜ 미시작 |
+| Task 076 | End 버튼 / Sign Out 확인 다이얼로그 | 🟡 단기 | chat/[id].tsx, settings.tsx | ⬜ 미시작 |
+| Task 077 | 모달 배경 탭 닫기 (홈 리포트, topic-select) | 🟡 단기 | index.tsx, topic-select.tsx | ⬜ 미시작 |
+| Task 078 | 퀴즈 세션 목록 useFocusEffect + notEnough 닫기 버튼 | 🟡 단기 | quiz.tsx | ⬜ 미시작 |
+| Task 079 | 섀도잉 플레이어 재생 중 일시정지 아이콘 표시 | 🟡 단기 | VideoPlayer.tsx | ⬜ 미시작 |
+| Task 080 | pt-14 → useSafeAreaInsets 일괄 교체 (9개 파일) | 🟡 단기 | 탭 화면 전체 | ⬜ 미시작 |
+| Task 081 | 채팅 말풍선 탭 가능 힌트 아이콘 추가 | 🟡 단기 | AIBubble, UserBubble, FeedbackBlock | ⬜ 미시작 |
+| Task 082 | 홈 화면 소개선 (인사말 시간대 / 로딩 / FAB 정리) | 🟡 단기 | index.tsx | ⬜ 미시작 |
+| Task 083 | Toast 색상 에러/성공/정보 분기 | 🟡 단기 | Toast.tsx, useAppStore.ts | ⬜ 미시작 |
+| Task 084 | 퀴즈 플레이어 이탈 경고 + 진행률 바 애니메이션 | 🟡 단기 | quiz/[sessionId].tsx | ⬜ 미시작 |
+| Task 085 | Settings 탭 아이콘 교체 + 스트릭 개선 | 🟡 단기 | _layout.tsx, settings.tsx, index.tsx | ⬜ 미시작 |
+| Task 086 | SavePopup 저장 완료 후 취소 버튼 숨김 | 🟡 단기 | SavePopup.tsx | ⬜ 미시작 |
+| Task 087 | 퀴즈 결과 점수 퍼센트 + 격려 메시지 + 오답 이동 | 🟢 장기 | quiz/result/[sessionId].tsx | ⬜ 미시작 |
+| Task 088 | 섀도잉 완료 반복 횟수 실제 카운팅 | 🟢 장기 | shadowing/[id].tsx | ⬜ 미시작 |
+| Task 089 | Root Layout 로딩 중 스플래시 처리 | 🟢 장기 | _layout.tsx | ⬜ 미시작 |
+| Task 090 | 섀도잉 목록 완료/미완료 정렬 | 🟢 장기 | shadowing.tsx | ⬜ 미시작 |
+
+## Phase 9 Task 의존성
+
+```
+Task 071 (TOPIC_EMOJI) ← 독립, 즉시 가능
+Task 072 (채팅 safe area) ← 독립
+Task 073 (온보딩 로딩) ← 독립
+Task 074 (Free Talking 중복 방지) ← 독립
+Task 075 (미구현 버튼 처리) ← 독립
+
+Task 076 (End/SignOut 확인) ← 독립
+Task 077 (모달 배경 닫기) ← 독립
+Task 078 (퀴즈 목록 갱신) ← 독립
+Task 079 (섀도잉 일시정지 아이콘) ← 독립
+Task 080 (pt-14 일괄 교체) ← 독립, 파일 수 많아 주의
+Task 081 (말풍선 힌트) ← 독립
+Task 082 (홈 소개선) ← Task 071 완료 후 함께 진행 권장
+Task 083 (Toast 색상) ← 독립, store 변경 포함
+Task 084 (퀴즈 이탈 경고) ← 독립
+Task 085 (Settings 아이콘) ← 독립
+Task 086 (SavePopup 취소 버튼) ← 독립
+
+Task 087 (퀴즈 결과 개선) ← 독립
+Task 088 (섀도잉 반복 횟수) ← 독립
+Task 089 (스플래시) ← 독립
+Task 090 (섀도잉 정렬) ← 독립
+```
