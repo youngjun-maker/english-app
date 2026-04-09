@@ -1,4 +1,5 @@
 import { View, Text, FlatList, ListRenderItem, Pressable, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCallback, useState } from 'react';
 import { useRouter, useFocusEffect } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -32,6 +33,7 @@ function EmptyState() {
 }
 
 export default function StudyScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const showToast = useAppStore((s) => s.showToast);
   const [expressions, setExpressions] = useState<Expression[]>([]);
@@ -74,9 +76,9 @@ export default function StudyScreen() {
     try {
       await deleteExpression(deleteTarget.id);
       setExpressions((prev) => prev.filter((e) => e.id !== deleteTarget.id));
-      showToast('표현이 삭제되었습니다.');
+      showToast('표현이 삭제되었습니다.', 'success');
     } catch {
-      showToast('표현 삭제에 실패했어요.');
+      showToast('표현 삭제에 실패했어요.', 'error');
     } finally {
       setDeleteTarget(null);
     }
@@ -97,12 +99,12 @@ export default function StudyScreen() {
   return (
     <View className="flex-1 bg-[#FAF9F7]">
       {/* 헤더 */}
-      <View className="px-5 pt-14 pb-3 flex-row items-center justify-between">
+      <View style={{ paddingTop: insets.top + 8 }} className="px-5 pb-3 flex-row items-center justify-between">
         <View>
           <Text className="text-2xl font-black text-gray-900">Learn</Text>
           <Text className="text-xs text-gray-400 mt-0.5">{expressions.length} expressions saved</Text>
         </View>
-        <Pressable className="w-9 h-9 rounded-full bg-white border border-gray-100 items-center justify-center active:opacity-60">
+        <Pressable disabled className="w-9 h-9 rounded-full bg-white border border-gray-100 items-center justify-center opacity-30">
           <Ionicons name="search-outline" size={18} color="#6B7280" />
         </Pressable>
       </View>

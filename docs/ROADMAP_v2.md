@@ -2336,6 +2336,12 @@ Phase 7 완료 후 표현 저장 팝업 UI가 낡고 폼 느낌이라 개선 요
 실제 topic_id: `cafe_order`, `airport_immigration`, `hotel_checkin`, `small_talk`, `opinion`, `free_talk`, `custom`, `taxi_negotiation`, `job_interview`, `business_meeting`, `neighbor_complaint`, `pharmacy`, `restaurant_complaint`, `bank_account`
 → 결과: **모든 대화 기록이 기본 이모지 '💬'로만 표시됨** (이모지 없이 동일하게 보임)
 
+**왜 수정하는가 (사용자 영향):**
+홈 화면과 대화 기록 전체 화면에서 어떤 상황극을 했는지 이모지로 한눈에 구분하는 게 핵심 UX인데, 모든 기록이 동일한 '💬'로 표시되어 의미가 없어짐. 카페 주문을 했는지, 면접을 봤는지, 호텔 체크인을 했는지 목록에서 전혀 구분이 안 됨. Phase 7에서 상황을 12개로 늘렸는데 정작 기록 화면에는 반영이 안 된 상태.
+
+**수정 후 달라지는 것:**
+홈 화면 "Recent History" 목록과 history 화면에서 각 대화마다 ☕ ✈️ 🏨 💼 등 상황에 맞는 이모지가 표시되어 어떤 연습을 했는지 스캔만으로 파악 가능.
+
 **구현 사항:**
 - [ ] `index.tsx`의 `TOPIC_EMOJI` 맵을 실제 topic_id 전체로 업데이트
   ```typescript
@@ -2976,8 +2982,8 @@ CompletionOverlay에 `stats.repeats: 1`이 하드코딩됨.
 | Task 080 | pt-14 → useSafeAreaInsets 일괄 교체 (9개 파일) | 🟡 단기 | 탭 화면 전체 | ⬜ 미시작 |
 | Task 081 | 채팅 말풍선 탭 가능 힌트 아이콘 추가 | 🟡 단기 | AIBubble, UserBubble, FeedbackBlock | ⬜ 미시작 |
 | Task 082 | 홈 화면 소개선 (인사말 시간대 / 로딩 / FAB 정리) | 🟡 단기 | index.tsx | ⬜ 미시작 |
-| Task 083 | Toast 색상 에러/성공/정보 분기 | 🟡 단기 | Toast.tsx, useAppStore.ts | ⬜ 미시작 |
-| Task 084 | 퀴즈 플레이어 이탈 경고 + 진행률 바 애니메이션 | 🟡 단기 | quiz/[sessionId].tsx | ⬜ 미시작 |
+| Task 083 | Toast 색상 에러/성공/정보 분기 | 🟡 단기 | Toast.tsx, useAppStore.ts | ✅ 완료 |
+| Task 084 | 퀴즈 플레이어 이탈 경고 + 진행률 바 애니메이션 | 🟡 단기 | quiz/[sessionId].tsx | ✅ 완료 |
 | Task 085 | Settings 탭 아이콘 교체 + 스트릭 개선 | 🟡 단기 | _layout.tsx, settings.tsx, index.tsx | ⬜ 미시작 |
 | Task 086 | SavePopup 저장 완료 후 취소 버튼 숨김 | 🟡 단기 | SavePopup.tsx | ⬜ 미시작 |
 | Task 087 | 퀴즈 결과 점수 퍼센트 + 격려 메시지 + 오답 이동 | 🟢 장기 | quiz/result/[sessionId].tsx | ⬜ 미시작 |

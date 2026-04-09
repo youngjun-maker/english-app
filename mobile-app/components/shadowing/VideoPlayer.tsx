@@ -130,9 +130,17 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
           className="absolute inset-0 items-center justify-center"
           style={{ backgroundColor: 'transparent' }}
         >
-          {!isPlaying && Platform.OS !== 'web' && (
-            <View className="w-14 h-14 rounded-full bg-black/40 items-center justify-center">
-              <Ionicons name="play" size={28} color="white" />
+          {Platform.OS !== 'web' && (
+            <View
+              className="w-14 h-14 rounded-full items-center justify-center"
+              style={{ backgroundColor: isPlaying ? 'rgba(0,0,0,0.15)' : 'rgba(0,0,0,0.40)' }}
+            >
+              <Ionicons
+                name={isPlaying ? 'pause' : 'play'}
+                size={28}
+                color="white"
+                style={{ opacity: isPlaying ? 0.6 : 1 }}
+              />
             </View>
           )}
         </Pressable>

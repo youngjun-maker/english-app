@@ -82,6 +82,9 @@ export default function ExpressionDetailScreen() {
     return (
       <View className="flex-1 items-center justify-center bg-[#FAF9F7]">
         <Text className="text-gray-400">표현을 찾을 수 없습니다.</Text>
+        <Pressable onPress={() => router.back()} className="mt-4 px-6 py-3 bg-blue-500 rounded-2xl">
+          <Text className="text-white font-semibold">돌아가기</Text>
+        </Pressable>
       </View>
     );
   }
@@ -102,9 +105,7 @@ export default function ExpressionDetailScreen() {
           </Text>
           <Text className="text-xs text-gray-400">{sourceLabel}에서 저장</Text>
         </View>
-        <Pressable className="w-9 h-9 rounded-full bg-gray-100 items-center justify-center active:opacity-60">
-          <Ionicons name="trash-outline" size={18} color="#9CA3AF" />
-        </Pressable>
+        <View className="w-9 h-9" />
       </View>
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>

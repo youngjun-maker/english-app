@@ -1,5 +1,5 @@
-import { View, Text, Pressable, ActivityIndicator } from 'react-native';
-import { useEffect, useState } from 'react';
+import { View, Text, Pressable, ActivityIndicator, Animated, BackHandler, Alert } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -25,13 +25,48 @@ export default function QuizPlayerScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [finalScore, setFinalScore] = useState(0);
 
+  const progressAnim = useRef(new Animated.Value(0)).current;
+
   useEffect(() => {
     if (!sessionId) return;
     fetchQuizSessionDetail(sessionId)
       .then(({ questions: q }) => setQuestions(q))
-      .catch(() => showToast('퀴즈를 불러오지 못했어요.'))
+      .catch(() => showToast('퀴즈를 불러오지 못했어요.', 'error'))
       .finally(() => setIsLoading(false));
   }, [sessionId]);
+
+  useEffect(() => {
+    if (questions.length === 0) return;
+    Animated.timing(progressAnim, {
+      toValue: (currentIndex + 1) / questions.length,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
+  }, [currentIndex, questions.length]);
+
+  useEffect(() => {
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (phase === 'result') return false;
+      handleBack();
+      return true;
+    });
+    return () => subscription.remove();
+  }, [phase]);
+
+  function handleBack() {
+    if (phase === 'result') {
+      router.back();
+      return;
+    }
+    Alert.alert(
+      '퀴즈 종료',
+      '종료하면 이번 퀴즈 진행 상황이 저장되지 않아요.',
+      [
+        { text: '계속 풀기', style: 'cancel' },
+        { text: '그래도 나가기', style: 'destructive', onPress: () => router.back() },
+      ]
+    );
+  }
 
   async function handleAnswer(isCorrect: boolean) {
     Haptics.impactAsync(
@@ -56,7 +91,7 @@ export default function QuizPlayerScreen() {
         await submitQuizResult(sessionId!, correctCount, newAnswers);
       } catch {
         // 제출 실패해도 결과 화면은 보여줌
-        showToast('결과 저장에 실패했어요.');
+        showToast('결과 저장에 실패했어요.', 'error');
       } finally {
         setIsSubmitting(false);
       }
@@ -109,14 +144,17 @@ export default function QuizPlayerScreen() {
   }
 
   const currentQuestion = questions[currentIndex];
-  const progressPercent = ((currentIndex + 1) / questions.length) * 100;
+  const progressWidth = progressAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0%', '100%'],
+  });
 
   return (
     <View className="flex-1 bg-white" style={{ paddingTop: insets.top }}>
       {/* 헤더 */}
       <View className="px-4 py-2 flex-row items-center">
         <Pressable
-          onPress={() => router.back()}
+          onPress={handleBack}
           className="w-9 h-9 items-center justify-center active:opacity-60"
         >
           <Ionicons name="chevron-back" size={24} color="#111827" />
@@ -129,9 +167,9 @@ export default function QuizPlayerScreen() {
 
       {/* 진행률 바 */}
       <View className="mx-4 bg-gray-100 rounded-full h-1.5 mb-2">
-        <View
+        <Animated.View
           className="bg-indigo-500 rounded-full h-1.5"
-          style={{ width: `${progressPercent}%` }}
+          style={{ width: progressWidth }}
         />
       </View>
 

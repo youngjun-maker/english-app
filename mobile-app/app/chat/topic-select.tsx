@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import { ActivityIndicator, Animated, FlatList, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { createConversation } from '@/api/conversations';
 import { useAppStore } from '@/store/useAppStore';
@@ -76,6 +77,7 @@ function PulseStartButton({ onPress, loading }: { onPress: () => void; loading: 
 }
 
 export default function TopicSelectScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const showToast = useAppStore((s) => s.showToast);
 
@@ -159,7 +161,7 @@ export default function TopicSelectScreen() {
   return (
     <View className="flex-1 bg-gray-50">
       {/* Header */}
-      <View className="bg-white px-5 pt-14 pb-4 border-b border-gray-100">
+      <View style={{ paddingTop: insets.top + 8 }} className="bg-white px-5 pb-4 border-b border-gray-100">
         <Pressable className="mb-3 active:opacity-60" onPress={() => router.back()}>
           <Text className="text-sm text-blue-500 font-medium">← 뒤로</Text>
         </Pressable>
@@ -234,7 +236,8 @@ export default function TopicSelectScreen() {
         transparent
         onRequestClose={() => { setCustomModalVisible(false); setCustomText(''); }}
       >
-        <View className="flex-1 justify-end bg-black/40">
+        <Pressable className="flex-1 justify-end bg-black/40" onPress={() => { setCustomModalVisible(false); setCustomText(''); }}>
+          <Pressable onPress={() => {}} className="w-full">
           <View className="bg-white rounded-t-3xl px-5 pt-5 pb-10">
             <Text className="text-lg font-black text-gray-900 mb-1">✏️ 내 상황 직접 설정</Text>
             <Text className="text-sm text-gray-400 mb-4">어떤 상황인지 자유롭게 입력해보세요</Text>
@@ -270,7 +273,8 @@ export default function TopicSelectScreen() {
               <Text className="text-sm text-gray-400">취소</Text>
             </Pressable>
           </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
 
       {/* 미션 분기 모달 */}
@@ -280,7 +284,8 @@ export default function TopicSelectScreen() {
         transparent
         onRequestClose={() => setMissionModalVisible(false)}
       >
-        <View className="flex-1 justify-end bg-black/40">
+        <Pressable className="flex-1 justify-end bg-black/40" onPress={() => setMissionModalVisible(false)}>
+          <Pressable onPress={() => {}} className="w-full">
           <View className="bg-white rounded-t-3xl px-5 pt-5 pb-10">
             <Text className="text-lg font-black text-gray-900 mb-1">
               {selectedSituation?.emoji} {selectedSituation?.label}
@@ -347,7 +352,8 @@ export default function TopicSelectScreen() {
               <Text className="text-sm text-gray-400">취소</Text>
             </Pressable>
           </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
 
       {/* 미션 브리핑 카드 모달 */}
@@ -360,8 +366,9 @@ export default function TopicSelectScreen() {
           setMissionModalVisible(true);
         }}
       >
-        <View className="flex-1 justify-end bg-black/50">
+        <Pressable className="flex-1 justify-end bg-black/50" onPress={() => { setBriefingModalVisible(false); setMissionModalVisible(true); }}>
           {/* 그라데이션 효과: 상단 amber → 하단 white */}
+          <Pressable onPress={() => {}} className="w-full">
           <View className="rounded-t-3xl overflow-hidden">
             {/* 상단 헤더 (amber 배경) */}
             <View className="bg-amber-500 px-5 pt-6 pb-5">
@@ -422,7 +429,8 @@ export default function TopicSelectScreen() {
               </Pressable>
             </View>
           </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
     </View>
   );

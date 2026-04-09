@@ -1,6 +1,8 @@
 import { View, Text, Pressable, FlatList, ActivityIndicator } from 'react-native';
-import { useEffect, useState } from 'react';
-import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useCallback, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAppStore } from '@/store/useAppStore';
 import { generateQuiz, fetchQuizSessions } from '@/api/quiz';
 import QuizSessionCard from '@/components/quiz/QuizSessionCard';
@@ -9,6 +11,7 @@ import type { QuizSession } from '@/types/quiz';
 type APIError = { error: { code: string; message: string } };
 
 export default function QuizScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const showToast = useAppStore((s) => s.showToast);
 
@@ -17,12 +20,15 @@ export default function QuizScreen() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [notEnough, setNotEnough] = useState(false);
 
-  useEffect(() => {
-    fetchQuizSessions()
-      .then(setSessions)
-      .catch(() => showToast('퀴즈 내역을 불러오지 못했어요.'))
-      .finally(() => setIsLoading(false));
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      setIsLoading(true);
+      fetchQuizSessions()
+        .then(setSessions)
+        .catch(() => showToast('퀴즈 내역을 불러오지 못했어요.'))
+        .finally(() => setIsLoading(false));
+    }, [])
+  );
 
   async function handleGenerate() {
     setIsGenerating(true);
@@ -45,7 +51,7 @@ export default function QuizScreen() {
   return (
     <View className="flex-1 bg-[#FAF9F7]">
       {/* 헤더 */}
-      <View className="bg-white px-5 pt-14 pb-4 border-b border-gray-100">
+      <View style={{ paddingTop: insets.top + 8 }} className="bg-white px-5 pb-4 border-b border-gray-100">
         <Text className="text-2xl font-bold text-gray-900">퀴즈</Text>
         <Text className="text-sm text-gray-400 mt-1">저장한 표현으로 실력을 확인하세요</Text>
       </View>
@@ -85,11 +91,14 @@ export default function QuizScreen() {
 
             {/* 표현 부족 안내 */}
             {notEnough && (
-              <View className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-4">
-                <Text className="text-amber-700 text-sm font-medium text-center">
+              <View className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-4 flex-row items-start">
+                <Text className="flex-1 text-amber-700 text-sm font-medium leading-5">
                   퀴즈를 시작하려면 표현이 10개 이상 필요해요.{'\n'}
                   대화하면서 표현을 더 저장해보세요! 📚
                 </Text>
+                <Pressable onPress={() => setNotEnough(false)} className="ml-2 p-1 active:opacity-60">
+                  <Ionicons name="close" size={16} color="#92400e" />
+                </Pressable>
               </View>
             )}
 

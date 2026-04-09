@@ -1,4 +1,5 @@
 import { View, Text, FlatList, ActivityIndicator, ListRenderItem } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useCallback } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { fetchContents, fetchCompletedSessionIds } from '@/api/shadowing';
@@ -21,6 +22,7 @@ function EmptyState() {
 }
 
 export default function ShadowingScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const showToast = useAppStore((s) => s.showToast);
   const [contents, setContents] = useState<ShadowingContent[]>([]);
@@ -52,7 +54,7 @@ export default function ShadowingScreen() {
   return (
     <View className="flex-1 bg-white">
       {/* 헤더 */}
-      <View className="px-5 pt-14 pb-4">
+      <View style={{ paddingTop: insets.top + 8 }} className="px-5 pb-4">
         <Text className="text-2xl font-black text-gray-900">Shadowing</Text>
         <Text className="text-xs text-gray-400 mt-0.5">
           원어민처럼 따라 말하기 훈련

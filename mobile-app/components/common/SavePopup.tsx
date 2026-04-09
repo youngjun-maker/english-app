@@ -154,10 +154,12 @@ export default function SavePopup({
                 </View>
               </Pressable>
 
-              {/* 취소 텍스트 링크 */}
-              <Pressable onPress={onClose} className="items-center py-1 active:opacity-60">
-                <Text className="text-sm text-gray-400">취소</Text>
-              </Pressable>
+              {/* 취소 텍스트 링크 — 저장 완료 후 숨김 */}
+              {!saved && (
+                <Pressable onPress={onClose} className="items-center py-1 active:opacity-60">
+                  <Text className="text-sm text-gray-400">취소</Text>
+                </Pressable>
+              )}
 
             </View>
           </Pressable>

@@ -1,5 +1,6 @@
 import { View, Text, Pressable } from 'react-native';
 import { useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import type { FeedbackItem } from '@/types';
 import TTSButton from '@/components/common/TTSButton';
 import SavePopup from '@/components/common/SavePopup';
@@ -37,7 +38,7 @@ export default function FeedbackBlock({ feedback, onLongPress, onSave, sourceLab
   return (
     <Pressable
       onPress={handleBubblePress}
-      className="bg-amber-50 border border-amber-100 rounded-xl px-3.5 py-2.5 mb-2"
+      className="bg-amber-50 border border-amber-100 rounded-xl px-3.5 py-2.5 mb-2 relative"
     >
       {/* 원문 (취소선) */}
       {feedback.original && (
@@ -62,14 +63,19 @@ export default function FeedbackBlock({ feedback, onLongPress, onSave, sourceLab
       )}
 
       {onSave && (
-        <SavePopup
-          visible={saveVisible}
-          initialText={feedback.corrected ?? ''}
-          sourceLabel={sourceLabel}
-          sourceBlock="교정 표현"
-          onSave={(t, memo) => onSave(t, memo)}
-          onClose={() => setSaveVisible(false)}
-        />
+        <>
+          <View className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
+            <Ionicons name="bookmark-outline" size={11} color="#9CA3AF" />
+          </View>
+          <SavePopup
+            visible={saveVisible}
+            initialText={feedback.corrected ?? ''}
+            sourceLabel={sourceLabel}
+            sourceBlock="교정 표현"
+            onSave={(t, memo) => onSave(t, memo)}
+            onClose={() => setSaveVisible(false)}
+          />
+        </>
       )}
     </Pressable>
   );

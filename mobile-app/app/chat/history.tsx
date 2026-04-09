@@ -1,18 +1,12 @@
 import { FlatList, Pressable, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAppStore } from '@/store/useAppStore';
 import { fetchConversations } from '@/api/conversations';
 import type { Conversation } from '@/types';
-
-const TOPIC_EMOJI: Record<string, string> = {
-  cafe: '☕',
-  airport: '✈️',
-  shopping: '🛍️',
-  restaurant: '🍽️',
-  hotel: '🏨',
-};
+import { TOPIC_EMOJI } from '@/constants/topicEmoji';
 
 function formatRelativeTime(isoString: string): string {
   const now = new Date();
@@ -28,6 +22,7 @@ function formatRelativeTime(isoString: string): string {
 }
 
 export default function HistoryScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const showToast = useAppStore((s) => s.showToast);
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -41,7 +36,7 @@ export default function HistoryScreen() {
   return (
     <View className="flex-1 bg-[#FAF9F7]">
       {/* Header */}
-      <View className="bg-white px-5 pt-14 pb-3 border-b border-gray-100 flex-row items-center gap-3">
+      <View style={{ paddingTop: insets.top + 8 }} className="bg-white px-5 pb-3 border-b border-gray-100 flex-row items-center gap-3">
         <Pressable
           onPress={() => router.back()}
           className="w-9 h-9 rounded-full bg-gray-100 items-center justify-center active:opacity-60"

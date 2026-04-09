@@ -25,7 +25,8 @@ interface AppState {
 
   // 토스트 메시지
   toastMessage: string | null;
-  showToast: (message: string) => void;
+  toastType: 'success' | 'error' | 'info';
+  showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
   clearToast: () => void;
 
   // 네트워크 상태
@@ -88,8 +89,9 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   // 토스트 메시지
   toastMessage: null,
-  showToast: (message) => set({ toastMessage: message }),
-  clearToast: () => set({ toastMessage: null }),
+  toastType: 'info',
+  showToast: (message, type = 'info') => set({ toastMessage: message, toastType: type }),
+  clearToast: () => set({ toastMessage: null, toastType: 'info' }),
 
   // 네트워크 상태
   isOffline: false,

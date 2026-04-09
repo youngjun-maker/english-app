@@ -1,0 +1,16 @@
+export const TOPIC_EMOJI: Record<string, string> = {
+  free_talk:            '💬',
+  cafe_order:           '☕',
+  airport_immigration:  '✈️',
+  hotel_checkin:        '🏨',
+  small_talk:           '💬',
+  opinion:              '💭',
+  taxi_negotiation:     '🚕',
+  job_interview:        '💼',
+  business_meeting:     '🤝',
+  neighbor_complaint:   '🏠',
+  pharmacy:             '💊',
+  restaurant_complaint: '🍽️',
+  bank_account:         '🏦',
+  custom:               '✏️',
+};

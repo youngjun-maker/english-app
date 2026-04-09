@@ -1,5 +1,6 @@
 import { View, Text, Pressable } from 'react-native';
 import { useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import type { FeedbackItem } from '@/types';
 import FeedbackBlock from '@/components/chat/FeedbackBlock';
 import TTSButton from '@/components/common/TTSButton';
@@ -62,8 +63,14 @@ export default function AIBubble({
                 ? () => setSaveVisible(true)
                 : undefined
           }
+          className="relative"
         >
           <Text className="text-gray-700 text-sm leading-relaxed">{nextResponse}</Text>
+          {!readonly && onSave && (
+            <View className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
+              <Ionicons name="bookmark-outline" size={11} color="#9CA3AF" />
+            </View>
+          )}
         </Pressable>
 
         {/* TTS 버튼 */}

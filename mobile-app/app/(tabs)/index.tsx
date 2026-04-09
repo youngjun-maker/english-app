@@ -1,4 +1,5 @@
 import { FlatList, Modal, Pressable, ScrollView, Text, View, ActivityIndicator } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useAppStore } from '@/store/useAppStore';
@@ -7,15 +8,9 @@ import BearMascot from '@/components/common/BearMascot';
 import { fetchWeeklyReport } from '@/api/reports';
 import type { Conversation } from '@/types';
 import type { WeeklyReport } from '@/api/reports';
+import { TOPIC_EMOJI } from '@/constants/topicEmoji';
 
 // ─── 상수 ────────────────────────────────────────────────────────────────────
-const TOPIC_EMOJI: Record<string, string> = {
-  cafe: '☕',
-  airport: '✈️',
-  shopping: '🛍️',
-  restaurant: '🍽️',
-  hotel: '🏨',
-};
 
 const WEEKDAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
@@ -26,6 +21,13 @@ const LOADING_MSGS = [
 ];
 
 // ─── 유틸 ────────────────────────────────────────────────────────────────────
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
+  return 'Good evening';
+}
+
 function formatRelativeTime(isoString: string): string {
   const now = new Date();
   const date = new Date(isoString);
@@ -84,12 +86,15 @@ function EmptyState() {
 
 // ─── 메인 화면 ───────────────────────────────────────────────────────────────
 export default function HomeScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const todayTurnCount = useAppStore((s) => s.todayTurnCount);
   const isTurnLimitReached = useAppStore((s) => s.isTurnLimitReached);
   const user = useAppStore((s) => s.user);
   const showToast = useAppStore((s) => s.showToast);
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [isConversationsLoading, setIsConversationsLoading] = useState(true);
+  const [isCreating, setIsCreating] = useState(false);
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [reportLoading, setReportLoading] = useState(false);
   const [report, setReport] = useState<WeeklyReport | null>(null);
@@ -99,7 +104,8 @@ export default function HomeScreen() {
   useEffect(() => {
     fetchConversations()
       .then(setConversations)
-      .catch(() => showToast('대화 목록을 불러오지 못했어요.'));
+      .catch(() => showToast('대화 목록을 불러오지 못했어요.'))
+      .finally(() => setIsConversationsLoading(false));
   }, []);
 
 
@@ -135,12 +141,16 @@ export default function HomeScreen() {
     router.push(`/chat/${id}`);
   }
 
-  async function handleFABPress() {
+  async function handleFreeTalking() {
+    if (isCreating) return;
+    setIsCreating(true);
     try {
       const conversation = await createConversation('free_talk', 'Free Talking');
       router.push({ pathname: '/chat/[id]', params: { id: conversation.id, topicLabel: 'Free Talking', topicId: 'free_talk' } });
     } catch {
-      showToast('대화를 시작하지 못했어요. 다시 시도해주세요.');
+      showToast('대화를 시작할 수 없어요.');
+    } finally {
+      setIsCreating(false);
     }
   }
 
@@ -148,12 +158,12 @@ export default function HomeScreen() {
   const ListHeader = (
     <>
       {/* ── 탑 바 ── */}
-      <View className="px-5 pt-14 pb-3 flex-row items-center gap-x-3">
+      <View style={{ paddingTop: insets.top + 8 }} className="px-5 pb-3 flex-row items-center gap-x-3">
         <View className="w-9 h-9 rounded-full bg-red-50 items-center justify-center">
           <BearMascot size="small" />
         </View>
         <Text className="text-base font-bold text-gray-900 flex-1">
-          Good morning, {displayName}!
+          {getGreeting()}, {displayName}!
         </Text>
       </View>
 
@@ -163,8 +173,12 @@ export default function HomeScreen() {
           {/* 스트릭 행 + BearMascot */}
           <View className="flex-row items-center mb-1">
             <Text className="text-sm">🔥</Text>
-            <Text className="text-sm font-bold text-gray-800 ml-2">3-day streak!</Text>
-            <Text className="text-xs text-gray-400 ml-1 flex-1">Keep it going today</Text>
+            <Text className="text-sm font-bold text-gray-800 ml-2">
+              {todayTurnCount > 0 ? '오늘 학습 완료!' : '오늘 첫 대화를 시작해보세요'}
+            </Text>
+            <Text className="text-xs text-gray-400 ml-1 flex-1">
+              {todayTurnCount > 0 ? `${todayTurnCount}턴 완료` : 'Keep it going today'}
+            </Text>
             <BearMascot size="small" />
           </View>
 
@@ -224,10 +238,15 @@ export default function HomeScreen() {
         <View className="flex-row gap-3 mb-5">
           {/* Free Talking */}
           <Pressable
-            className="flex-1 bg-white rounded-2xl p-5 border border-gray-100 items-center active:opacity-70"
-            onPress={handleFABPress}
+            className={`flex-1 bg-white rounded-2xl p-5 border border-gray-100 items-center active:opacity-70 ${isCreating ? 'opacity-50' : ''}`}
+            onPress={handleFreeTalking}
+            disabled={isCreating}
           >
-            <Text className="text-3xl mb-2.5">💬</Text>
+            {isCreating ? (
+              <ActivityIndicator size="small" color="#6366F1" style={{ marginBottom: 10, height: 36 }} />
+            ) : (
+              <Text className="text-3xl mb-2.5">💬</Text>
+            )}
             <Text className="text-sm font-bold text-gray-800 text-center">Free Talking</Text>
             <Text className="text-xs text-gray-400 text-center mt-0.5">Open chat</Text>
           </Pressable>
@@ -275,7 +294,14 @@ export default function HomeScreen() {
 
   return (
     <View className="flex-1 bg-[#FAF9F7]">
-      {conversations.length === 0 ? (
+      {isConversationsLoading ? (
+        <>
+          {ListHeader}
+          <View className="flex-1 items-center justify-center">
+            <ActivityIndicator size="small" color="#9CA3AF" />
+          </View>
+        </>
+      ) : conversations.length === 0 ? (
         <>
           {ListHeader}
           <EmptyState />
@@ -300,7 +326,8 @@ export default function HomeScreen() {
         transparent
         onRequestClose={() => setReportModalVisible(false)}
       >
-        <View className="flex-1 justify-end bg-black/40">
+        <Pressable className="flex-1 justify-end bg-black/40" onPress={() => setReportModalVisible(false)}>
+          <Pressable onPress={() => {}} className="w-full">
           <View className="bg-white rounded-t-3xl px-5 pt-5 pb-10 max-h-[80%]">
             <Text className="text-lg font-black text-gray-900 mb-4 text-center">
               📊 이번 주 학습 리포트
@@ -366,19 +393,20 @@ export default function HomeScreen() {
               <Text className="text-sm font-semibold text-gray-600">닫기</Text>
             </Pressable>
           </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
 
-      {/* FAB — BearMascot + 마이크 배지 */}
+      {/* FAB — 새 대화 시작 (topic-select로 이동) */}
       <Pressable
         className="absolute bottom-8 right-6 w-14 h-14 bg-red-500 rounded-full items-center justify-center active:opacity-80"
         style={{ elevation: 6 }}
-        onPress={handleFABPress}
+        onPress={() => router.push('/chat/topic-select')}
       >
         <BearMascot size="small" />
-        {/* 마이크 배지 */}
+        {/* 더하기 배지 */}
         <View className="absolute -bottom-1 -right-1 w-6 h-6 bg-gray-900 rounded-full items-center justify-center border-2 border-white">
-          <Text className="text-white text-[8px]">🎤</Text>
+          <Text className="text-white text-[10px] font-bold">+</Text>
         </View>
       </Pressable>
     </View>

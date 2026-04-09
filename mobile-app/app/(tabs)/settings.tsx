@@ -1,4 +1,5 @@
-import { View, Text, Pressable, ScrollView } from 'react-native';
+import { Alert, View, Text, Pressable, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { useAppStore } from '@/store/useAppStore';
@@ -6,23 +7,29 @@ import { supabase } from '@/utils/supabase';
 import BearMascot from '@/components/common/BearMascot';
 
 export default function SettingsScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const user = useAppStore((s) => s.user);
   const todayTurnCount = useAppStore((s) => s.todayTurnCount);
   const displayName = user?.display_name ?? 'User';
   const email = user?.email ?? '';
 
-  // streak은 별도 API 없으므로 턴 카운트로 대체 표시
-  const streak = 3;
 
-  async function handleSignOut() {
-    await supabase.auth.signOut();
+  function handleSignOut() {
+    Alert.alert(
+      '로그아웃',
+      '정말 로그아웃 하시겠어요?',
+      [
+        { text: '취소', style: 'cancel' },
+        { text: '로그아웃', style: 'destructive', onPress: () => supabase.auth.signOut() },
+      ]
+    );
   }
 
   return (
     <View className="flex-1 bg-[#FAF9F7]">
       {/* 헤더 */}
-      <View className="px-5 pt-14 pb-3">
+      <View style={{ paddingTop: insets.top + 8 }} className="px-5 pb-3">
         <Text className="text-2xl font-black text-gray-900">Settings</Text>
       </View>
 
@@ -43,31 +50,39 @@ export default function SettingsScreen() {
           {/* 스트릭 배지 */}
           <View className="bg-orange-50 rounded-full px-3 py-1.5 flex-row items-center gap-1">
             <Text className="text-sm">🔥</Text>
-            <Text className="text-xs font-semibold text-orange-500">{streak}</Text>
+            <Text className="text-xs font-semibold text-orange-500">
+              {todayTurnCount > 0 ? '오늘 완료!' : '오늘 0턴'}
+            </Text>
           </View>
         </View>
 
         {/* 메뉴 섹션 */}
         <View className="bg-white rounded-2xl mx-4 mb-3 overflow-hidden">
           {/* Subscription */}
-          <Pressable className="flex-row items-center px-4 py-4 active:opacity-60">
+          <View className="flex-row items-center px-4 py-4">
             <View className="w-8 h-8 rounded-full bg-indigo-50 items-center justify-center mr-3">
               <Text className="text-base">💳</Text>
             </View>
             <Text className="flex-1 text-sm font-medium text-gray-800">Subscription</Text>
-            <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
-          </Pressable>
+            <View className="px-2 py-0.5 bg-gray-100 rounded-full mr-2">
+              <Text className="text-xs text-gray-400">준비 중</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color="#D1D5DB" />
+          </View>
 
           <View className="mx-4 border-b border-gray-50" />
 
           {/* Preferences */}
-          <Pressable className="flex-row items-center px-4 py-4 active:opacity-60">
+          <View className="flex-row items-center px-4 py-4">
             <View className="w-8 h-8 rounded-full bg-gray-100 items-center justify-center mr-3">
               <Text className="text-base">⚙️</Text>
             </View>
             <Text className="flex-1 text-sm font-medium text-gray-800">Preferences</Text>
-            <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
-          </Pressable>
+            <View className="px-2 py-0.5 bg-gray-100 rounded-full mr-2">
+              <Text className="text-xs text-gray-400">준비 중</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color="#D1D5DB" />
+          </View>
         </View>
 
         {/* 앱 사용 가이드 */}

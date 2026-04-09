@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  Alert,
   Animated,
   Dimensions,
   FlatList,
@@ -13,6 +14,7 @@ import {
   View,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 import UserBubble from '@/components/chat/UserBubble';
@@ -146,6 +148,7 @@ export default function ChatScreen() {
   const difficultyLevel = ([1, 2, 3].includes(Number(levelParam)) ? Number(levelParam) : 2) as 1 | 2 | 3;
   const router = useRouter();
 
+  const insets = useSafeAreaInsets();
   const showToast = useAppStore((s) => s.showToast);
   const isOffline = useAppStore((s) => s.isOffline);
 
@@ -226,9 +229,9 @@ export default function ChatScreen() {
         user_memo: params.memo,
       });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      showToast('표현이 저장되었습니다!');
+      showToast('표현이 저장되었습니다!', 'success');
     } catch {
-      showToast('표현 저장에 실패했어요.');
+      showToast('표현 저장에 실패했어요.', 'error');
     }
   }, [conversationId, showToast]);
 
@@ -334,7 +337,18 @@ export default function ChatScreen() {
   }
 
   function handleEndConversation() {
-    router.replace('/(tabs)');
+    if (turns.length === 0) {
+      router.replace('/(tabs)');
+      return;
+    }
+    Alert.alert(
+      '대화 종료',
+      '대화를 종료하고 홈으로 돌아갈까요?',
+      [
+        { text: '계속 대화하기', style: 'cancel' },
+        { text: '종료', style: 'destructive', onPress: () => router.replace('/(tabs)') },
+      ]
+    );
   }
 
   // -------------------------------------------------------------------------
@@ -392,7 +406,7 @@ export default function ChatScreen() {
       {/* ------------------------------------------------------------------ */}
       {/* Header                                                              */}
       {/* ------------------------------------------------------------------ */}
-      <View className="bg-white px-5 pt-1 pb-3 border-b border-gray-100 flex-row items-center gap-3">
+      <View style={{ paddingTop: insets.top + 8 }} className="bg-white px-5 pb-3 border-b border-gray-100 flex-row items-center gap-3">
         {/* Bear avatar + 토픽 이모지 배지 */}
         <View className="relative">
           <View className="w-10 h-10 rounded-full bg-red-50 items-center justify-center">

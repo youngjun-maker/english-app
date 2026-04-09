@@ -1,4 +1,5 @@
 import { ScrollView, Text, View, Pressable, LayoutAnimation, Platform, UIManager } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -161,12 +162,13 @@ function AccordionItem({ q, a }: FAQItem) {
 }
 
 export default function GuideScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
 
   return (
     <View className="flex-1 bg-[#FAF9F7]">
       {/* 헤더 */}
-      <View className="flex-row items-center px-4 pt-14 pb-3 bg-[#FAF9F7]">
+      <View style={{ paddingTop: insets.top + 8 }} className="flex-row items-center px-4 pb-3 bg-[#FAF9F7]">
         <Pressable
           className="w-9 h-9 items-center justify-center rounded-full active:opacity-60 mr-2"
           onPress={() => router.back()}

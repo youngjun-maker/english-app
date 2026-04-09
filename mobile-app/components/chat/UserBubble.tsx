@@ -1,5 +1,6 @@
 import { View, Text, Pressable } from 'react-native';
 import { useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import TTSButton from '@/components/common/TTSButton';
 import SavePopup from '@/components/common/SavePopup';
 import { useTTSButton } from '@/hooks/useTTSButton';
@@ -27,9 +28,14 @@ export default function UserBubble({ text, onLongPress, onSave, sourceLabel }: U
     <View className="items-end mb-4">
       <Pressable
         onPress={handleBubblePress}
-        className="bg-gray-900 rounded-2xl rounded-br-sm px-4 py-3 max-w-[80%]"
+        className="bg-gray-900 rounded-2xl rounded-br-sm px-4 py-3 max-w-[80%] relative"
       >
         <Text className="text-white text-sm leading-relaxed">{text}</Text>
+        {onSave && (
+          <View className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
+            <Ionicons name="bookmark-outline" size={11} color="#9CA3AF" />
+          </View>
+        )}
       </Pressable>
       <TTSButton
         text={text}

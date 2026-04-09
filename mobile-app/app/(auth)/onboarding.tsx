@@ -3,6 +3,7 @@ import { makeRedirectUri } from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import { useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   NativeScrollEvent,
   NativeSyntheticEvent,
   Platform,
@@ -13,6 +14,7 @@ import {
   View,
 } from 'react-native';
 
+import { useAppStore } from '@/store/useAppStore';
 import { supabase } from '@/utils/supabase';
 
 // OAuth redirect 처리 완료 — 컴포넌트 외부 최상단에서 반드시 호출
@@ -48,65 +50,71 @@ const SLIDES: Slide[] = [
   },
 ];
 
-async function signInWithGoogle(): Promise<void> {
-  const redirectUri = makeRedirectUri({ scheme: 'englishapp' });
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: { redirectTo: redirectUri, skipBrowserRedirect: true },
-  });
-  if (error) {
-    console.error('Google OAuth error:', error.message);
-    return;
-  }
-  if (data.url) {
-    const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUri);
-    if (result.type === 'success' && result.url) {
-      // implicit flow: access_token, refresh_token이 URL fragment(#)에 포함됨
-      const fragment = result.url.split('#')[1] ?? '';
-      const params = new URLSearchParams(fragment);
-      const access_token = params.get('access_token');
-      const refresh_token = params.get('refresh_token');
-      if (access_token && refresh_token) {
-        const { error: sessionError } = await supabase.auth.setSession({ access_token, refresh_token });
-        if (sessionError) {
-          console.error('Set session error:', sessionError.message);
-        }
-      }
-    }
-  }
-}
-
-async function signInWithApple(): Promise<void> {
-  try {
-    const credential = await AppleAuthentication.signInAsync({
-      requestedScopes: [
-        AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-        AppleAuthentication.AppleAuthenticationScope.EMAIL,
-      ],
-    });
-    const { error } = await supabase.auth.signInWithIdToken({
-      provider: 'apple',
-      token: credential.identityToken!,
-    });
-    if (error) {
-      console.error('Apple Sign In error:', error.message);
-    }
-  } catch (e: unknown) {
-    // 사용자가 직접 취소한 경우는 에러 로그 불필요
-    if ((e as { code?: string }).code !== 'ERR_REQUEST_CANCELED') {
-      console.error('Apple Sign In error:', e);
-    }
-  }
-}
-
 // 로그인 성공 후 router.replace는 불필요:
 // _layout.tsx의 onAuthStateChange가 세션 감지 → appState → Redirect 처리
 
 export default function OnboardingScreen() {
   const scrollRef = useRef<ScrollView>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
   const { width: windowWidth } = useWindowDimensions();
+  const showToast = useAppStore((s) => s.showToast);
   const SLIDE_WIDTH = Platform.OS === 'web' ? 390 : windowWidth;
+
+  async function handleGoogleLogin() {
+    if (isLoading) return;
+    setIsLoading(true);
+    try {
+      const redirectUri = makeRedirectUri({ scheme: 'englishapp' });
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: redirectUri, skipBrowserRedirect: true },
+      });
+      if (error) throw error;
+      if (data.url) {
+        const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUri);
+        if (result.type === 'success' && result.url) {
+          const fragment = result.url.split('#')[1] ?? '';
+          const params = new URLSearchParams(fragment);
+          const access_token = params.get('access_token');
+          const refresh_token = params.get('refresh_token');
+          if (access_token && refresh_token) {
+            const { error: sessionError } = await supabase.auth.setSession({ access_token, refresh_token });
+            if (sessionError) throw sessionError;
+          }
+        }
+      }
+    } catch {
+      showToast('로그인에 실패했어요. 다시 시도해주세요.');
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function handleAppleLogin() {
+    if (isLoading) return;
+    setIsLoading(true);
+    try {
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+      const { error } = await supabase.auth.signInWithIdToken({
+        provider: 'apple',
+        token: credential.identityToken!,
+      });
+      if (error) throw error;
+    } catch (e: unknown) {
+      // 사용자가 직접 취소한 경우는 Toast 불필요
+      if ((e as { code?: string }).code !== 'ERR_REQUEST_CANCELED') {
+        showToast('로그인에 실패했어요. 다시 시도해주세요.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   function handleScroll(event: NativeSyntheticEvent<NativeScrollEvent>) {
     const offsetX = event.nativeEvent.contentOffset.x;
@@ -166,18 +174,28 @@ export default function OnboardingScreen() {
         {isLastSlide ? (
           <>
             <Pressable
-              className="w-full bg-blue-500 rounded-2xl py-4 items-center active:opacity-80"
-              onPress={signInWithGoogle}
+              className={`w-full bg-blue-500 rounded-2xl py-4 items-center active:opacity-80 ${isLoading ? 'opacity-60' : ''}`}
+              onPress={handleGoogleLogin}
+              disabled={isLoading}
             >
-              <Text className="text-white text-base font-semibold">Google로 시작하기</Text>
+              {isLoading ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <Text className="text-white text-base font-semibold">Google로 시작하기</Text>
+              )}
             </Pressable>
 
             {Platform.OS === 'ios' && (
               <Pressable
-                className="w-full bg-gray-900 rounded-2xl py-4 items-center active:opacity-80"
-                onPress={signInWithApple}
+                className={`w-full bg-gray-900 rounded-2xl py-4 items-center active:opacity-80 ${isLoading ? 'opacity-60' : ''}`}
+                onPress={handleAppleLogin}
+                disabled={isLoading}
               >
-                <Text className="text-white text-base font-semibold">Apple로 시작하기</Text>
+                {isLoading ? (
+                  <ActivityIndicator color="white" />
+                ) : (
+                  <Text className="text-white text-base font-semibold">Apple로 시작하기</Text>
+                )}
               </Pressable>
             )}
           </>
