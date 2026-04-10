@@ -3,7 +3,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { Redirect, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { Platform, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Platform, Text, useWindowDimensions, View } from 'react-native';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -58,7 +58,12 @@ export default function RootLayout() {
   }, []);
 
   if (appState === 'loading') {
-    return null;
+    return (
+      <View className="flex-1 bg-white items-center justify-center">
+        <Text className="text-4xl mb-4">🐻</Text>
+        <ActivityIndicator size="small" color="#3B82F6" />
+      </View>
+    );
   }
 
   const content = (

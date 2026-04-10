@@ -1,6 +1,6 @@
 import { View, Text, FlatList, ActivityIndicator, ListRenderItem } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { fetchContents, fetchCompletedSessionIds } from '@/api/shadowing';
 import ContentCard from '@/components/shadowing/ContentCard';
@@ -27,6 +27,14 @@ export default function ShadowingScreen() {
   const showToast = useAppStore((s) => s.showToast);
   const [contents, setContents] = useState<ShadowingContent[]>([]);
   const [completedIds, setCompletedIds] = useState<string[]>([]);
+  const sortedContents = useMemo(() =>
+    [...contents].sort((a, b) => {
+      const aCompleted = completedIds.includes(a.id) ? 1 : 0;
+      const bCompleted = completedIds.includes(b.id) ? 1 : 0;
+      return aCompleted - bCompleted;
+    }),
+    [contents, completedIds],
+  );
   const [isLoading, setIsLoading] = useState(true);
 
   useFocusEffect(
@@ -68,14 +76,14 @@ export default function ShadowingScreen() {
         </View>
       ) : (
         <FlatList
-          data={contents}
+          data={sortedContents}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
           className="flex-1 px-5"
           ListEmptyComponent={<EmptyState />}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={
-            contents.length === 0 ? { flex: 1 } : { paddingBottom: 24 }
+            sortedContents.length === 0 ? { flex: 1 } : { paddingBottom: 24 }
           }
         />
       )}

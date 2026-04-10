@@ -7,6 +7,15 @@ import { fetchQuizSessionDetail } from '@/api/quiz';
 import { useAppStore } from '@/store/useAppStore';
 import type { QuizSession, QuizQuestion } from '@/types/quiz';
 
+function getEncouragement(correct: number, total: number): string {
+  if (total === 0) return '';
+  const ratio = correct / total;
+  if (ratio >= 0.9) return '🏆 완벽해요!';
+  if (ratio >= 0.7) return '🎉 잘했어요!';
+  if (ratio >= 0.5) return '💪 조금만 더!';
+  return '📚 더 연습해요';
+}
+
 export default function QuizResultScreen() {
   const { sessionId } = useLocalSearchParams<{ sessionId: string }>();
   const router = useRouter();
@@ -48,6 +57,9 @@ export default function QuizResultScreen() {
   }
 
   const correctCount = session.correct_count ?? 0;
+  const totalCount = session.total_count;
+  const percentage = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
+  const encouragement = getEncouragement(correctCount, totalCount);
 
   return (
     <View className="flex-1 bg-[#FAF9F7]" style={{ paddingTop: insets.top }}>
@@ -71,7 +83,8 @@ export default function QuizResultScreen() {
           {session.correct_count !== null ? (
             <>
               <Text className="text-5xl font-black text-indigo-600">{correctCount}</Text>
-              <Text className="text-xl text-gray-400 font-medium">/ {session.total_count}</Text>
+              <Text className="text-xl text-gray-400 font-medium">/ {totalCount} · {percentage}%</Text>
+              <Text className="text-base font-semibold text-gray-700 mt-3">{encouragement}</Text>
             </>
           ) : (
             <Text className="text-gray-400 font-medium">미완료 퀴즈</Text>
@@ -114,6 +127,14 @@ export default function QuizResultScreen() {
               <Text className="text-xs text-gray-500 leading-5">
                 {q.example_sentence_ko}
               </Text>
+              {q.is_correct === false && q.expression_id && (
+                <Pressable
+                  onPress={() => router.push(`/study/${q.expression_id}`)}
+                  className="mt-2 active:opacity-60"
+                >
+                  <Text className="text-xs text-indigo-500 font-medium">표현 상세 보기 →</Text>
+                </Pressable>
+              )}
             </View>
           </View>
         ))}

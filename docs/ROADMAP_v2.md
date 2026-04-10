@@ -2970,26 +2970,26 @@ CompletionOverlay에 `stats.repeats: 1`이 하드코딩됨.
 
 | Task | 설명 | 우선순위 | 대상 파일 | 상태 |
 |------|------|---------|---------|------|
-| Task 071 | TOPIC_EMOJI 매핑 오류 수정 + 공통 상수 파일 생성 | 🔴 즉시 | index.tsx, history.tsx | ⬜ 미시작 |
-| Task 072 | 채팅 헤더 safe area 처리 (pt-1 → insets.top) | 🔴 즉시 | chat/[id].tsx | ⬜ 미시작 |
-| Task 073 | 온보딩 로그인 로딩 상태 + 에러 Toast | 🔴 즉시 | onboarding.tsx | ⬜ 미시작 |
-| Task 074 | Free Talking 중복 생성 방지 (isCreating flag) | 🔴 즉시 | index.tsx | ⬜ 미시작 |
-| Task 075 | 미구현 버튼 disabled 처리 (검색/삭제/Subscription) | 🔴 즉시 | study.tsx, settings.tsx, [expressionId].tsx | ⬜ 미시작 |
-| Task 076 | End 버튼 / Sign Out 확인 다이얼로그 | 🟡 단기 | chat/[id].tsx, settings.tsx | ⬜ 미시작 |
-| Task 077 | 모달 배경 탭 닫기 (홈 리포트, topic-select) | 🟡 단기 | index.tsx, topic-select.tsx | ⬜ 미시작 |
-| Task 078 | 퀴즈 세션 목록 useFocusEffect + notEnough 닫기 버튼 | 🟡 단기 | quiz.tsx | ⬜ 미시작 |
-| Task 079 | 섀도잉 플레이어 재생 중 일시정지 아이콘 표시 | 🟡 단기 | VideoPlayer.tsx | ⬜ 미시작 |
-| Task 080 | pt-14 → useSafeAreaInsets 일괄 교체 (9개 파일) | 🟡 단기 | 탭 화면 전체 | ⬜ 미시작 |
-| Task 081 | 채팅 말풍선 탭 가능 힌트 아이콘 추가 | 🟡 단기 | AIBubble, UserBubble, FeedbackBlock | ⬜ 미시작 |
-| Task 082 | 홈 화면 소개선 (인사말 시간대 / 로딩 / FAB 정리) | 🟡 단기 | index.tsx | ⬜ 미시작 |
+| Task 071 | TOPIC_EMOJI 매핑 오류 수정 + 공통 상수 파일 생성 | 🔴 즉시 | index.tsx, history.tsx | ✅ 완료 |
+| Task 072 | 채팅 헤더 safe area 처리 (pt-1 → insets.top) | 🔴 즉시 | chat/[id].tsx | ✅ 완료 |
+| Task 073 | 온보딩 로그인 로딩 상태 + 에러 Toast | 🔴 즉시 | onboarding.tsx | ✅ 완료 |
+| Task 074 | Free Talking 중복 생성 방지 (isCreating flag) | 🔴 즉시 | index.tsx | ✅ 완료 |
+| Task 075 | 미구현 버튼 disabled 처리 (검색/삭제/Subscription) | 🔴 즉시 | study.tsx, settings.tsx, [expressionId].tsx | ✅ 완료 |
+| Task 076 | End 버튼 / Sign Out 확인 다이얼로그 | 🟡 단기 | chat/[id].tsx, settings.tsx | ✅ 완료 |
+| Task 077 | 모달 배경 탭 닫기 (홈 리포트, topic-select) | 🟡 단기 | index.tsx, topic-select.tsx | ✅ 완료 |
+| Task 078 | 퀴즈 세션 목록 useFocusEffect + notEnough 닫기 버튼 | 🟡 단기 | quiz.tsx | ✅ 완료 |
+| Task 079 | 섀도잉 플레이어 재생 중 일시정지 아이콘 표시 | 🟡 단기 | VideoPlayer.tsx | ✅ 완료 |
+| Task 080 | pt-14 → useSafeAreaInsets 일괄 교체 (9개 파일) | 🟡 단기 | 탭 화면 전체 | ✅ 완료 |
+| Task 081 | 채팅 말풍선 탭 가능 힌트 아이콘 추가 | 🟡 단기 | AIBubble, UserBubble, FeedbackBlock | ✅ 완료 |
+| Task 082 | 홈 화면 소개선 (인사말 시간대 / 로딩 / FAB 정리) | 🟡 단기 | index.tsx | ✅ 완료 |
 | Task 083 | Toast 색상 에러/성공/정보 분기 | 🟡 단기 | Toast.tsx, useAppStore.ts | ✅ 완료 |
 | Task 084 | 퀴즈 플레이어 이탈 경고 + 진행률 바 애니메이션 | 🟡 단기 | quiz/[sessionId].tsx | ✅ 완료 |
-| Task 085 | Settings 탭 아이콘 교체 + 스트릭 개선 | 🟡 단기 | _layout.tsx, settings.tsx, index.tsx | ⬜ 미시작 |
-| Task 086 | SavePopup 저장 완료 후 취소 버튼 숨김 | 🟡 단기 | SavePopup.tsx | ⬜ 미시작 |
-| Task 087 | 퀴즈 결과 점수 퍼센트 + 격려 메시지 + 오답 이동 | 🟢 장기 | quiz/result/[sessionId].tsx | ⬜ 미시작 |
-| Task 088 | 섀도잉 완료 반복 횟수 실제 카운팅 | 🟢 장기 | shadowing/[id].tsx | ⬜ 미시작 |
-| Task 089 | Root Layout 로딩 중 스플래시 처리 | 🟢 장기 | _layout.tsx | ⬜ 미시작 |
-| Task 090 | 섀도잉 목록 완료/미완료 정렬 | 🟢 장기 | shadowing.tsx | ⬜ 미시작 |
+| Task 085 | Settings 탭 아이콘 교체 + 스트릭 개선 | 🟡 단기 | _layout.tsx, settings.tsx, index.tsx | ✅ 완료 |
+| Task 086 | SavePopup 저장 완료 후 취소 버튼 숨김 | 🟡 단기 | SavePopup.tsx | ✅ 완료 |
+| Task 087 | 퀴즈 결과 점수 퍼센트 + 격려 메시지 + 오답 이동 | 🟢 장기 | quiz/result/[sessionId].tsx | ✅ 완료 |
+| Task 088 | 섀도잉 완료 반복 횟수 실제 카운팅 | 🟢 장기 | shadowing/[id].tsx | ✅ 완료 |
+| Task 089 | Root Layout 로딩 중 스플래시 처리 | 🟢 장기 | _layout.tsx | ✅ 완료 |
+| Task 090 | 섀도잉 목록 완료/미완료 정렬 | 🟢 장기 | shadowing.tsx | ✅ 완료 |
 
 ## Phase 9 Task 의존성
 

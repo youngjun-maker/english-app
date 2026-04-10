@@ -62,6 +62,8 @@ export default function ShadowingPlayerScreen() {
 
   // 완료 시 소요 시간 (초)
   const elapsedSecondsRef = useRef(0);
+  // 루프 반복 횟수
+  const loopCountRef = useRef(0);
 
   // 모드 변경 시 auto-pause 플래그 리셋
   useEffect(() => {
@@ -150,6 +152,7 @@ export default function ShadowingPlayerScreen() {
         if (prevScript) {
           lastSentenceIndexRef.current = prevIndex;
           setCurrentSentenceIndex(prevIndex);
+          loopCountRef.current++;
           videoRef.current?.seek(prevScript.start);
           videoRef.current?.play();
           isPausedRef.current = false;
@@ -202,6 +205,7 @@ export default function ShadowingPlayerScreen() {
     isCompletedRef.current = false;
     isPausedRef.current = false;
     lastSentenceIndexRef.current = -1;
+    loopCountRef.current = 0;
     videoRef.current?.seek(0);
     videoRef.current?.play();
   }
@@ -386,7 +390,7 @@ export default function ShadowingPlayerScreen() {
           stats={{
             sentences: scripts.length,
             duration: durationLabel,
-            repeats: 1,
+            repeats: loopCountRef.current + 1,
           }}
         />
       )}
