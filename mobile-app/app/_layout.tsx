@@ -34,6 +34,13 @@ export default function RootLayout() {
 
     // 로그인/로그아웃 이벤트 구독
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // 로그아웃 시 즉시 store 비움 (이중 안전장치 — settings.tsx의 낙관적 clearSession과 별개)
+      if (event === 'SIGNED_OUT') {
+        useAppStore.getState().clearSession();
+        setAppState('unauthenticated');
+        return;
+      }
+
       useAppStore.getState().setSession(session);
       setAppState(session ? 'home' : 'unauthenticated');
 

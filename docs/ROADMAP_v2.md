@@ -3017,3 +3017,389 @@ Task 088 (섀도잉 반복 횟수) ← 독립
 Task 089 (스플래시) ← 독립
 Task 090 (섀도잉 정렬) ← 독립
 ```
+
+---
+
+## 기능별 코드 점검 계획 (2026-04-10 작성)
+
+> "작업은 완료됐다고 표시되어 있지만 막상 기능에 들어가면 안 되는 항목을 찾기 위한 코드 레벨 점검 체크리스트"
+
+### 점검 방식
+
+각 기능을 3단계로 확인한다:
+1. **코드 존재 확인** — 파일이 있고 핵심 로직이 구현되어 있는가
+2. **연결 확인** — API 호출, 라우트, 컴포넌트 Props 등이 실제로 연결되어 있는가
+3. **엣지케이스 확인** — 에러 처리, 로딩 상태, 빈 데이터 등이 처리되어 있는가
+
+### 우선순위 (버그 가능성 높은 순)
+
+1. **영역 5 섀도잉** — VideoPlayer seek 비동기, Auto-pause 타이밍 복잡
+2. **영역 6 퀴즈** — 실기기 미테스트 기록 있음
+3. **영역 2 채팅 핵심 흐름** — 턴 카운트/오프라인 연결 누락 가능성
+4. **영역 7 홈 화면** — 더미 데이터가 아직 남아있을 가능성
+
+---
+
+### 영역 1: 인증 (Task 018)
+
+| 항목 | 파일 | 확인 포인트 | 상태 |
+|------|------|-------------|------|
+| Google 로그인 | `app/(auth)/onboarding.tsx` | `signInWithGoogle` 실제 호출 여부, `WebBrowser.openAuthSessionAsync` 연결 | ✅ |
+| Apple 로그인 | `app/(auth)/onboarding.tsx` | iOS 플랫폼 분기 처리, `expo-apple-authentication` 연결 | ✅ |
+| 세션 유지 | `app/_layout.tsx` | `onAuthStateChange` 구독, `setSession` 호출 | ✅ |
+| Supabase users upsert | `app/_layout.tsx` | 로그인 후 users 테이블 upsert 호출 여부 | ✅ |
+| 로그아웃 | `app/(tabs)/settings.tsx` | 로그아웃 버튼 존재 및 실제 동작 확인 | ✅ 버그 수정됨 |
+
+---
+
+### 영역 2: 채팅 핵심 흐름 (Task 020-021)
+
+| 항목 | 파일 | 확인 포인트 | 상태 |
+|------|------|-------------|------|
+| 녹음 → STT | `app/chat/[id].tsx`, `api/chat.ts` | `transcribeAudio` 실제 연결, 30초 타이머 동작 | ✅ |
+| STT → LLM (2-Step) | `api/chat.ts` | `sendMessage` 호출 후 말풍선 즉시 표시 로직 | ✅ |
+| 턴 카운트 증가 | `api/chat.ts` | `incrementTurnCount` 호출 위치 확인 | ✅ |
+| 20턴 제한 UI | `app/chat/[id].tsx` | `isTurnLimitReached` 구독, RecordButton 비활성화 | ✅ |
+| 오프라인 처리 | `app/chat/[id].tsx` | `isOffline` 상태 RecordButton 비활성화 연결 | ✅ |
+| STT 실패 "다시 말하기" | `app/chat/[id].tsx` | `sttFailed` 상태 → 재시도 UI 표시 | ✅ 버그 수정됨 |
+
+---
+
+### 영역 3: TTS 재생 (Task 021)
+
+| 항목 | 파일 | 확인 포인트 | 상태 |
+|------|------|-------------|------|
+| TTS 버튼 연결 | `UserBubble`, `AIBubble`, `FeedbackBlock`, `ExpressionCard` | `useTTSButton` 훅 실제 연결 여부 | ✅ |
+| 중단 메커니즘 | `api/chat.ts` | `_currentSound` 중단 후 새 재생 로직 | ✅ |
+| is_perfect 분기 | `FeedbackBlock.tsx` | `is_perfect: true`일 때 TTS 버튼 미표시 확인 | ✅ |
+| 로딩 상태 | `TTSButton.tsx`, `useTTSButton.ts` | 재생 중 스피너/비활성화 표시 | ✅ |
+| AbortController | `useTTSButton.ts` | 컴포넌트 언마운트 시 TTS 중단 | ✅ 버그 수정됨 |
+
+---
+
+### 영역 4: 표현 저장 & 학습장 (Task 022)
+
+| 항목 | 파일 | 확인 포인트 | 상태 |
+|------|------|-------------|------|
+| 롱프레스 SavePopup | `app/chat/[id].tsx` | 롱프레스 → `SavePopup` 표시, source_block 분기 | ✅ |
+| source_block 3종 | `UserBubble`, `FeedbackBlock`, `AIBubble` | `onSave(source_block)` 각각 올바른 값 전달 | ✅ |
+| 표현 저장 API | `api/chat.ts` | `saveExpression` 호출 → Supabase insert | ✅ |
+| 학습장 목록 | `app/(tabs)/study.tsx` | `fetchExpressions` 마운트 시 호출, 빈 상태 처리 | ✅ |
+| 표현 삭제 | `app/(tabs)/study.tsx` | 스와이프 삭제 → `deleteExpression` 연결 | ✅ |
+| 대화 문맥 화면 | `app/study/[expressionId].tsx` | `fetchMessages` 실제 데이터, ai_turn 하이라이트 | ✅ |
+
+---
+
+### 영역 5: 섀도잉 (Task 025-036)
+
+| 항목 | 파일 | 확인 포인트 | 상태 |
+|------|------|-------------|------|
+| 콘텐츠 목록 API | `ai-server/routes/shadowing.js` | `GET /api/shadowing` DB 연결 | ✅ |
+| 콘텐츠 목록 화면 | `app/(tabs)/shadowing.tsx` | API 호출, ContentCard 렌더링 | ✅ |
+| VideoPlayer | `components/shadowing/VideoPlayer.tsx` | `expo-video` 실제 사용, seek 비동기 처리 | ✅ |
+| Auto-pause | `app/shadowing/[id].tsx` | 문장 끝 시간에 자동 일시정지 로직 | ✅ 버그 수정됨 |
+| 루프 반복 | `ControlBar` / 플레이어 | 루프 버튼 → 구간 반복 실제 동작 | ✅ |
+| 3단계 모드 | `ModeTab` | 1문장/3문장/전체 전환 시 Auto-pause 범위 변경 | ✅ |
+| 자막 하이라이트 | `ScriptArea.tsx` | 현재 재생 위치 → 해당 문장 하이라이트 | ✅ |
+| 마이크 녹음 비교 | `app/shadowing/[id].tsx` | 녹음 → 원어민 vs 내 발음 순차 재생 | ✅ |
+| 세션 저장 | `app/shadowing/[id].tsx` | 완료 시 `POST /api/shadowing/sessions` 호출 | ✅ 버그 수정됨 |
+
+---
+
+### 영역 6: 퀴즈 (Task 037-046)
+
+| 항목 | 파일 | 확인 포인트 | 상태 |
+|------|------|-------------|------|
+| 퀴즈 생성 | `app/(tabs)/quiz.tsx` | "퀴즈 시작" 버튼 → `POST /api/quiz/generate` 호출 | ✅ |
+| 표현 10개 미만 처리 | `app/(tabs)/quiz.tsx` | 표현 부족 시 안내 메시지 | ✅ |
+| 문제 화면 | `app/quiz/[sessionId].tsx` | QuizQuestion 렌더링, 답변 선택 | ✅ |
+| highlight_text 볼드 | `QuizQuestion.tsx` | `**text**` 파싱 → Bold 렌더링 | ✅ |
+| 정답/오답 인라인 표시 | `app/quiz/[sessionId].tsx` | 선택 즉시 피드백 표시, 다음 문제 이동 | ✅ 버그 수정됨 |
+| 결과 화면 | `app/quiz/result/[sessionId].tsx` | 점수 계산, 오답 목록 표시 | ✅ 버그 수정됨 |
+| 세션 PATCH | `api/quiz.ts` | 문제 풀 때마다 `PATCH /api/quiz/sessions/:id` 호출 | ✅ 버그 수정됨 |
+
+---
+
+### 영역 7: 홈 화면 & 대화 목록 (Task 009 + 후속)
+
+| 항목 | 파일 | 확인 포인트 | 상태 |
+|------|------|-------------|------|
+| 대화 목록 API 연결 | `app/(tabs)/index.tsx` | 실제 `fetchConversations` 호출 여부 (더미 제거됐는가?) | ✅ |
+| 대화 목록 + 턴수 표시 | `app/(tabs)/index.tsx` | `get_conversations_with_turns` RPC 결과 렌더링 | ✅ |
+| 새 대화 시작 | `app/chat/topic-select.tsx` | `createConversation` → `chat/[id]` 이동 | ✅ |
+| 기존 대화 이어가기 | `app/(tabs)/index.tsx` | 목록 탭 → `chat/[id]` 이동 연결 | ✅ |
+
+---
+
+### 영역 8: 백엔드 미들웨어 & API 안정성
+
+| 항목 | 파일 | 확인 포인트 | 상태 |
+|------|------|-------------|------|
+| JWT 검증 | `middleware/auth.js` | Supabase `getUser` 호출, 실패 시 401 | ✅ |
+| 턴 제한 (RPC) | `routes/conversations.js` | `process_turn` RPC 호출로 교체됐는가 (구 turnLimit 미들웨어 제거) | ✅ |
+| 프롬프트 프리로드 | `utils/buildPrompt.js` | 서버 시작 시 txt 파일 로드, 요청마다 재읽기 없음 | ✅ |
+| TTS 캐싱 | `routes/tts.js` | Supabase Storage 캐시 확인 → 없으면 OpenAI 호출 | ✅ |
+| STT 크기 제한 | `routes/stt.js` | multer 500KB 제한, 30초 방어 | ✅ 버그 수정됨 |
+
+---
+
+### 영역 9: 에러 처리 & UX 공통
+
+| 항목 | 파일 | 확인 포인트 | 상태 |
+|------|------|-------------|------|
+| 401 자동 갱신 | `utils/apiFetch.ts` | refresh → retry → 실패 시 signOut | ✅ |
+| 오프라인 토스트 | `hooks/useOffline.ts` | NetInfo 구독 → showToast | ✅ 버그 수정됨 |
+| Toast 표시 | `components/common/Toast.tsx` | `toastMessage` store 구독 → 표시 | ✅ 버그 수정됨 |
+| 에러 코드 7종 | 백엔드 전반 | `errorResponse.js` 사용 일관성 | ✅ |
+
+---
+
+## 코드 점검 후 심층 개선 계획 (2026-04-10 작성) ✅ 전체 완료 (2026-04-10)
+
+> 즉시 수정된 17개 버그의 근본 원인을 해결하고 재발을 방지하기 위한 구조적 개선 작업
+
+---
+
+### 개선-01: 섀도잉 handleTimeUpdate 상태 기계 리팩터링
+
+**대상 버그:** 버그1(full 모드 완료 미실행) · 버그5(SELECT 필드 누락) · 버그6(useCallback 미적용)
+
+**근본 원인 분석:**
+
+| 버그 | 근본 원인 |
+|------|-----------|
+| full 모드 완료 미실행 | `handleTimeUpdate`가 `current/!current` 이분법으로만 동작 — 마지막 문장 종료 직후 `current === null`이 되므로 완료 감지 코드가 도달 불가 위치에 있었음 |
+| SELECT 필드 누락 | TypeScript 타입(`ShadowingContent`)과 Supabase SELECT 쿼리 필드를 별도로 관리하다 불일치 발생 |
+| useCallback 미적용 | FlatList `renderItem` useCallback 표준 패턴 부재 |
+
+**개선 방향:**
+
+1. `handleTimeUpdate`를 `PLAYING → SENTENCE_END → COMPLETE` 3단계 상태로 명확히 분리
+   - `PLAYING`: `currentTime < 현재 문장 end_time` → 정상 진행
+   - `SENTENCE_END`: `currentTime >= end_time` AND `mode !== 'full'` → pause + 다음 대기
+   - `COMPLETE`: `currentTime >= 마지막 문장 end_time` AND `mode === 'full'` → `saveSession()` + CompletionOverlay
+   - loop 모드 활성 시 COMPLETE 건너뜀
+2. SELECT 쿼리 수정 시 `types/index.ts`도 함께 업데이트하는 관행 확립
+3. FlatList `renderItem`은 항상 `useCallback(fn, [deps])` 패턴 적용
+
+**대상 파일:**
+- `mobile-app/app/shadowing/[id].tsx` — handleTimeUpdate 상태 기계
+- `mobile-app/api/shadowing.ts` — SELECT 필드 타입 일치
+- `mobile-app/app/(tabs)/shadowing.tsx` — FlatList useCallback
+- `mobile-app/types/index.ts` — ShadowingContent 타입 참조
+
+**완료 기준:** full 모드에서 마지막 문장 종료 시 CompletionOverlay 표시 및 saveSession 호출. loop 모드 시 완료 미실행. SELECT = 타입 필드 일치. renderItem useCallback 적용.
+
+**상태:** ✅ 완료 (2026-04-10)
+
+---
+
+### 개선-02: 퀴즈 PATCH 트랜잭션 구조 강화 및 타입 안정성
+
+**대상 버그:** 버그2(expression_id 누락) · 버그3(is_correct 미저장) · 버그7(correct_count 하드코딩) · 버그8(타입 단언 누락) · 버그9(이중 패딩)
+
+**근본 원인 분석:**
+
+| 버그 | 근본 원인 |
+|------|-----------|
+| expression_id 누락 | `GET /sessions/:id` SELECT 목록이 DB 스키마와 불일치 — `expression_id` 누락 |
+| is_correct 미저장 | PATCH 핸들러가 `quiz_sessions.correct_count` 집계에만 집중, `quiz_questions.is_correct` 개별 업데이트 책임 누락 |
+| correct_count 하드코딩 | `total_count` 상한을 10으로 고정 — `sessions.total_count` 미참조 |
+| 타입 단언 누락 | TypeScript strict null check 없이 `expression_id: string \| null` 사용 |
+| 이중 패딩 | FlatList `contentContainerStyle`과 `ListHeaderComponent` 내부 패딩이 중복 |
+
+**개선 방향:**
+
+1. PATCH 핸들러 Step 순서 보장:
+   - Step 1: session 조회 (소유권 확인 + `total_count` 확보)
+   - Step 2: `answers` 루프 → `quiz_questions.is_correct` UPDATE
+   - Step 3: `correct_count = answers.filter(a => a.is_correct).length`
+   - Step 4: `quiz_sessions` UPDATE (`correct_count`, `completed_at`)
+   - Step 5: 망각 곡선 갱신 (`expression_id` null 체크 후 `next_review_at` 업데이트)
+2. `GET /sessions/:id` SELECT = DB 스키마 전체 필드
+3. `quiz/[sessionId].tsx` `expression_id` null 가드 또는 `as string` 단언 명시
+4. FlatList 패딩을 `contentContainerStyle` 단일 소스로 통일
+
+**대상 파일:**
+- `ai-server/routes/quiz.js` — PATCH 핸들러, GET SELECT
+- `mobile-app/app/quiz/[sessionId].tsx` — expression_id null 가드
+- `mobile-app/app/(tabs)/quiz.tsx` — FlatList 패딩 책임 분리
+
+**완료 기준:** PATCH 후 `quiz_questions.is_correct` DB 저장 확인. GET 응답에 `expression_id` 포함. `correct_count` 상한이 `total_count` 기준. FlatList 패딩 단일 소스.
+
+**상태:** ✅ 완료 (2026-04-10)
+
+---
+
+### 개선-03: 채팅 오디오 세션 수명주기 통합 및 stale closure 해소
+
+**대상 버그:** 버그4(iOS TTS 무음) · 버그10(stale closure 4건)
+
+**근본 원인 분석:**
+
+| 버그 | 근본 원인 |
+|------|-----------|
+| iOS TTS 무음 | `stopRecording` 성공/실패/타임아웃 경로 간 `setAudioModeAsync` 호출이 비대칭 — 성공 경로에만 `allowsRecordingIOS: false` 복원 누락 |
+| stale closure | `chat/[id].tsx`가 300+ 라인 대형 컴포넌트로 `useCallback` deps 수동 관리 중 누락 발생 |
+
+**개선 방향:**
+
+1. `stopRecording`의 `setAudioModeAsync({ allowsRecordingIOS: false })`를 `finally` 블록으로 이동
+   ```
+   try { await recording.stopAndUnloadAsync(); }
+   finally { await Audio.setAudioModeAsync({ allowsRecordingIOS: false }); }
+   ```
+   → 성공 / 실패 / 30초 타임아웃 자동 종료 모든 경로에서 복원 보장
+
+2. `turnsRef` 패턴 도입:
+   ```
+   const turnsRef = useRef<ChatTurn[]>([]);
+   useEffect(() => { turnsRef.current = turns; }, [turns]);
+   ```
+   → `useCallback` deps에 `turns` 없이도 항상 최신 배열 참조
+
+3. 음성 경로 `handleRecordingStop`에 `cancelTodayStreakReminder()` 호출 추가 (텍스트 경로와 대칭)
+
+**대상 파일:**
+- `mobile-app/components/chat/RecordButton.tsx` — finally 블록 오디오 복원
+- `mobile-app/app/chat/[id].tsx` — turnsRef 패턴, useCallback deps
+
+**완료 기준:** iOS에서 녹음 완료 후 TTS 정상 재생. `turnsRef.current`가 최신 turns 반영. 음성/텍스트 경로 모두 streak 알림 취소 호출.
+
+**상태:** ✅ 완료 (2026-04-10)
+
+---
+
+### 개선-04: TTS 언마운트 클린업 표준화 및 RN 호환 스타일 교정
+
+**대상 버그:** 버그11(언마운트 후 오디오 재생 지속) · 버그16(pointer-events-none 무효) · 버그17(useEffect deps 누락)
+
+**근본 원인 분석:**
+
+| 버그 | 근본 원인 |
+|------|-----------|
+| 언마운트 후 재생 | `useEffect` cleanup에 비동기 작업 중단 코드 없음 — mountedRef 패턴 미표준화 |
+| pointer-events-none 무효 | NativeWind v4의 `pointer-events-none`은 웹 전용 CSS — RN에서 미동작 |
+| deps 누락 | Zustand 액션이 stable reference임을 인식하면서도 ESLint 규칙 미설정으로 누락 |
+
+**개선 방향:**
+
+1. `useTTSButton` 3단 cleanup 패턴 표준화:
+   ```
+   const mountedRef = useRef(true);
+   useEffect(() => {
+     return () => {
+       mountedRef.current = false;
+       abortRef.current?.abort();
+       stopTTS();
+     };
+   }, []);
+   // 모든 setState에 if (mountedRef.current) 가드
+   ```
+
+2. RN에서 웹 CSS 속성 사용 금지 규칙:
+   - `pointer-events-none` → `pointerEvents="none"` prop
+   - `select-none`, `cursor-*` 등 웹 전용 속성 주의
+
+3. `useOffline.ts` deps 배열에 Zustand 액션 추가 또는 `// eslint-disable-next-line react-hooks/exhaustive-deps` 주석으로 의도 명시
+
+**대상 파일:**
+- `mobile-app/hooks/useTTSButton.ts` — mountedRef + AbortController cleanup
+- `mobile-app/components/common/Toast.tsx` — pointerEvents prop
+- `mobile-app/hooks/useOffline.ts` — useEffect deps
+
+**완료 기준:** 화면 이탈 시 TTS 자동 중단. 언마운트 후 setState 경고 없음. Toast `pointerEvents="none"` prop 적용. useOffline deps 완전.
+
+**상태:** ✅ 완료 (2026-04-10)
+
+---
+
+### 개선-05: 인증 플로우 강화 및 OAuth metadata 정규화
+
+**대상 버그:** 버그12(로그아웃 stale 세션) · 버그13(Google 사용자 이름 빈 문자열)
+
+**근본 원인 분석:**
+
+| 버그 | 근본 원인 |
+|------|-----------|
+| stale 세션 잔존 | 로그아웃 시 `supabase.auth.signOut()` 응답 후 store 비우는 비관적 처리 — 네트워크 지연 시 stale user 잔존 |
+| 이름 빈 문자열 | `user_metadata.display_name`만 참조 — Google OAuth는 `full_name` 또는 `name` 키 사용 |
+
+**개선 방향:**
+
+1. 로그아웃 순서를 낙관적 처리로 변경:
+   ```
+   clearSession();               // 즉시 store 비움 (UI 즉시 반응)
+   await supabase.auth.signOut(); // 서버 정리 (실패해도 store는 이미 비워짐)
+   ```
+
+2. `setSession`의 display_name fallback 체인 강화:
+   ```
+   display_name ?? full_name ?? name ?? email?.split('@')[0] ?? 'User'
+   ```
+   - `display_name`: Apple 기본
+   - `full_name`: Google 기본
+   - `name`: 일부 OAuth provider
+   - `email 앞부분`: 최후 fallback
+
+3. `_layout.tsx` `onAuthStateChange SIGNED_OUT` 이벤트에서도 `clearSession()` 호출 확인 (이중 안전장치)
+
+**대상 파일:**
+- `mobile-app/app/(tabs)/settings.tsx` — 로그아웃 순서
+- `mobile-app/store/useAppStore.ts` — display_name fallback 체인
+- `mobile-app/app/_layout.tsx` — SIGNED_OUT clearSession 이중 안전장치
+
+**완료 기준:** 로그아웃 즉시 UI 반응(store 선행 비움). Google/Apple 로그인 후 사용자 이름 정상 표시. 네트워크 오류 로그아웃 시도 후에도 store 비워짐.
+
+**상태:** ✅ 완료 (2026-04-10)
+
+---
+
+### 개선-06: STT multer 상수 일원화 및 AIBubble readonly 인터페이스 명시
+
+**대상 버그:** 버그14(multer 값 불일치 + 에러핸들러 누락) · 버그15(AIBubble readonly 빈 함수 주입)
+
+**근본 원인 분석:**
+
+| 버그 | 근본 원인 |
+|------|-----------|
+| multer 값 불일치 | `MAX_AUDIO_SIZE` 상수가 multer config와 라우트 수동 체크 두 곳에 분리 선언 — 한 곳만 수정 시 불일치 |
+| 에러핸들러 누락 | multer 레벨 에러(`LIMIT_FILE_SIZE`)를 잡는 미들웨어 없어 500 반환 |
+| 빈 함수 주입 | `AIBubble`의 readonly/editable 컨텍스트 인터페이스 미정의 — `study/[expressionId].tsx`에서 `onLongPress={() => {}}` 주입 |
+
+**개선 방향:**
+
+1. `stt.js` 상수 일원화:
+   ```js
+   const MAX_AUDIO_SIZE = 500 * 1024; // 500KB — 단일 선언
+   // multer config와 handleUpload 에러핸들러 모두 이 상수 참조
+   ```
+   `handleUpload` 래퍼 미들웨어:
+   ```js
+   function handleUpload(req, res, next) {
+     upload.single('audio')(req, res, (err) => {
+       if (err?.code === 'LIMIT_FILE_SIZE')
+         return res.status(400).json(errorResponse('AUDIO_TOO_LONG'));
+       next(err);
+     });
+   }
+   ```
+
+2. `AIBubble`에 `readonly` prop 추가:
+   ```tsx
+   interface AIBubbleProps {
+     // ... 기존 props
+     readonly?: boolean;
+   }
+   // readonly=true 시 onLongPress/onSave 바인딩 스킵
+   ```
+   `study/[expressionId].tsx`에서 `<AIBubble readonly />` 명시적 전달
+
+**대상 파일:**
+- `ai-server/routes/stt.js` — MAX_AUDIO_SIZE 단일 상수 + handleUpload 래퍼
+- `mobile-app/components/chat/AIBubble.tsx` — readonly prop 인터페이스
+- `mobile-app/app/study/[expressionId].tsx` — readonly 명시적 전달
+
+**완료 기준:** `MAX_AUDIO_SIZE` 단일 선언. 500KB 초과 시 400 `AUDIO_TOO_LONG` 응답. `AIBubble readonly` prop 존재. `study/[expressionId].tsx`에서 빈 함수 주입 없음.
+
+**상태:** ✅ 완료 (2026-04-10)

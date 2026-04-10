@@ -75,8 +75,8 @@ export default function QuizPlayerScreen() {
     const currentQ = questions[currentIndex];
     const newAnswers = [
       ...answers,
-      ...(currentQ.expression_id
-        ? [{ expression_id: currentQ.expression_id, is_correct: isCorrect }]
+      ...(currentQ.expression_id != null
+        ? [{ expression_id: currentQ.expression_id as string, is_correct: isCorrect }]
         : []),
     ];
     setAnswers(newAnswers);
@@ -88,7 +88,7 @@ export default function QuizPlayerScreen() {
       setFinalScore(correctCount);
       setIsSubmitting(true);
       try {
-        await submitQuizResult(sessionId!, correctCount, newAnswers);
+        await submitQuizResult(sessionId!, newAnswers);
       } catch {
         // 제출 실패해도 결과 화면은 보여줌
         showToast('결과 저장에 실패했어요.', 'error');

@@ -44,7 +44,6 @@ export default function AIBubble({
           <FeedbackBlock
             key={`${messageId}-fb-${index}`}
             feedback={item}
-            onLongPress={readonly ? () => {} : undefined}
             onSave={
               !readonly && onFeedbackSave
                 ? (text, memo) => onFeedbackSave(index, text, memo)

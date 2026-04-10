@@ -76,6 +76,8 @@ export default function RecordButton({ onRecordStop, disabled }: RecordButtonPro
     } catch (e) {
       console.warn('stopRecording error:', e);
       recordingRef.current = null;
+    } finally {
+      // 성공/실패/타임아웃 모든 경로에서 iOS 오디오 세션 복원 (TTS 재생이 무음 모드에서 동작하도록)
       try {
         await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
       } catch (_) {}

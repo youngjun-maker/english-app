@@ -32,12 +32,11 @@ export async function fetchQuizSessionDetail(sessionId: string): Promise<QuizSes
 
 export async function submitQuizResult(
   sessionId: string,
-  correctCount: number,
   answers: Array<{ expression_id: string; is_correct: boolean }>
 ): Promise<void> {
   const res = await apiFetch(`/api/quiz/sessions/${sessionId}`, {
     method: 'PATCH',
-    body: JSON.stringify({ correct_count: correctCount, answers }),
+    body: JSON.stringify({ answers }),
   });
   if (!res.ok) return handleError(res);
 }

@@ -63,7 +63,14 @@ export const useAppStore = create<AppState>((set, get) => ({
       ? {
           id: supabaseUser.id,
           email: supabaseUser.email ?? '',
-          display_name: supabaseUser.user_metadata?.['display_name'] ?? '',
+          // Google OAuth → full_name / name, Apple → full_name, 기존 display_name 순서로 fallback
+          // 모두 없으면 이메일 앞부분 → 'User' 순으로 최후 fallback
+          display_name:
+            supabaseUser.user_metadata?.['display_name'] ??
+            supabaseUser.user_metadata?.['full_name'] ??
+            supabaseUser.user_metadata?.['name'] ??
+            supabaseUser.email?.split('@')[0] ??
+            'User',
           created_at: supabaseUser.created_at,
           last_login_at: supabaseUser.last_sign_in_at ?? supabaseUser.created_at,
         }

@@ -11,9 +11,14 @@ export default function SettingsScreen() {
   const router = useRouter();
   const user = useAppStore((s) => s.user);
   const todayTurnCount = useAppStore((s) => s.todayTurnCount);
+  const clearSession = useAppStore((s) => s.clearSession);
   const displayName = user?.display_name ?? 'User';
   const email = user?.email ?? '';
 
+  async function performSignOut() {
+    clearSession();
+    await supabase.auth.signOut();
+  }
 
   function handleSignOut() {
     Alert.alert(
@@ -21,7 +26,7 @@ export default function SettingsScreen() {
       '정말 로그아웃 하시겠어요?',
       [
         { text: '취소', style: 'cancel' },
-        { text: '로그아웃', style: 'destructive', onPress: () => supabase.auth.signOut() },
+        { text: '로그아웃', style: 'destructive', onPress: performSignOut },
       ]
     );
   }

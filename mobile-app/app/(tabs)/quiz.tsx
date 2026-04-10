@@ -71,7 +71,7 @@ export default function QuizScreen() {
           />
         )}
         ListHeaderComponent={
-          <View className="px-4 pt-5 pb-2">
+          <View className="pt-5 pb-2">
             {/* 퀴즈 생성 버튼 */}
             <Pressable
               onPress={handleGenerate}

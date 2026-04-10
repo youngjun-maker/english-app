@@ -226,7 +226,7 @@ router.get('/sessions/:id', authMiddleware, async (req, res) => {
 
     const { data: questions, error: questionsError } = await supabase
       .from('quiz_questions')
-      .select('id, expression_text, example_sentence_en, example_sentence_ko, highlight_text, order_index, is_correct')
+      .select('id, expression_id, expression_text, example_sentence_en, example_sentence_ko, highlight_text, order_index, is_correct')
       .eq('session_id', sessionId)
       .order('order_index', { ascending: true });
 
@@ -245,21 +245,57 @@ router.get('/sessions/:id', authMiddleware, async (req, res) => {
 // PATCH /api/quiz/sessions/:id
 router.patch('/sessions/:id', authMiddleware, async (req, res) => {
   const sessionId = req.params.id;
-  const { correct_count, answers } = req.body;
+  const { answers } = req.body;
 
-  if (
-    typeof correct_count !== 'number' ||
-    !Number.isInteger(correct_count) ||
-    correct_count < 0 ||
-    correct_count > 10
-  ) {
-    return errorResponse(res, 400, 'INVALID_REQUEST', 'correct_count는 0~10 사이의 정수여야 합니다');
+  // answers 배열 필수 검증
+  if (!Array.isArray(answers) || answers.length === 0) {
+    return errorResponse(res, 400, 'INVALID_REQUEST', 'answers 배열이 필요합니다');
   }
 
   try {
+    // Step 1: 세션 조회 — 소유권 확인 + total_count 확보
+    const { data: sessionData, error: sessionFetchError } = await supabase
+      .from('quiz_sessions')
+      .select('id, total_count')
+      .eq('id', sessionId)
+      .eq('user_id', req.user.id)
+      .single();
+
+    if (sessionFetchError || !sessionData) {
+      return errorResponse(res, 404, 'NOT_FOUND', '퀴즈 세션을 찾을 수 없습니다');
+    }
+
+    // Step 2: answers 루프 — quiz_questions.is_correct UPDATE (expression_id 기준)
+    for (const answer of answers) {
+      if (!answer.expression_id) continue; // expression_id 없는 항목 스킵
+
+      // quiz_questions.is_correct 업데이트 (결과 화면 정답/오답 표시용)
+      await supabase
+        .from('quiz_questions')
+        .update({ is_correct: answer.is_correct })
+        .eq('session_id', sessionId)
+        .eq('expression_id', answer.expression_id);
+    }
+
+    // Step 3: correct_count 서버 측 계산 (클라이언트 값 불신)
+    const correctCount = answers.filter((a) => a.is_correct === true).length;
+
+    if (correctCount > sessionData.total_count) {
+      return errorResponse(
+        res,
+        400,
+        'INVALID_REQUEST',
+        `correct_count는 total_count(${sessionData.total_count}) 이하여야 합니다`
+      );
+    }
+
+    // Step 4: quiz_sessions UPDATE — correct_count + completed_at 설정
     const { data, error } = await supabase
       .from('quiz_sessions')
-      .update({ correct_count })
+      .update({
+        correct_count: correctCount,
+        completed_at: new Date().toISOString(),
+      })
       .eq('id', sessionId)
       .eq('user_id', req.user.id)
       .select('id');
@@ -273,31 +309,31 @@ router.patch('/sessions/:id', authMiddleware, async (req, res) => {
       return errorResponse(res, 404, 'NOT_FOUND', '퀴즈 세션을 찾을 수 없습니다');
     }
 
-    // 망각 곡선 갱신: answers 배열이 있을 때만 처리 (하위 호환)
-    if (Array.isArray(answers) && answers.length > 0) {
-      for (const answer of answers) {
-        const { data: expr } = await supabase
-          .from('expressions')
-          .select('review_interval')
-          .eq('id', answer.expression_id)
-          .single();
+    // Step 5: 망각 곡선 갱신 — expression_id null 체크 후 next_review_date 업데이트
+    for (const answer of answers) {
+      if (!answer.expression_id) continue; // expression_id 없는 항목 스킵
 
-        const currentInterval = expr?.review_interval ?? 1;
-        const newInterval = answer.is_correct
-          ? Math.min(currentInterval * 2, 30)
-          : 1;
+      const { data: expr } = await supabase
+        .from('expressions')
+        .select('review_interval')
+        .eq('id', answer.expression_id)
+        .single();
 
-        const nextDate = new Date();
-        nextDate.setDate(nextDate.getDate() + newInterval);
+      const currentInterval = expr?.review_interval ?? 1;
+      const newInterval = answer.is_correct
+        ? Math.min(currentInterval * 2, 30)
+        : 1;
 
-        await supabase
-          .from('expressions')
-          .update({
-            review_interval: newInterval,
-            next_review_date: nextDate.toISOString().split('T')[0],
-          })
-          .eq('id', answer.expression_id);
-      }
+      const nextDate = new Date();
+      nextDate.setDate(nextDate.getDate() + newInterval);
+
+      await supabase
+        .from('expressions')
+        .update({
+          review_interval: newInterval,
+          next_review_date: nextDate.toISOString().split('T')[0],
+        })
+        .eq('id', answer.expression_id);
     }
 
     return res.status(200).json({ success: true });

@@ -3,7 +3,6 @@
 const express = require('express');
 const multer = require('multer');
 const os = require('os');
-const path = require('path');
 const fs = require('fs');
 const { OpenAI } = require('openai');
 const { authMiddleware } = require('../middleware/auth');
@@ -21,18 +20,31 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 },
+  limits: { fileSize: MAX_AUDIO_SIZE },
 });
 
+// multer 에러 핸들러 미들웨어 (LIMIT_FILE_SIZE → 400)
+function handleUpload(req, res, next) {
+  upload.single('audio')(req, res, (err) => {
+    if (err) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return errorResponse(res, 400, 'AUDIO_TOO_LONG', '오디오 파일이 너무 큽니다 (최대 30초)');
+      }
+      return errorResponse(res, 400, 'INVALID_AUDIO_FORMAT', '파일 업로드 오류가 발생했습니다');
+    }
+    next();
+  });
+}
+
 // POST /api/stt
-router.post('/', authMiddleware, upload.single('audio'), async (req, res) => {
+router.post('/', authMiddleware, handleUpload, async (req, res) => {
   const file = req.file;
 
   if (!file) {
     return errorResponse(res, 400, 'INVALID_AUDIO_FORMAT', '오디오 파일이 필요합니다');
   }
 
-  const { mimetype, originalname, size } = file;
+  const { mimetype, originalname } = file;
   const filePath = file.path;
 
   // 포맷 검증: audio/mp4 mimetype이거나 .m4a 확장자여야 함
@@ -42,12 +54,6 @@ router.post('/', authMiddleware, upload.single('audio'), async (req, res) => {
   if (!isMp4Mime && !isM4aExt) {
     fs.unlink(filePath, () => {});
     return errorResponse(res, 400, 'INVALID_AUDIO_FORMAT', '지원하지 않는 오디오 형식입니다 (m4a만 허용)');
-  }
-
-  // 크기 검증: 30초 기준 초과 시 거부
-  if (size > MAX_AUDIO_SIZE) {
-    fs.unlink(filePath, () => {});
-    return errorResponse(res, 400, 'AUDIO_TOO_LONG', '오디오 파일이 너무 큽니다 (최대 30초)');
   }
 
   // Whisper STT 호출

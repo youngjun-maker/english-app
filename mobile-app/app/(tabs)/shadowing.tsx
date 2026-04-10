@@ -7,6 +7,8 @@ import ContentCard from '@/components/shadowing/ContentCard';
 import { useAppStore } from '@/store/useAppStore';
 import type { ShadowingContent } from '@/types/shadowing';
 
+const keyExtractor = (item: ShadowingContent) => item.id;
+
 function EmptyState() {
   return (
     <View className="flex-1 items-center justify-center px-8">
@@ -50,13 +52,16 @@ export default function ShadowingScreen() {
     }, []),
   );
 
-  const renderItem: ListRenderItem<ShadowingContent> = ({ item }) => (
-    <ContentCard
-      content={item}
-      completed={completedIds.includes(item.id)}
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      onPress={() => router.push({ pathname: '/shadowing/[id]' as any, params: { id: item.id } })}
-    />
+  const renderItem: ListRenderItem<ShadowingContent> = useCallback(
+    ({ item }) => (
+      <ContentCard
+        content={item}
+        completed={completedIds.includes(item.id)}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        onPress={() => router.push({ pathname: '/shadowing/[id]' as any, params: { id: item.id } })}
+      />
+    ),
+    [completedIds, router],
   );
 
   return (
@@ -77,7 +82,7 @@ export default function ShadowingScreen() {
       ) : (
         <FlatList
           data={sortedContents}
-          keyExtractor={(item) => item.id}
+          keyExtractor={keyExtractor}
           renderItem={renderItem}
           className="flex-1 px-5"
           ListEmptyComponent={<EmptyState />}

@@ -24,7 +24,7 @@ export default function Toast() {
   if (!toastMessage) return null;
 
   return (
-    <View className="absolute bottom-20 left-6 right-6 items-center z-50 pointer-events-none">
+    <View pointerEvents="none" className="absolute bottom-20 left-6 right-6 items-center z-50">
       <View style={{ backgroundColor: BG_COLOR[toastType] }} className="px-5 py-3 rounded-full">
         <Text className="text-white text-sm text-center">{toastMessage}</Text>
       </View>

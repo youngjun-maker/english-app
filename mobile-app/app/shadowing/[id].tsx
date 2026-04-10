@@ -131,9 +131,31 @@ export default function ShadowingPlayerScreen() {
     );
 
     if (!current) {
-      // gap 구간: ref는 건드리지 않고 스크롤만 이전 문장으로 유지
+      // gap 구간 또는 마지막 문장 이후 구간
       const fallback = [...currentScripts].reverse().find((s) => currentTime >= s.start);
       if (fallback) setCurrentSentenceIndex(fallback.index);
+
+      // 마지막 문장 end 이후인지 확인
+      const lastScript = currentScripts[currentScripts.length - 1];
+      if (!lastScript || currentTime < lastScript.end) return;
+
+      // 루프 모드: 마지막 문장 end 이후에도 루프 구간 start로 되돌리기
+      if (isLoopingRef.current) {
+        const loopTarget = currentScripts[currentSentenceIndexRef.current] ?? lastScript;
+        lastSentenceIndexRef.current = loopTarget.index - 1;
+        loopCountRef.current++;
+        videoRef.current?.seek(loopTarget.start);
+        videoRef.current?.play();
+        isPausedRef.current = false;
+        return;
+      }
+
+      // 전체 모드: 완료 처리
+      if (shadowingModeRef.current === 'full' && !isCompletedRef.current) {
+        isCompletedRef.current = true;
+        elapsedSecondsRef.current = Math.round((Date.now() - sessionStartTime) / 1000);
+        handleCompletion();
+      }
       return;
     }
 
@@ -179,15 +201,7 @@ export default function ShadowingPlayerScreen() {
         videoRef.current?.pause();
       }
     }
-    // 전체 모드: 마지막 문장 종료 시 완료 처리
-    if (mode === 'full') {
-      const lastScript = currentScripts[currentScripts.length - 1];
-      if (lastScript && currentTime >= lastScript.end && !isCompletedRef.current) {
-        isCompletedRef.current = true;
-        elapsedSecondsRef.current = Math.round((Date.now() - sessionStartTime) / 1000);
-        handleCompletion();
-      }
-    }
+    // full 모드 완료 처리는 마지막 문장 end 이후 (!current 분기)에서 실행됨
   }
 
   async function handleCompletion() {

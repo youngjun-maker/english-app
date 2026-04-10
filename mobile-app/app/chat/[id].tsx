@@ -155,6 +155,8 @@ export default function ChatScreen() {
   const conversationId = id;
 
   const [turns, setTurns] = useState<ChatTurn[]>([]);
+  // goal_achieved 처리에서 최신 turns를 동기적으로 읽기 위한 ref
+  const turnsRef = useRef<ChatTurn[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isTextMode, setIsTextMode] = useState(false);
   const [textInput, setTextInput] = useState('');
@@ -163,6 +165,11 @@ export default function ChatScreen() {
   const [currentHint, setCurrentHint] = useState<string | null>(null);
   /** 미션 클리어 시 하이라이트할 네이티브 표현 (최대 3개) */
   const [highlightExpressions, setHighlightExpressions] = useState<{ text: string; messageId: string }[]>([]);
+
+  // turns ref 동기화 — goal_achieved 처리에서 stale closure 없이 최신 배열 참조
+  useEffect(() => {
+    turnsRef.current = turns;
+  });
 
   const flatListRef = useRef<FlatList<ChatTurn>>(null);
   const flashOpacity = useRef(new Animated.Value(0)).current;
@@ -238,26 +245,28 @@ export default function ChatScreen() {
   // -------------------------------------------------------------------------
   // 공통: AI 응답 fetching 흐름
   // -------------------------------------------------------------------------
-  async function fetchAIResponse(tempId: string, text: string) {
+  const fetchAIResponse = useCallback(async (tempId: string, text: string) => {
     useAppStore.getState().setTypingIndicator(true);
     try {
       const { message_id, user_message_id, content } = await sendMessage(conversationId, text, difficultyLevel);
-      setTurns((prev) =>
-        prev.map((t) =>
+      // setTurns 함수형 업데이트로 최신 turns 참조 — stale closure 없음
+      setTurns((prev) => {
+        const updated = prev.map((t) =>
           t.id === tempId
             ? { id: message_id, userMsgId: user_message_id, userText: text, aiContent: content }
             : t
-        )
-      );
+        );
+        return updated;
+      });
       // 돌발 상황 플래그 처리
       if (content.is_surprise) {
         triggerSurpriseEffect();
       }
       if (content.goal_achieved) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        // 최근 AI 응답에서 네이티브 표현 최대 3개 추출 (현재 턴 포함)
+        // turnsRef를 통해 최신 turns를 stale closure 없이 읽음
         const currentExpr = { text: content.next_response, messageId: message_id };
-        const recentAITurns = [...turns]
+        const recentAITurns = turnsRef.current
           .filter((t) => t.aiContent?.next_response && t.id !== tempId)
           .slice(-2)
           .map((t) => ({ text: t.aiContent!.next_response, messageId: t.id }));
@@ -276,7 +285,7 @@ export default function ChatScreen() {
     } finally {
       useAppStore.getState().setTypingIndicator(false);
     }
-  }
+  }, [conversationId, difficultyLevel, showToast, triggerSurpriseEffect]);
 
   // -------------------------------------------------------------------------
   // 녹음 완료 핸들러 — STT → sendMessage 2-Step
@@ -289,7 +298,8 @@ export default function ChatScreen() {
       try {
         const { text } = await transcribeAudio(uri);
 
-        if (turns.length === 0) {
+        if (turnsRef.current.length === 0) {
+          cancelTodayStreakReminder().catch(() => {});
         }
 
         // 사용자 말풍선 즉시 표시 (optimistic — userMsgId는 아직 모름)
@@ -309,7 +319,7 @@ export default function ChatScreen() {
         setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
       }
     },
-    [conversationId, isProcessing, showToast]
+    [isProcessing, showToast, fetchAIResponse]
   );
 
   // -------------------------------------------------------------------------
@@ -319,7 +329,7 @@ export default function ChatScreen() {
     const text = (overrideText !== undefined ? overrideText : textInput).trim();
     if (!text || isProcessing) return;
 
-    if (turns.length === 0) {
+    if (turnsRef.current.length === 0) {
       cancelTodayStreakReminder().catch(() => {});
     }
 

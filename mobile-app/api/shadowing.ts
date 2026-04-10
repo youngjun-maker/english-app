@@ -67,7 +67,7 @@ export async function fetchContents(): Promise<ShadowingContent[]> {
 
   const { data, error } = await supabase
     .from('shadowing_contents')
-    .select('id, title, description, thumbnail_url, duration, level, category')
+    .select('id, title, description, video_url, thumbnail_url, duration, level, category')
     .eq('is_published', true)
     .order('created_at', { ascending: false });
 
@@ -86,7 +86,7 @@ export async function fetchContentDetail(id: string): Promise<{
 
   const { data: content, error: contentError } = await supabase
     .from('shadowing_contents')
-    .select('id, title, video_url, duration')
+    .select('id, title, description, video_url, thumbnail_url, duration, level, category')
     .eq('id', id)
     .eq('is_published', true)
     .single();
